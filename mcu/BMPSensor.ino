@@ -1,5 +1,5 @@
 #include <Wire.h>
-#include <Adafruit_BMP085.h>
+#include <Adafruit_BMP085_U.h>
 
 //Constants
 const uint16_t BAUD_RATE = 9600;
