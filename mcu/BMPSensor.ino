@@ -9,8 +9,7 @@ Adafruit_BMP085 sensor;
 
 void setup() {
 	Serial.begin(BAUD_RATE);
-	bool success = sensor.begin();
-	if(!success){
+	if(!sensor.begin()){
 		Serial.println("No BMP085 Pressure Sensor detected... Check wiring.");
 		while(true) {}
 	} else {
@@ -20,10 +19,8 @@ void setup() {
 
 void loop() {
 	Serial.print(sensor.readPressure());
-	// Serial.print(" Pa @ ");
 	Serial.print(" ");
 	Serial.print(sensor.readTemperature());
-	// Serial.println(" *C\n");
 	Serial.println();
 
 	delay(1000);
