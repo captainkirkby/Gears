@@ -1,7 +1,7 @@
 Gears
 =====
 
-Set of packages used to measure the Burgess clock.
+Set of packages used to measure a clock.
 
 Microcontroller code to gather data from the photodiode sensor, barometric pressure and temperature sensor, 
 thermistors, and GPS disciplined oscillator.
