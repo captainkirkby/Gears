@@ -9,7 +9,7 @@
 # Select 'leaf' for the plug-in devices
 # Select 'hub' for the usb-nordic interface embedded within a hub
 # --------------------------------------------------------------------------
-TARGET = leaf
+TARGET = BMPSensor
 
 # --------------------------------------------------------------------------
 # The MCU programming method to use:
@@ -17,7 +17,7 @@ TARGET = leaf
 # Select 'spi' to program an AVR directly via its ISP port using an avrisp2
 # Select 'tiny' to program an AVR directly via its ISP port using a usbtiny
 # --------------------------------------------------------------------------
-METHOD = tiny
+METHOD = usb
 
 # --------------------------------------------------------------------------
 # The MCU architecture to build for
@@ -29,7 +29,7 @@ DEVICE = 328
 # --------------------------------------------------------------------------
 # The location of the Arduino installation to use
 # --------------------------------------------------------------------------
-INSTALL_DIR = /Users/david/arduino-0015
+INSTALL_DIR = /Applications/Arduino.app/Contents/Resources/Java
 
 # ==========================================================================
 # Arduino library configuration
@@ -38,24 +38,24 @@ INSTALL_DIR = /Users/david/arduino-0015
 # --------------------------------------------------------------------------
 # The location of the arduino core library sources
 # --------------------------------------------------------------------------
-ARDUINO = $(INSTALL_DIR)/hardware/cores/arduino
+ARDUINO = $(INSTALL_DIR)/hardware/arduino/cores/arduino
 
 # --------------------------------------------------------------------------
 # The core C sources to use
 # --------------------------------------------------------------------------
-CORE_C_SRC = pins_arduino.c wiring.c wiring_analog.c wiring_digital.c wiring_pulse.c \
-        wiring_serial.c wiring_shift.c WInterrupts.c
+CORE_C_SRC = avr-libc/malloc.c avr-libc/realloc.c WInterrupts.c wiring.c \
+wiring_analog.c wiring_digital.c wiring_pulse.c wiring_shift.c
         
 # --------------------------------------------------------------------------
 # The core C++ sources to use
 # --------------------------------------------------------------------------
-CORE_CPP_SRC = HardwareSerial.cpp WMath.cpp Print.cpp
+CORE_CPP_SRC = CDC.cpp HardwareSerial.cpp HID.cpp IPAddress.cpp new.cpp \
+Print.cpp Stream.cpp Tone.cpp USBCore.cpp WMath.cpp WString.cpp 
 
 # --------------------------------------------------------------------------
 # The local C++ sources to use
 # --------------------------------------------------------------------------
-LOCAL_CPP_SRC = serialno.cpp Spi.cpp mirf.cpp wireless.cpp \
-        utilities.cpp audio.cpp random.cpp lcd.cpp float16.cpp
+LOCAL_CPP_SRC = 
 
 # ==========================================================================
 # Target device configuration
@@ -130,7 +130,8 @@ CDEFS = -DF_CPU=$(F_CPU)
 CXXDEFS = -DF_CPU=$(F_CPU)
 
 # Place -I options here
-LIBDIR = $(INSTALL_DIR)/hardware/libraries
+LIBDIR = $(INSTALL_DIR)/hardware/
+
 CINCS = -I$(ARDUINO) -I$(LIBDIR)
 CXXINCS = -I$(ARDUINO) -I$(LIBDIR)
 
@@ -330,4 +331,4 @@ depend:
                 >> $(MAKEFILE); \
         $(CC) -M -mmcu=$(MCU) $(CDEFS) $(CINCS) $(SRC) $(ASRC) >> $(MAKEFILE)
 
-.PHONY:        all $(BUILD_DIR) elf hex eep lss sym program coff extcoff clean dependg
+.PHONY:        all $(BUILD_DIR) elf hex eep lss sym program coff extcoff clean depend
