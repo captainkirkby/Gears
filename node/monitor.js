@@ -4,6 +4,8 @@
 // to read the serial port where arduino is sitting.  //
 ////////////////////////////////////////////////////////
 var serialPort = require("serialport");
+var MongoClient = require('mongodb').MongoClient;
+
 
 serialPort.list(function(err, ports){
 	var usbSerialPort = "";
@@ -45,6 +47,19 @@ serialPort.list(function(err, ports){
 			console.log("Junk");
 		} else {
 			console.log(data);
+			
+			// Connect to the db
+			MongoClient.connect("mongodb://localhost:27017/BMPReadout", function(err, db) {
+				if(err) throw err;
+				console.log("We are connected");
+			
+				var collection = db.collection('data');
+			
+				var doc2 = {"data" : data};
+
+				collection.insert(doc2, {w:1}, function(err, result) {});
+			});
+
 		}
 	});
 
