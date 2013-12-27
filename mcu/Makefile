@@ -62,12 +62,12 @@ LOCAL_CPP_SRC =
 # ==========================================================================
 
 ifeq ($(DEVICE),168)
-		VARIANT = mega
+		VARIANT = standard
 		MCU = atmega168
 		BUILD_DIR = build.168
 		AVR_FUSES = -u -U efuse:w:0x01:m -U hfuse:w:0xD7:m -U lfuse:w:0xff:m
 else
-		VARIANT = mega
+		VARIANT = standard
 		MCU = atmega328p
 		BUILD_DIR = build.328
 		## 5V 16MHz full-swing oscillator
@@ -133,10 +133,9 @@ CXXDEFS = -DF_CPU=$(F_CPU)
 
 # Place -I options here
 VARIANTSDIR = $(INSTALL_DIR)/hardware/arduino/variants
-AVRINCDIR = $(INSTALL_DIR)/hardware/tools/avr/avr/include
 
-CINCS = -I$(ARDUINO) -I$(VARIANTSDIR)/$(VARIANT) -I$(AVRINCDIR)
-CXXINCS = -I$(ARDUINO) -I$(VARIANTSDIR)/$(VARIANT) -I$(AVRINCDIR)
+CINCS = -I$(ARDUINO) -I$(VARIANTSDIR)/$(VARIANT)
+CXXINCS = -I$(ARDUINO) -I$(VARIANTSDIR)/$(VARIANT)
 
 # Compiler flag to set the C Standard level.
 # c89   - "ANSI" C
