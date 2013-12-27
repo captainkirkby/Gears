@@ -1,12 +1,11 @@
 #include <Arduino.h>
-#include <Wire.h>
 #include <Adafruit_BMP085_U.h>
 
 //Constants
 const uint16_t BAUD_RATE = 9600;
 
 //Sensor object
-Adafruit_BMP085_Unified bmp = Adafruit_BMP085_Unified(10085);
+Adafruit_BMP085_Unified sensor = Adafruit_BMP085_Unified(10085);
 
 void setup() {
 	Serial.begin(BAUD_RATE);
@@ -19,9 +18,12 @@ void setup() {
 }
 
 void loop() {
-	Serial.print(sensor.readPressure());
+	float temperature,pressure;
+	sensor.getTemperature(&temperature);
+	sensor.getPressure(&pressure);
+	Serial.print(temperature);
 	Serial.print(" ");
-	Serial.print(sensor.readTemperature());
+	Serial.print(pressure);
 	Serial.println();
 
 	delay(1000);
