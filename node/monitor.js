@@ -2,7 +2,7 @@
 // Use the cool library                               //
 // git://github.com/voodootikigod/node-serialport.git //
 // to read the serial port where arduino is sitting.  //
-////////////////////////////////////////////////////////               
+////////////////////////////////////////////////////////
 var serialPort = require("serialport");
 
 serialPort.list(function(err, ports){
@@ -28,14 +28,17 @@ serialPort.list(function(err, ports){
 		baudrate: 9600,
 		parser: serialPort.parsers.readline('\r\n')
 	});
-	
-	usbSerial.on('open',function() {
-		console.log('Port open');
-	});
-	
-	usbSerial.on('data', function(data) {
-		console.log(data);
-	});
 
+	usbSerial.flush(function(err){
+		if(err) throw err;
+
+		usbSerial.on('open',function() {
+			console.log('Port open');
+		});
+		
+		usbSerial.on('data', function(data) {
+			console.log(data);
+		});
+	});
 
 });
