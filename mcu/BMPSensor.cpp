@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include <Wire.h>
 #include <Adafruit_BMP085_U.h>
 
@@ -5,7 +6,7 @@
 const uint16_t BAUD_RATE = 9600;
 
 //Sensor object
-Adafruit_BMP085 sensor;
+Adafruit_BMP085_Unified bmp = Adafruit_BMP085_Unified(10085);
 
 void setup() {
 	Serial.begin(BAUD_RATE);
@@ -24,4 +25,13 @@ void loop() {
 	Serial.println();
 
 	delay(1000);
+}
+
+int main(void) {
+	init();
+	setup();
+	for(;;) {
+		loop();
+	}
+	return 0;
 }
