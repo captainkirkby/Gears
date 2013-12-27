@@ -3,17 +3,39 @@
 // git://github.com/voodootikigod/node-serialport.git //
 // to read the serial port where arduino is sitting.  //
 ////////////////////////////////////////////////////////               
-var com = require("serialport");
+var serialPort = require("serialport");
 
-var serialPort = new com.SerialPort("/dev/tty.usbserial-A6008i2Y", {
-    baudrate: 9600,
-    parser: com.parsers.readline('\r\n')
-  });
+serialPort.list(function(err, ports){
+	var usbSerialPort = "";
+	if(err) throw err;
 
-serialPort.on('open',function() {
-  console.log('Port open');
-});
+	// Synchronous blocking call
+	ports.forEach(function(port){
+		console.log(port.comName);
+		console.log(port.pnpId);
+		console.log(port.manufacturer);
 
-serialPort.on('data', function(data) {
-  console.log(data);
+		// Find the first serial port that looks like a usb serial port
+		if(port.comName.indexOf("usb") > -1){
+			usbSerialPort = port.comName;
+			console.log("Found port to use: " + usbSerialPort);
+		}
+	});
+
+	console.log("At end of for each.  Value of usbSerialPort is " + usbSerialPort + ".  Creating instance of SerialPort with it.");
+
+	var usbSerial = new serialPort.SerialPort(usbSerialPort, {
+		baudrate: 9600,
+		parser: serialPort.parsers.readline('\r\n')
+	});
+	
+	usbSerial.on('open',function() {
+		console.log('Port open');
+	});
+	
+	usbSerial.on('data', function(data) {
+		console.log(data);
+	});
+
+
 });
