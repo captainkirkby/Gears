@@ -29,16 +29,17 @@ serialPort.list(function(err, ports){
 		parser: serialPort.parsers.readline('\r\n')
 	});
 
-	usbSerial.flush(function(err){
+	usbSerial.on('open',function(err) {
 		if(err) throw err;
+		console.log('Port open');
 
-		usbSerial.on('open',function() {
-			console.log('Port open');
+		usbSerial.flush(function(err){
+			if(err) throw err;
 		});
-		
-		usbSerial.on('data', function(data) {
-			console.log(data);
-		});
+	});
+	
+	usbSerial.on('data', function(data) {
+		console.log(data);
 	});
 
 });
