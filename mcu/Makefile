@@ -50,12 +50,17 @@ wiring_analog.c wiring_digital.c wiring_pulse.c wiring_shift.c
 # The core C++ sources to use
 # --------------------------------------------------------------------------
 CORE_CPP_SRC = CDC.cpp HardwareSerial.cpp HID.cpp IPAddress.cpp new.cpp \
-Print.cpp Stream.cpp Tone.cpp USBCore.cpp WMath.cpp WString.cpp 
+Print.cpp Stream.cpp Tone.cpp USBCore.cpp WMath.cpp WString.cpp
+
+# --------------------------------------------------------------------------
+# The local C sources to use
+# --------------------------------------------------------------------------
+LOCAL_C_SRC = twi.c
 
 # --------------------------------------------------------------------------
 # The local C++ sources to use
 # --------------------------------------------------------------------------
-LOCAL_CPP_SRC = 
+LOCAL_CPP_SRC = Adafruit_BMP085_U.cpp Adafruit_Sensor.cpp Wire.cpp
 
 # ==========================================================================
 # Target device configuration
@@ -128,8 +133,8 @@ DEBUG = stabs
 OPT = s
 
 # Place -D or -U options here
-CDEFS = -DF_CPU=$(F_CPU)
-CXXDEFS = -DF_CPU=$(F_CPU)
+CDEFS = -DF_CPU=$(F_CPU) -DARDUINO=100
+CXXDEFS = -DF_CPU=$(F_CPU) -DARDUINO=100
 
 # Place -I options here
 VARIANTSDIR = $(INSTALL_DIR)/hardware/arduino/variants
@@ -203,6 +208,7 @@ config:
 
 CORE_C_OBJ = $(addprefix $(BUILD_DIR)/obj/, $(CORE_C_SRC:%.c=%.o))
 CORE_CPP_OBJ = $(addprefix $(BUILD_DIR)/obj/, $(CORE_CPP_SRC:%.cpp=%.o))
+LOCAL_C_OBJ = $(addprefix $(BUILD_DIR)/obj/, $(LOCAL_C_SRC:%.c=%.o))
 LOCAL_CPP_OBJ = $(addprefix $(BUILD_DIR)/obj/, $(LOCAL_CPP_SRC:%.cpp=%.o))
 
 $(CORE_C_OBJ) : $(BUILD_DIR)/obj/%.o : $(ARDUINO)/%.c
@@ -211,10 +217,13 @@ $(CORE_C_OBJ) : $(BUILD_DIR)/obj/%.o : $(ARDUINO)/%.c
 $(CORE_CPP_OBJ) : $(BUILD_DIR)/obj/%.o : $(ARDUINO)/%.cpp
 		$(CXX) -c $(ALL_CXXFLAGS) $< -o $@
 
+$(LOCAL_C_OBJ) : $(BUILD_DIR)/obj/%.o : ./%.c
+		$(CC) -c $(ALL_CFLAGS) $< -o $@
+
 $(LOCAL_CPP_OBJ) : $(BUILD_DIR)/obj/%.o : ./%.cpp
 		$(CXX) -c $(ALL_CXXFLAGS) $< -o $@
 
-LIBOBJ = $(CORE_C_OBJ) $(CORE_CPP_OBJ) $(LOCAL_CPP_OBJ)
+LIBOBJ = $(CORE_C_OBJ) $(CORE_CPP_OBJ) $(LOCAL_C_OBJ) $(LOCAL_CPP_OBJ)
 
 # --------------------------------------------------------------------------
 
