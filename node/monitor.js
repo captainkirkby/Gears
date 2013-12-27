@@ -32,14 +32,20 @@ serialPort.list(function(err, ports){
 	usbSerial.on('open',function(err) {
 		if(err) throw err;
 		console.log('Port open');
-
-		usbSerial.flush(function(err){
-			if(err) throw err;
-		});
 	});
-	
-	usbSerial.on('data', function(data) {
-		console.log(data);
+
+	var HEADER = "Celsius";
+	var foundHeader = false;
+
+	usbSerial.on('data', function(data){
+		if(data.indexOf(HEADER) > -1){
+			foundHeader = true;
+			console.log("Header");
+		} else if(!foundHeader){
+			console.log("Junk");
+		} else {
+			console.log(data);
+		}
 	});
 
 });
