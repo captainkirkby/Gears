@@ -1,5 +1,30 @@
 $(function() {
 
+	$("#fetch").click(function(){
+		//alert("Clicked!");
+
+		var dataURL = "recent";
+
+		function onDataRecieved(data){
+			//alert("Data Recieved!" + data);
+
+			var d1 = [];
+			for (var i = 0; i < 14; i += 0.5) {
+				d1.push([i, Math.cos(i)]);
+			}
+
+			$.plot("#placeholder", [d1]);
+		}
+
+		$.ajax({
+			url:dataURL,
+			type:"GET",
+			dataType:"json",
+			success:onDataRecieved
+		});
+
+	});
+
 	var d1 = [];
 	for (var i = 0; i < 14; i += 0.5) {
 		d1.push([i, Math.sin(i)]);
