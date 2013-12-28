@@ -72,10 +72,11 @@ async.parallel({
 					console.log('Ignoring badly formatted packet "%s"',packet);
 				}
 				else {
+					timestamp = new Date();
 					temperature = values[0];
 					pressure = values[1];
 					// %d handles both integer and float values (there is no %f)
-					console.log('temperature = %d, pressure = %d',temperature,pressure);
+					console.log('timestamp = %s, temperature = %d, pressure = %d',timestamp,temperature,pressure);
 				}
 			});
 		});
