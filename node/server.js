@@ -59,8 +59,15 @@ async.parallel({
 		db.on('error', console.error.bind(console, 'db connection error:'));
 		db.once('open', function() {
   			console.log('db connection established.');
-  			// Propagates our database connection to data logger.
-  			callback(null,db);
+  			// Defines the data model for our serial packets
+  			var packetSchema = mongoose.Schema({
+  				timestamp: Date,
+  				temperature: Number,
+  				pressure: Number
+  			});
+  			var dataModel = mongoose.model('dataModel',packetSchema);
+  			// Propagates our database connection and data model to data logger.
+  			callback(null,{'connection':db,'model':dataModel});
 		});
 	}},
 	// Performs steps that require both an open serial port and database connection.
@@ -93,7 +100,8 @@ async.parallel({
 		var app = express();
 		app.get('/config.txt', function(req, res) {
 			res.send(util.format('tty path is %s and db is %s at %s:%d',
-				config.port.path,config.db.name,config.db.host,config.db.port));
+				config.port.path,config.db.connection.name,config.db.connection.host,
+				config.db.connection.port));
 		});
 		// Starts our webapp.
 		console.log('starting web server on port 3000');
