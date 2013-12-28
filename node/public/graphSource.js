@@ -30,7 +30,16 @@ $(function() {
 		});
 	}
 
+	var TIMEOUT_VALUE = 333;
+
+	function continuousUpdate(){
+		displayRecentData();
+		setTimeout(continuousUpdate, TIMEOUT_VALUE);
+	}
+
 	$("#fetch").click(displayRecentData);
+
+	$("#continuousMode").click(continuousUpdate);
 
 	$("#footer").prepend("Flot " + $.plot.version + " &ndash; ");
 
