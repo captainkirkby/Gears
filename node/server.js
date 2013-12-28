@@ -118,7 +118,7 @@ async.parallel({
 		});
 		app.get('/recent', function(req,res) {
 			Packet.find().limit(10).select('timestamp temperature pressure').exec(function(err,results) {
-				res.send(JSON.stringify(results));
+				res.send(results);
 			});
 		});
 		// Starts our webapp.
