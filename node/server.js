@@ -1,26 +1,29 @@
 // Implements the combined data logger and web server component of the clock metrology project.
 // Created by D & D Kirkby, Dec 2013
 
-async = require('async');
+var util = require('util');
+var async = require('async');
+var express = require('express');
+var app = express();
 
 async.parallel({
-	// Opens a serial port connection to the TickTock module.
-	port: function(callback) {
+	// Opens a serial port connection to the TickTock device.
+	dev: function(callback) {
 		async.waterfall([
 			// Finds the tty device name of the serial port to open.
-			function(portCallback) {
+			function(devCallback) {
 				console.log('Looking for the tty device...')
-				portCallback(null,'portName');
+				devCallback(null,'portName');
 			},
 			// Opens the serial port.
-			function(portName,portCallback) {
+			function(portName,devCallback) {
 				console.log('Opening device %s...',portName);
-				portCallback(null,'port');
+				devCallback(null,portName,'port');
 			}],
-			// Propagates our open port to the data logger.
-			function(err,port) {
+			// Propagates our device info to data logger.
+			function(err,portName,port) {
 				if(!err) console.log('serial port is ready');
-				callback(err,port);
+				callback(err,{'tty':portName,'port':port});
 			}
 		);
 	},
@@ -29,9 +32,17 @@ async.parallel({
 		console.log('Connecting to the database...');
 		callback(null,'db');
 	}},
-	// Logs TickTock packets from the serial port into the database.
 	function(err,config) {
 		if(err) throw err;
+		// Logs TickTock packets from the serial port into the database.
 		console.log('starting data logger with',config);
+		// Defines our webapp routes
+		// Defines our webserver routes that depend on the database.
+		app.get('/config.txt', function(req, res) {
+			res.send(util.format('tty is %s',config.dev.tty));
+		});
+		// Starts our webapp
+		console.log('starting web server on port 3000');
+		app.listen(3000);
 	}
 );
