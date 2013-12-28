@@ -12,7 +12,14 @@ $(function() {
 				pressureSet.push([key, value.pressure]);
 			});
 			
-			$.plot("#placeholder", [temperatureSet, pressureSet]);
+			$.plot("#placeholder", [
+				{ data: temperatureSet, label: "Temperature (°C)" },
+				{ data: pressureSet, label: "Pressure (Pa)", yaxis: 2 }
+			], {
+				//xaxes : [{ mode: "time"}],		//must include jquery.flot.time.min.js for this!
+				yaxes : [{}, {position: "right"}]
+			});
+
 		}
 
 		$.ajax({
