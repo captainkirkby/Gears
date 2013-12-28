@@ -75,6 +75,7 @@ async.parallel({
 		if(err) throw err;
 		// Logs TickTock packets from the serial port into the database.
 		console.log('starting data logger with',config);
+		var Packet = config.db.model;
 		config.port.on('data',function(packet) {
 			async.map(packet.split(' '),
 			// Converts one string token into a floating point value.
@@ -92,7 +93,16 @@ async.parallel({
 					temperature = values[0];
 					pressure = values[1];
 					// %d handles both integer and float values (there is no %f)
-					console.log('timestamp = %s, temperature = %d, pressure = %d',timestamp,temperature,pressure);
+					console.log('timestamp = %s, temperature = %d, pressure = %d',
+						timestamp,temperature,pressure);
+					var packet = new Packet({
+						'timestamp': timestamp,
+						'temperature': temperature,
+						'pressure': pressure
+					});
+					packet.save(function(err,p) {
+						if(err) console.log('Error writing packet',p);
+					});
 				}
 			});
 		});
