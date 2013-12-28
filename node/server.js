@@ -4,6 +4,8 @@
 var util = require('util');
 var async = require('async');
 var express = require('express');
+var serial = require("serialport");
+
 var app = express();
 
 async.parallel({
@@ -12,8 +14,17 @@ async.parallel({
 		async.waterfall([
 			// Finds the tty device name of the serial port to open.
 			function(devCallback) {
-				console.log('Looking for the tty device...')
-				devCallback(null,'portName');
+				console.log('Looking for the tty device...');
+				serial.list(function(err,ports) {
+					// Looks for the first port with 'FTDI' as the manufacturer
+					async.detectSeries(ports,function(port,ttyCallback) {
+						console.log('scanning port',port);
+						ttyCallback(port.manufacturer == 'FTDI');
+					},
+					// Forwards the corresponding tty device name.
+					function(firstFtdiPort) { devCallback(null,firstFtdiPort.comName) }
+					);
+				});
 			},
 			// Opens the serial port.
 			function(portName,devCallback) {
@@ -36,8 +47,7 @@ async.parallel({
 		if(err) throw err;
 		// Logs TickTock packets from the serial port into the database.
 		console.log('starting data logger with',config);
-		// Defines our webapp routes
-		// Defines our webserver routes that depend on the database.
+		// Defines our webapp routes.
 		app.get('/config.txt', function(req, res) {
 			res.send(util.format('tty is %s',config.dev.tty));
 		});
