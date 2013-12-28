@@ -4,9 +4,8 @@
 var util = require('util');
 var async = require('async');
 var express = require('express');
-var serial = require("serialport");
-
-var app = express();
+var serial = require('serialport');
+var mongoose = require('mongoose');
 
 async.parallel({
 	// Opens a serial port connection to the TickTock device.
@@ -55,7 +54,14 @@ async.parallel({
 	// Connects to the database where packets from TickTock are logged.
 	db: function(callback) {
 		console.log('Connecting to the database...');
-		callback(null,'db');
+		mongoose.connect('mongodb://localhost:27017/ticktock');
+		var db = mongoose.connection;
+		db.on('error', console.error.bind(console, 'db connection error:'));
+		db.once('open', function() {
+  			console.log('db connection established.');
+  			// Propagates our database connection to data logger.
+  			callback(null,db);
+		});
 	}},
 	// Performs steps that require both an open serial port and database connection.
 	function(err,config) {
@@ -84,10 +90,12 @@ async.parallel({
 			});
 		});
 		// Defines our webapp routes.
+		var app = express();
 		app.get('/config.txt', function(req, res) {
-			res.send(util.format('tty path is %s',config.port.path));
+			res.send(util.format('tty path is %s and db is %s at %s:%d',
+				config.port.path,config.db.name,config.db.host,config.db.port));
 		});
-		// Starts our webapp
+		// Starts our webapp.
 		console.log('starting web server on port 3000');
 		app.listen(3000);
 	}
