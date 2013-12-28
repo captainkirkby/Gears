@@ -108,6 +108,9 @@ async.parallel({
 		});
 		// Defines our webapp routes.
 		var app = express();
+
+		app.use('/', express.static(__dirname + '/public'));
+
 		app.get('/about', function(req, res) {
 			res.send(util.format('tty path is %s and db is %s at %s:%d',
 				config.port.path,config.db.connection.name,config.db.connection.host,
