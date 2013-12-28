@@ -21,7 +21,7 @@ async.parallel({
 						ttyCallback(port.manufacturer == 'FTDI');
 					},
 					// Forwards the corresponding tty device name.
-					function(firstFtdiPort) { portCallback(null,firstFtdiPort.comName) }
+					function(firstFtdiPort) { portCallback(null,firstFtdiPort.comName); }
 					);
 				});
 			},
@@ -58,16 +58,16 @@ async.parallel({
 		var db = mongoose.connection;
 		db.on('error', console.error.bind(console, 'db connection error:'));
 		db.once('open', function() {
-  			console.log('db connection established.');
-  			// Defines the data model for our serial packets
-  			var packetSchema = mongoose.Schema({
-  				timestamp: Date,
-  				temperature: Number,
-  				pressure: Number
-  			});
-  			var dataModel = mongoose.model('dataModel',packetSchema);
-  			// Propagates our database connection and data model to data logger.
-  			callback(null,{'connection':db,'model':dataModel});
+			console.log('db connection established.');
+			// Defines the data model for our serial packets
+			var packetSchema = mongoose.Schema({
+				timestamp: Date,
+				temperature: Number,
+				pressure: Number
+			});
+			var dataModel = mongoose.model('dataModel',packetSchema);
+			// Propagates our database connection and data model to data logger.
+			callback(null,{'connection':db,'model':dataModel});
 		});
 	}},
 	// Performs steps that require both an open serial port and database connection.
@@ -95,12 +95,12 @@ async.parallel({
 					// %d handles both integer and float values (there is no %f)
 					console.log('timestamp = %s, temperature = %d, pressure = %d',
 						timestamp,temperature,pressure);
-					var packet = new Packet({
+					var p = new Packet({
 						'timestamp': timestamp,
 						'temperature': temperature,
 						'pressure': pressure
 					});
-					packet.save(function(err,p) {
+					p.save(function(err,p) {
 						if(err) console.log('Error writing packet',p);
 					});
 				}
