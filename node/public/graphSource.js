@@ -8,7 +8,6 @@ $(function() {
 			var pressureSet = [];
 
 			$.each(data, function(key, value){
-				alert(key + " : " + value.temperature + " @ " + value.pressure);
 				temperatureSet.push([key, value.temperature]);
 				pressureSet.push([key, value.pressure]);
 			});
