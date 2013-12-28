@@ -60,7 +60,24 @@ async.parallel({
 		// Logs TickTock packets from the serial port into the database.
 		console.log('starting data logger with',config);
 		config.port.on('data',function(packet) {
-			console.log('got packet',packet);
+			async.map(packet.split(' '),
+			// Converts one string token into a floating point value.
+			function(token,handler) {
+				// Result will be NaN for an invalid token.
+				handler(null,parseFloat(token));
+			},
+			// Processes the converted values from one packet.
+			function(err,values) {
+				if(err || values.length != 2) {
+					console.log('Ignoring badly formatted packet "%s"',packet);
+				}
+				else {
+					temperature = values[0];
+					pressure = values[1];
+					// %d handles both integer and float values (there is no %f)
+					console.log('temperature = %d, pressure = %d',temperature,pressure);
+				}
+			});
 		});
 		// Defines our webapp routes.
 		app.get('/config.txt', function(req, res) {
