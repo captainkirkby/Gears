@@ -108,10 +108,15 @@ async.parallel({
 		});
 		// Defines our webapp routes.
 		var app = express();
-		app.get('/config.txt', function(req, res) {
+		app.get('/about', function(req, res) {
 			res.send(util.format('tty path is %s and db is %s at %s:%d',
 				config.port.path,config.db.connection.name,config.db.connection.host,
 				config.db.connection.port));
+		});
+		app.get('/recent', function(req,res) {
+			Packet.find().limit(10).select('timestamp temperature pressure').exec(function(err,results) {
+				res.send(JSON.stringify(results));
+			});
 		});
 		// Starts our webapp.
 		console.log('starting web server on port 3000');
