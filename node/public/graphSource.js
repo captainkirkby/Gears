@@ -8,15 +8,17 @@ $(function() {
 			var pressureSet = [];
 
 			$.each(data, function(key, value){
-				temperatureSet.push([key, value.temperature]);
-				pressureSet.push([key, value.pressure]);
+				var d = new Date(Date.parse(value.timestamp));
+
+				temperatureSet.push([d, value.temperature]);
+				pressureSet.push([d, value.pressure]);
 			});
 			
 			$.plot("#placeholder", [
 				{ data: temperatureSet, label: "Temperature (°C)" },
 				{ data: pressureSet, label: "Pressure (Pa)", yaxis: 2 }
 			], {
-				//xaxes : [{ mode: "time"}],		//must include jquery.flot.time.min.js for this!
+				xaxes : [{ mode: "time", timezone: "browser"}],		//must include jquery.flot.time.min.js for this!
 				yaxes : [{}, {position: "right"}]
 			});
 
