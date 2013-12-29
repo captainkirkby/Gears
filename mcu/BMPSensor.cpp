@@ -4,7 +4,7 @@
 #include "packet.h"
 
 //Constants
-const uint16_t BAUD_RATE = 9600;
+#define BAUD_RATE 115200
 
 //Sensor object
 Adafruit_BMP085_Unified sensor = Adafruit_BMP085_Unified(10085);
