@@ -16,8 +16,6 @@ $(function() {
 				//Get timestamp as a date object
 				var date = new Date(Date.parse(data[index].timestamp));
 
-				var smoothing = true;
-
 				var temperature = NaN;
 				var pressure = NaN;
 
@@ -93,6 +91,8 @@ $(function() {
 	var TIMEOUT_VALUE = 333;
 	var realTimeUpdates = false;
 
+	var smoothing = false;
+
 	function continuousUpdate(){
 		if(realTimeUpdates){
 			displayRecentData();
@@ -111,6 +111,16 @@ $(function() {
 			$(this).val("Start Real Time Updates");
 		}
 		continuousUpdate();
+	});
+
+	$("#toggleSmoothing").click(function(){
+		if(smoothing){
+			$(this).val("Use Smoothing");
+			smoothing = false;
+		} else {
+			$(this).val("Don't Use Smoothing");
+			smoothing = true;
+		}
 	});
 
 	$("#footer").prepend("Flot " + $.plot.version + " &ndash; ");
