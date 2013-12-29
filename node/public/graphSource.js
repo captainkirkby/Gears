@@ -30,15 +30,16 @@ $(function() {
 					var pressureAverageSpace = Math.floor(NUM_PRESSURE_SAMPLES/2);
 
 					// Average smooth temperature and pressure
-					for(var i=(-1*temperatureAverageSpace);i<temperatureAverageSpace;i++){
+					for(var i=(-1*temperatureAverageSpace);i<=temperatureAverageSpace;i++){
 						var t_index = i+index;
+						console.log(t_index);
 						if(t_index<0 || t_index>=data.length){
 							temperature = data[index].temperature;
 						} else {
 							temperatureSum += data[t_index].temperature;
 						}
 					}
-					for(var j=(-1*pressureAverageSpace);j<pressureAverageSpace;j++){
+					for(var j=(-1*pressureAverageSpace);j<=pressureAverageSpace;j++){
 						var p_index = j+index;
 						if(p_index<0 || p_index>=data.length){
 							pressure = data[index].pressure;
