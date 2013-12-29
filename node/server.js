@@ -118,7 +118,7 @@ async.parallel({
 			console.log('db connection established.');
 			// Defines the data model for our serial packets
 			var packetSchema = mongoose.Schema({
-				timestamp: Date,
+				timestamp: { type: Date, index: true },
 				temperature: Number,
 				pressure: Number
 			});
