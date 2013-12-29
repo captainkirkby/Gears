@@ -7,26 +7,30 @@ var express = require('express');
 var serial = require('serialport');
 var mongoose = require('mongoose');
 
+// Assembles fixed-size packets in the specified buffer using the data provided.
+// Call with remaining = 0 the first time, then update remaining with the return value.
+// Calls the specified handler with each completed buffer. Packets are assumed to
+// start with 4 consecutive bytes of 0xFE, which will be included in the assembled
+// packet sent to the handler. Automatically aligns to packet boundaries when called
+// with remaining = 0 or when an assembled packet has an unexpected header.
 function assemblePacket(data,buffer,remaining,handler) {
 	var nextAvail = 0;
 	while(nextAvail < data.length) {
-		console.log('assemble',nextAvail,remaining);
-		if(remaining < 0) {
-			if(nextAvail + 4 <= data.length) {
-				console.log('raw',Number(data.readUInt32LE(nextAvail)).toString(16));
-				// Scan data to find next header
-				if(data.readUInt32LE(nextAvail) == 0xDeadBeef) {
-					remaining = buffer.length;
-				}
-				else {
-					nextAvail++;
+		if(remaining <= 0) {
+			// Look for a header byte.
+			if(data[nextAvail] == 0xFE) {
+				buffer[-remaining] = 0xFE;
+				remaining -= 1;
+				if(remaining == -4) {
+					// We have found a complete packet header, so start reading its payload.
+					remaining = buffer.length - 4;
 				}
 			}
 			else {
-				// We are still looking for a header, but don't have enough bytes
-				// to detect one.
-				return -1;
+				// Forget any previously seen header bytes.
+				remaining = 0;
 			}
+			nextAvail++;
 		}
 		else {
 			var toCopy = Math.min(remaining,data.length-nextAvail);
@@ -34,14 +38,14 @@ function assemblePacket(data,buffer,remaining,handler) {
 			nextAvail += toCopy;
 			remaining -= toCopy;
 			if(remaining == 0) {
-				if(buffer.readUInt32LE(0) == 0xDeadBeef) {
+				if(buffer.readUInt32LE(0) == 0xFEFEFEFE) {
 					handler(buffer);
 					remaining = buffer.length;
 				}
 				else {
 					console.log("ignoring packet with bad header",buffer);
 					// Go back to header scanning.
-					remaining = -1;
+					remaining = 0;
 				}
 			}
 		}
@@ -119,11 +123,11 @@ async.parallel({
 		console.log('starting data logger with',config);
 		var PacketModel = config.db.model;
 		var buffer = new Buffer(12);
-		var remaining = -1;
+		var remaining = 0;
 		config.port.on('data',function(data) {
-			console.log(data);
+			console.log('received',data);
 			remaining = assemblePacket(data,buffer,remaining,function(buf) {
-				console.log('got',buf);
+				console.log('assembled',buf);
 			});
 			/*
 			async.map(packet.split(' '),
