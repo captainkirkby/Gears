@@ -23,7 +23,6 @@
  #include "WProgram.h"
 #endif
 
-#include <Adafruit_Sensor.h>
 #include <Wire.h>
 
 /*=========================================================================
@@ -90,7 +89,7 @@
     } bmp085_calib_data;
 /*=========================================================================*/
 
-class Adafruit_BMP085_Unified : public Adafruit_Sensor
+class Adafruit_BMP085_Unified
 {
   public:
     Adafruit_BMP085_Unified(int32_t sensorID = -1);
@@ -98,9 +97,6 @@ class Adafruit_BMP085_Unified : public Adafruit_Sensor
     bool  begin(bmp085_mode_t mode = BMP085_MODE_ULTRAHIGHRES);
     void  getTemperature(float *temp);
     void  getPressure(float *pressure);
-    float pressureToAltitude(float seaLevel, float atmospheric, float temp);
-    void  getEvent(sensors_event_t*);
-    void  getSensor(sensor_t*);
 
   private:
     int32_t           _sensorID;

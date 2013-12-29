@@ -60,7 +60,7 @@ LOCAL_C_SRC = twi.c
 # --------------------------------------------------------------------------
 # The local C++ sources to use
 # --------------------------------------------------------------------------
-LOCAL_CPP_SRC = Adafruit_BMP085_U.cpp Adafruit_Sensor.cpp Wire.cpp
+LOCAL_CPP_SRC = Adafruit_BMP085_U.cpp Wire.cpp
 
 # ==========================================================================
 # Target device configuration
