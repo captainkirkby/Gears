@@ -7,6 +7,48 @@ var express = require('express');
 var serial = require('serialport');
 var mongoose = require('mongoose');
 
+function assemblePacket(data,buffer,remaining,handler) {
+	var nextAvail = 0;
+	while(nextAvail < data.length) {
+		console.log('assemble',nextAvail,remaining);
+		if(remaining < 0) {
+			if(nextAvail + 4 <= data.length) {
+				console.log('raw',Number(data.readUInt32LE(nextAvail)).toString(16));
+				// Scan data to find next header
+				if(data.readUInt32LE(nextAvail) == 0xDeadBeef) {
+					remaining = buffer.length;
+				}
+				else {
+					nextAvail++;
+				}
+			}
+			else {
+				// We are still looking for a header, but don't have enough bytes
+				// to detect one.
+				return -1;
+			}
+		}
+		else {
+			var toCopy = Math.min(remaining,data.length-nextAvail);
+			data.copy(buffer,buffer.length-remaining,nextAvail,nextAvail+toCopy);
+			nextAvail += toCopy;
+			remaining -= toCopy;
+			if(remaining == 0) {
+				if(buffer.readUInt32LE(0) == 0xDeadBeef) {
+					handler(buffer);
+					remaining = buffer.length;
+				}
+				else {
+					console.log("ignoring packet with bad header",buffer);
+					// Go back to header scanning.
+					remaining = -1;
+				}
+			}
+		}
+	}
+	return remaining;
+}
+
 async.parallel({
 	// Opens a serial port connection to the TickTock device.
 	port: function(callback) {
@@ -30,7 +72,7 @@ async.parallel({
 				console.log('Opening device %s...',ttyName);
 				var port = new serial.SerialPort(ttyName, {
 					baudrate: 9600,
-					parser: serial.parsers.readline("\r\n")
+					parser: serial.parsers.raw
 				});
 				port.on('open',function(err) {
 					if(err) return portCallback(err);
@@ -75,8 +117,15 @@ async.parallel({
 		if(err) throw err;
 		// Logs TickTock packets from the serial port into the database.
 		console.log('starting data logger with',config);
-		var Packet = config.db.model;
-		config.port.on('data',function(packet) {
+		var PacketModel = config.db.model;
+		var buffer = new Buffer(12);
+		var remaining = -1;
+		config.port.on('data',function(data) {
+			console.log(data);
+			remaining = assemblePacket(data,buffer,remaining,function(buf) {
+				console.log('got',buf);
+			});
+			/*
 			async.map(packet.split(' '),
 			// Converts one string token into a floating point value.
 			function(token,handler) {
@@ -95,7 +144,7 @@ async.parallel({
 					// %d handles both integer and float values (there is no %f)
 					console.log('timestamp = %s, temperature = %d, pressure = %d',
 						timestamp,temperature,pressure);
-					var p = new Packet({
+					var p = new PacketModel({
 						'timestamp': timestamp,
 						'temperature': temperature,
 						'pressure': pressure
@@ -105,6 +154,7 @@ async.parallel({
 					});
 				}
 			});
+			*/
 		});
 		// Defines our webapp routes.
 		var app = express();
@@ -117,7 +167,7 @@ async.parallel({
 				config.db.connection.port));
 		});
 		app.get('/recent', function(req,res) {
-			Packet.find().limit(120).sort([['timestamp', -1]]).select('timestamp temperature pressure').exec(function(err,results) {
+			PacketModel.find().limit(120).sort([['timestamp', -1]]).select('timestamp temperature pressure').exec(function(err,results) {
 				res.send(results);
 			});
 		});

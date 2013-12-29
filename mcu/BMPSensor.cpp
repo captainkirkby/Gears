@@ -16,19 +16,17 @@ void setup() {
 	if(!sensor.begin()){
 		Serial.println("No BMP085 Pressure Sensor detected... Check wiring.");
 		while(true) {}
-	} else {
-		Serial.println("Initialized.\nData format: Pressure Temperature\nUnits: \nPressure = Pa\nTemperature = Celsius");
 	}
+	packet.header = PACKET_HEADER;
 }
 
 void loop() {
+	// Reads BMP180 sensors
 	sensor.getTemperature(&packet.temperature);
 	sensor.getPressure(&packet.pressure);
-	Serial.print(packet.temperature);
-	Serial.print(" ");
-	Serial.print(packet.pressure);
-	Serial.println();
-
+	// Sends binary packet data
+	Serial.write((const uint8_t*)&packet,sizeof(packet));
+	// Waits for about 1 sec...
 	delay(1000);
 }
 
