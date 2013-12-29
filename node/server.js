@@ -117,7 +117,7 @@ async.parallel({
 				config.db.connection.port));
 		});
 		app.get('/recent', function(req,res) {
-			Packet.find().limit(10).sort([['timestamp', -1]]).select('timestamp temperature pressure').exec(function(err,results) {
+			Packet.find().limit(120).sort([['timestamp', -1]]).select('timestamp temperature pressure').exec(function(err,results) {
 				res.send(results);
 			});
 		});
