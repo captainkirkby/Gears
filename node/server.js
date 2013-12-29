@@ -81,7 +81,7 @@ async.parallel({
 			// Converts one string token into a floating point value.
 			function(token,handler) {
 				// Result will be NaN for an invalid token.
-				handler(null,parseFloat(token));
+				handler(null,parseInt(token));
 			},
 			// Processes the converted values from one packet.
 			function(err,values) {
@@ -90,7 +90,7 @@ async.parallel({
 				}
 				else {
 					timestamp = new Date();
-					temperature = values[0];
+					temperature = values[0]/160.0;
 					pressure = values[1];
 					// %d handles both integer and float values (there is no %f)
 					console.log('timestamp = %s, temperature = %d, pressure = %d',
