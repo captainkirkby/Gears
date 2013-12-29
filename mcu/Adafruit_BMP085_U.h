@@ -95,8 +95,8 @@ class Adafruit_BMP085_Unified
     Adafruit_BMP085_Unified(int32_t sensorID = -1);
   
     bool  begin(bmp085_mode_t mode = BMP085_MODE_ULTRAHIGHRES);
-    void  getTemperature(float *temp);
-    void  getPressure(float *pressure);
+    void  getTemperature(int32_t *temp);
+    void  getPressure(int32_t *pressure);
 
   private:
     int32_t           _sensorID;
