@@ -122,43 +122,25 @@ async.parallel({
 		// Logs TickTock packets from the serial port into the database.
 		console.log('starting data logger with',config);
 		var PacketModel = config.db.model;
+		// NB: packet size is hard coded here!
 		var buffer = new Buffer(12);
 		var remaining = 0;
 		config.port.on('data',function(data) {
 			console.log('received',data);
 			remaining = assemblePacket(data,buffer,remaining,function(buf) {
 				console.log('assembled',buf);
+				// Prepares packet data for storing to the database.
+				// NB: packet layout is hardcoded here!
+				var p = new PacketModel({
+					'timestamp': new Date(),
+					'temperature': buf.readInt32LE(4)/160.0,
+					'pressure': buf.readInt32LE(8)
+				});
+				console.log(p);
+				p.save(function(err,p) {
+					if(err) console.log('Error writing packet',p);
+				});
 			});
-			/*
-			async.map(packet.split(' '),
-			// Converts one string token into a floating point value.
-			function(token,handler) {
-				// Result will be NaN for an invalid token.
-				handler(null,parseInt(token));
-			},
-			// Processes the converted values from one packet.
-			function(err,values) {
-				if(err || values.length != 2) {
-					console.log('Ignoring badly formatted packet "%s"',packet);
-				}
-				else {
-					timestamp = new Date();
-					temperature = values[0]/160.0;
-					pressure = values[1];
-					// %d handles both integer and float values (there is no %f)
-					console.log('timestamp = %s, temperature = %d, pressure = %d',
-						timestamp,temperature,pressure);
-					var p = new PacketModel({
-						'timestamp': timestamp,
-						'temperature': temperature,
-						'pressure': pressure
-					});
-					p.save(function(err,p) {
-						if(err) console.log('Error writing packet',p);
-					});
-				}
-			});
-			*/
 		});
 		// Defines our webapp routes.
 		var app = express();
