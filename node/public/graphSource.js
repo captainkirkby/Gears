@@ -7,9 +7,9 @@ $(function() {
 			var temperatureSet = [];
 			var pressureSet = [];
 
-			// Number of samples to average with
-			var NUM_TEMPERATURE_SAMPLES = 5;		// o o X o o
-			var NUM_PRESSURE_SAMPLES = 5;
+			// Number of samples to average with (must be an odd number)
+			var NUM_TEMPERATURE_SAMPLES = 11;		// o o X o o
+			var NUM_PRESSURE_SAMPLES = 11;
 
 			// Iterate through retrieved data
 			for(var index=0;index<data.length;index++){
@@ -33,6 +33,9 @@ $(function() {
 						console.log(t_index);
 						if(t_index<0 || t_index>=data.length){
 							temperature = data[index].temperature;
+							console.log("Point 1");
+							console.log(temperature);
+							break;
 						} else {
 							temperatureSum += data[t_index].temperature;
 						}
@@ -46,13 +49,19 @@ $(function() {
 						}
 					}
 
-					// If average was taken, use it.
+					// If average was taken (temperature has NOT been updated), use it.
 					if(isNaN(temperature)){
 						temperature = temperatureSum/NUM_TEMPERATURE_SAMPLES;
+					} else {
+						console.log(temperature);
+						console.log("Point 2");
 					}
 
 					if(isNaN(pressure)){
 						pressure = pressureSum/NUM_PRESSURE_SAMPLES;
+					} else {
+						console.log(temperature);
+						console.log("Point 2");
 					}
 				} else {
 					temperature = data[index].temperature;
