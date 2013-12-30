@@ -1,8 +1,21 @@
 $(function() {
 
-	function displayRecentData(){
-		var dataURL = "fetch";
+	function displayData(from, to){
+		if(from === undefined){
+			from = "";			// Use server default
+		}
+
+		if(to === undefined){
+			to = "now";
+		}
+
+		var dataURL = "fetch?" + $.param({
+			"from" : from,
+			"to" : to
+		});
 		
+		alert(dataURL);
+
 		function onDataRecieved(data){
 			var temperatureSet = [];
 			var pressureSet = [];
@@ -74,7 +87,7 @@ $(function() {
 
 	function continuousUpdate(){
 		if(realTimeUpdates){
-			displayRecentData();
+			displayData();
 			setTimeout(continuousUpdate, TIMEOUT_VALUE);
 		}
 	}
@@ -88,9 +101,7 @@ $(function() {
 	$("#fetch").click(function(){
 		var from = new Date($("#from").val());
 		var to = new Date($("#to").val());
-		alert("From :" + from.toUTCString());
-		alert("To :" + to.toUTCString());
-		//displayRecentData();
+		displayData(from.toISOString(),to.toISOString());
 	});
 
 	$("#continuousMode").click(function(){
@@ -120,5 +131,5 @@ $(function() {
 		}
 	});
 
-	displayRecentData();
+	displayData();
 });
