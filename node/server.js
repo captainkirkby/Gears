@@ -67,7 +67,17 @@ async.parallel({
 		db.on('error', console.error.bind(console, 'db connection error:'));
 		db.once('open', function() {
 			console.log('db connection established.');
-			// Defines the data model for our serial packets
+			// Defines the schema and model for our serial boot packets
+			var bootPacketSchema = mongoose.Schema({
+				timestamp: { type: Date, index: true },
+				bmpSensorOk: Boolean,
+				gpsSerialOk: Boolean,
+				commitTimestamp: Date,
+				commitHash: String,
+				commitStatus: Number
+			});
+			var bootPacketModel = mongoose.model('bootPacketModel',bootPacketSchema);
+			// Defines the schema and model for our serial data packets
 			var dataPacketSchema = mongoose.Schema({
 				timestamp: { type: Date, index: true },
 				temperature: Number,
@@ -75,7 +85,11 @@ async.parallel({
 			});
 			var dataPacketModel = mongoose.model('dataPacketModel',dataPacketSchema);
 			// Propagates our database connection and db models to data logger.
-			callback(null,{'connection':db,'dataPacketModel':dataPacketModel});
+			callback(null,{
+				'connection':db,
+				'bootPacketModel':bootPacketModel,
+				'dataPacketModel':dataPacketModel
+			});
 		});
 	}},
 	// Performs steps that require both an open serial port and database connection.
@@ -92,7 +106,8 @@ async.parallel({
 			var buffer = new Buffer(36);
 			var remaining = 0;
 			config.port.on('data',function(data) {
-				remaining = receive(data,buffer,remaining,config.db.dataPacketModel);
+				remaining = receive(data,buffer,remaining,
+					config.db.bootPacketModel,config.db.dataPacketModel);
 			});
 		}
 		// Defines our webapp routes.
@@ -113,17 +128,38 @@ async.parallel({
 
 // Receives a new chunk of binary data from the serial port and returns the
 // updated value of remaining that should be used for the next call.
-function receive(data,buffer,remaining,dataPacketModel) {
+function receive(data,buffer,remaining,bootPacketModel,dataPacketModel) {
 	console.log('remaining',remaining,'received',data);
 	return assembler.ingest(data,buffer,remaining,function(buf) {
 		console.log('assembled',buf);
-		// Prepares packet data for storing to the database.
-		// NB: packet layout is hardcoded here!
-		var p = new dataPacketModel({
-			'timestamp': new Date(),
-			'temperature': buf.readInt32LE(16)/160.0,
-			'pressure': buf.readInt32LE(20)
-		});
+		var p;
+		// Looks up this packet type.
+		var type = buf.readUInt8(3);
+		if(type == 0x00) {
+			// Prepares boot packet for storing to the database.
+			// NB: packet layout is hardcoded here!
+			p = new bootPacketModel({
+				'timestamp': new Date(),
+				'bmpSensorOk': buf.readUInt8(4),
+				'gspSerialOk': buf.readUInt8(5),
+				'commitTimestamp': new Date(1000*buf.readUInt32LE(6)),
+				'commitHash': '',
+				'commitStatus': buf.readUInt8(30)
+			});
+		}
+		else if(type == 0x01) {
+			// Prepares data packet for storing to the database.
+			// NB: packet layout is hardcoded here!
+			p = new dataPacketModel({
+				'timestamp': new Date(),
+				'temperature': buf.readInt32LE(16)/160.0,
+				'pressure': buf.readInt32LE(20)
+			});
+		}
+		else {
+			console.log('Got unexpected packet type',type);
+			return;
+		}
 		console.log(p);
 		p.save(function(err,p) {
 			if(err) console.log('Error saving data packet',p);
