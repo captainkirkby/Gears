@@ -147,26 +147,11 @@ async.parallel({
 		if(config.db && config.port) {
 			// Logs TickTock packets from the serial port into the database.
 			console.log('starting data logger with',config);
-			var PacketModel = config.db.model;
 			// NB: maximum possible packet size is hard coded here!
 			var buffer = new Buffer(36);
 			var remaining = 0;
 			config.port.on('data',function(data) {
-				console.log('received',data);
-				remaining = assemblePacket(data,buffer,remaining,function(buf) {
-					console.log('assembled',buf);
-					// Prepares packet data for storing to the database.
-					// NB: packet layout is hardcoded here!
-					var p = new PacketModel({
-						'timestamp': new Date(),
-						'temperature': buf.readInt32LE(16)/160.0,
-						'pressure': buf.readInt32LE(20)
-					});
-					console.log(p);
-					p.save(function(err,p) {
-						if(err) console.log('Error writing packet',p);
-					});
-				});
+				return receive(data,buffer,remaining,config.db.model);
 			});
 		}
 		// Defines our webapp routes.
@@ -185,12 +170,33 @@ async.parallel({
 	}
 );
 
+// Receives a new chunk of binary data from the serial port.
+function receive(data,buffer,remaining,model) {
+	console.log('received',data);
+	remaining = assemblePacket(data,buffer,remaining,function(buf) {
+		console.log('assembled',buf);
+		// Prepares packet data for storing to the database.
+		// NB: packet layout is hardcoded here!
+		var p = new model({
+			'timestamp': new Date(),
+			'temperature': buf.readInt32LE(16)/160.0,
+			'pressure': buf.readInt32LE(20)
+		});
+		console.log(p);
+		p.save(function(err,p) {
+			if(err) console.log('Error writing packet',p);
+		});
+	});
+}
+
+// Responds to a request for our about page.
 function about(req,res,config) {
 	res.send(util.format('tty path is %s and db is %s at %s:%d',
 		config.port.path,config.db.connection.name,config.db.connection.host,
 		config.db.connection.port));
 }
 
+// Responds to a request to fetch data.
 function fetch(req,res,model) {
 	// Gets the date range to fetch.
 	var from = ('from' in req.query) ? req.query.from : '-120';
