@@ -79,15 +79,27 @@ $(function() {
 		}
 	}
 
+	function setManualFetchEnabled(enabled){
+		$("#fetch").prop('disabled', !enabled);
+		$("#from").prop('disabled', !enabled);
+		$("#to").prop('disabled', !enabled);
+	}
+
 	$("#fetch").click(displayRecentData);
 
 	$("#continuousMode").click(function(){
 		if(!realTimeUpdates){
+			// Real Time On
 			realTimeUpdates = true;
 			$(this).val("Stop Real Time Updates");
+			// disable manual fetch
+			setManualFetchEnabled(false);
 		} else {
+			// Real Time Off
 			realTimeUpdates = false;
 			$(this).val("Start Real Time Updates");
+			// enable manual fetch
+			setManualFetchEnabled(true);
 		}
 		continuousUpdate();
 	});
