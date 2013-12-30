@@ -1,11 +1,11 @@
 $(function() {
 
 	function displayData(from, to){
-		if(from === undefined || from === ""){
+		if(from === undefined){
 			from = "";			// Use server default
 		}
 
-		if(to === undefined || to === ""){
+		if(to === undefined){
 			to = "now";
 		}
 
@@ -101,7 +101,19 @@ $(function() {
 	$("#fetch").click(function(){
 		var from = new Date($("#from").val());
 		var to = new Date($("#to").val());
-		displayData(from.toISOString(),to.toISOString());
+
+		var fromArg = "";
+		var toArg = "now";
+
+		// Check for valid dates
+		if(!isNaN(from)){
+			fromArg = from.toISOString();
+		}
+		if(!isNaN(to)){
+			toArg = to.toISOString();
+		}
+
+		displayData(fromArg,toArg);
 	});
 
 	$("#continuousMode").click(function(){
