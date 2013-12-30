@@ -9,7 +9,7 @@
 # Select 'leaf' for the plug-in devices
 # Select 'hub' for the usb-nordic interface embedded within a hub
 # --------------------------------------------------------------------------
-TARGET = BMPSensor
+TARGET = device
 
 # --------------------------------------------------------------------------
 # The MCU programming method to use:
