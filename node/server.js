@@ -172,9 +172,32 @@ async.parallel({
 			// Serves data dynamically via AJAX.
 			var PacketModel = config.db.model;
 			app.get('/recent', function(req,res) {
-				PacketModel.find().limit(120).sort([['timestamp', -1]]).select('timestamp temperature pressure').exec(function(err,results) {
-					res.send(results);
-				});
+				// Gets the date range to fetch.
+				var from = ('from' in req.query) ? req.query.from : '-120';
+				var to = ('to' in req.query) ? req.query.to : 'now';
+				// Converts end date into a javascript Date object.
+				to = new Date(Date.parse(to));
+				if(to == 'Invalid Date') to = new Date();
+				// Converts begin date into a javascript Date object.
+				var relativeSeconds = parseInt(from);
+				if(relativeSeconds < 0) {
+					// Interprets from as number of seconds to fetch before end date.
+					from = new Date(to.getTime() + 1000*relativeSeconds);
+				}
+				else {
+					// Tries to interpret from as a date string.
+					from = new Date(Date.parse(from));
+					if(from == 'Invalid Date') {
+						// Defaults to fetching 120 seconds.
+						from = new Date(to.getTime() - 120000);
+					}
+				}
+				console.log('query',from,to);
+				PacketModel.find()
+					.where('timestamp').gt(from).lte(to)
+					.limit(1000).sort([['timestamp', -1]])
+					.select('timestamp temperature pressure')
+					.exec(function(err,results) { res.send(results); });
 			});
 		}
 		// Starts our webapp.
