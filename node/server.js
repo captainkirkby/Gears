@@ -47,13 +47,8 @@ async.parallel({
 				port.on('open',function(err) {
 					if(err) return portCallback(err);
 					console.log('Port open');
-					// Waits one second, while the device resets.
-					setTimeout(function() {
-						// Flushes any data received but not yet read.
-						port.flush();
-						// Forwards the open serial port.
-						portCallback(null,port);
-					},2000);
+					// Forwards the open serial port.
+					portCallback(null,port);
 				});
 			}],
 			// Propagates our device info to data logger.
