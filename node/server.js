@@ -7,24 +7,41 @@ var express = require('express');
 var serial = require('serialport');
 var mongoose = require('mongoose');
 
-// Assembles fixed-size packets in the specified buffer using the data provided.
+// Assembles packets in the specified buffer using the data provided.
 // Call with remaining = 0 the first time, then update remaining with the return value.
 // Calls the specified handler with each completed buffer. Packets are assumed to
-// start with 4 consecutive bytes of 0xFE, which will be included in the assembled
-// packet sent to the handler. Automatically aligns to packet boundaries when called
-// with remaining = 0 or when an assembled packet has an unexpected header.
+// start with 3 consecutive bytes of 0xFE followed by an unsigned byte that specifies
+// the packet type. Payload sizes for different packet types are hardcoded.
+// Automatically aligns to packet boundaries when called with remaining = 0 or when
+// an assembled packet has an unexpected header.
 function assemblePacket(data,buffer,remaining,handler) {
 	var nextAvail = 0;
 	while(nextAvail < data.length) {
-		if(remaining <= 0) {
+		if(remaining == -3) {
+			// The next byte is the packet type.
+			type = data.readUInt8(nextAvail);
+			if(type == 0x01) {
+				// NB: hardcoded payload size for a DATA_PACKET
+				remaining = 32;
+			}
+			else {
+				console.log('Skipping unexpected packet type',type);
+				return 0;
+			}
+			console.log('start packet',type,remaining);
+			// Check that the buffer provided is big enough.
+			if(remaining + 4 > buffer.length) {
+				console.log('Skipping packet with payload overflow',remaining+4,buffer.length);
+				return 0;
+			}
+			buffer[4] = type;
+			nextAvail++;
+		}
+		else if(remaining <= 0) {
 			// Look for a header byte.
 			if(data[nextAvail] == 0xFE) {
 				buffer[-remaining] = 0xFE;
 				remaining -= 1;
-				if(remaining == -4) {
-					// We have found a complete packet header, so start reading its payload.
-					remaining = buffer.length - 4;
-				}
 			}
 			else {
 				// Forget any previously seen header bytes.
@@ -38,15 +55,8 @@ function assemblePacket(data,buffer,remaining,handler) {
 			nextAvail += toCopy;
 			remaining -= toCopy;
 			if(remaining === 0) {
-				if(buffer.readUInt32LE(0) == 0xFEFEFEFE) {
-					handler(buffer);
-					remaining = buffer.length;
-				}
-				else {
-					console.log("ignoring packet with bad header",buffer);
-					// Go back to header scanning.
-					remaining = 0;
-				}
+				// Calls the specified handler with the assembled packet.
+				handler(buffer);
 			}
 		}
 	}
@@ -136,8 +146,8 @@ async.parallel({
 			// Logs TickTock packets from the serial port into the database.
 			console.log('starting data logger with',config);
 			var PacketModel = config.db.model;
-			// NB: packet size is hard coded here!
-			var buffer = new Buffer(12);
+			// NB: maximum possible packet size is hard coded here!
+			var buffer = new Buffer(36);
 			var remaining = 0;
 			config.port.on('data',function(data) {
 				console.log('received',data);
@@ -147,8 +157,8 @@ async.parallel({
 					// NB: packet layout is hardcoded here!
 					var p = new PacketModel({
 						'timestamp': new Date(),
-						'temperature': buf.readInt32LE(4)/160.0,
-						'pressure': buf.readInt32LE(8)
+						'temperature': buf.readInt32LE(16)/160.0,
+						'pressure': buf.readInt32LE(20)
 					});
 					console.log(p);
 					p.save(function(err,p) {
