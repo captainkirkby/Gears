@@ -85,10 +85,10 @@ $(function() {
 	var smoothing = false;
 
 
-	function continuousUpdate(){
+	function continuousUpdate(length){
 		if(realTimeUpdates){
-			displayData();
-			setTimeout(continuousUpdate, TIMEOUT_VALUE);
+			displayData(length);
+			setTimeout(continuousUpdate, TIMEOUT_VALUE, length);
 		}
 	}
 
@@ -96,6 +96,7 @@ $(function() {
 		$("#fetch").prop('disabled', !enabled);
 		$("#from").prop('disabled', !enabled);
 		$("#to").prop('disabled', !enabled);
+		$("#length").prop('disabled', enabled);
 	}
 
 	$("#fetch").click(function(){
@@ -117,10 +118,16 @@ $(function() {
 	});
 
 	$("#continuousMode").click(function(){
+		var length;
 		if(!realTimeUpdates){
 			// Real Time On
 			realTimeUpdates = true;
 			$(this).val("Stop Real Time Updates");
+			// Get value of length field
+			var lengthValue = $("#length").val();
+			if(!isNaN(parseInt(lengthValue))){
+				length = parseInt(lengthValue);
+			}
 			// disable manual fetch
 			setManualFetchEnabled(false);
 		} else {
@@ -130,7 +137,8 @@ $(function() {
 			// enable manual fetch
 			setManualFetchEnabled(true);
 		}
-		continuousUpdate();
+
+		continuousUpdate(length);
 	});
 
 	$("#toggleSmoothing").click(function(){
@@ -144,4 +152,5 @@ $(function() {
 	});
 
 	displayData();
+	setManualFetchEnabled(true);
 });
