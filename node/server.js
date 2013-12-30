@@ -54,7 +54,7 @@ function assemblePacket(data,buffer,remaining,handler) {
 			data.copy(buffer,buffer.length-remaining,nextAvail,nextAvail+toCopy);
 			nextAvail += toCopy;
 			remaining -= toCopy;
-			if(remaining == 0) {
+			if(remaining === 0) {
 				// Calls the specified handler with the assembled packet.
 				handler(buffer);
 			}
