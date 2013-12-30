@@ -1,11 +1,11 @@
 $(function() {
 
 	function displayData(from, to){
-		if(from === undefined){
+		if(from === undefined || from === ""){
 			from = "";			// Use server default
 		}
 
-		if(to === undefined){
+		if(to === undefined || to === ""){
 			to = "now";
 		}
 
