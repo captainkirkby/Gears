@@ -16,7 +16,7 @@ $(function() {
 				console.log(smoothingRadius);
 				if(smoothingRadius < 1){
 					console.log("Smallest radius reached");
-					return data[index];
+					return data[index][field];
 				}
 
 				if(smoothingRadius%2 == 0){
