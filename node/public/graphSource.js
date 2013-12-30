@@ -14,6 +14,7 @@ $(function() {
 			"to" : to
 		});
 		
+		//
 		alert(dataURL);
 
 		function onDataRecieved(data){
@@ -25,10 +26,10 @@ $(function() {
 			var NUM_PRESSURE_SAMPLES = 55;
 
 			function smoothPoints(field, index, smoothingRadius){
-				console.log(index);
-				console.log(smoothingRadius);
+				//console.log(index);
+				//console.log(smoothingRadius);
 				if(smoothingRadius < 1){
-					console.log("Smallest radius reached");
+					//console.log("Smallest radius reached");
 					return data[index][field];
 				}
 
@@ -42,7 +43,7 @@ $(function() {
 				for(var i=(-1*averageSpace);i<=averageSpace;i++){
 					var t_index = i+index;
 					if(t_index<0 || t_index>=data.length){
-						console.log("Decreasing radius");
+						//console.log("Decreasing radius");
 						return smoothPoints(field, index, smoothingRadius-2);
 					} else {
 						sum += data[t_index][field];
