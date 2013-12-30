@@ -126,7 +126,7 @@ $(function() {
 			// Get value of length field
 			var lengthValue = $("#length").val();
 			if(!isNaN(parseInt(lengthValue))){
-				length = parseInt(lengthValue);
+				length = Math.abs(parseInt(lengthValue)) * -1;		//ensure a negative number
 			}
 			// disable manual fetch
 			setManualFetchEnabled(false);
