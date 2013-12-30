@@ -171,7 +171,7 @@ async.parallel({
 		if(config.db) {
 			// Serves data dynamically via AJAX.
 			var PacketModel = config.db.model;
-			app.get('/recent', function(req,res) {
+			app.get('/fetch', function(req,res) {
 				// Gets the date range to fetch.
 				var from = ('from' in req.query) ? req.query.from : '-120';
 				var to = ('to' in req.query) ? req.query.to : 'now';

@@ -1,7 +1,7 @@
 $(function() {
 
 	function displayRecentData(){
-		var dataURL = "recent";
+		var dataURL = "fetch";
 		
 		function onDataRecieved(data){
 			var temperatureSet = [];
