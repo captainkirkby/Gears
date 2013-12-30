@@ -142,6 +142,8 @@ async.parallel({
 	// with command-line flags.
 	function(err,config) {
 		if(err) throw err;
+		// Record our startup time.
+		config.startupTime = new Date();
 		if(config.db && config.port) {
 			// Logs TickTock packets from the serial port into the database.
 			console.log('starting data logger with',config);
@@ -172,12 +174,7 @@ async.parallel({
 		// Serves static files from our public subdirectory.
 		app.use('/', express.static(__dirname + '/public'));
 		// Serves a dynamically generated information page.
-		app.get('/about', function(req, res) {
-			// TODO: flesh this out and improve handling of --no-serial or --no-database
-			res.send(util.format('tty path is %s and db is %s at %s:%d',
-				config.port.path,config.db.connection.name,config.db.connection.host,
-				config.db.connection.port));
-		});
+		app.get('/about', function(req, res) { return about(req,res,config); });
 		if(config.db) {
 			// Serves data dynamically via AJAX.
 			var PacketModel = config.db.model;
@@ -215,3 +212,9 @@ async.parallel({
 		app.listen(3000);
 	}
 );
+
+function about(req,res,config) {
+	res.send(util.format('tty path is %s and db is %s at %s:%d',
+		config.port.path,config.db.connection.name,config.db.connection.host,
+		config.db.connection.port));
+}
