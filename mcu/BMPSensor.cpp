@@ -9,7 +9,17 @@
 //Sensor object
 Adafruit_BMP085_Unified sensor = Adafruit_BMP085_Unified(10085);
 
-Packet packet;
+// Declares and initializes our boot info packet.
+BootPacket bootPacket = {
+	START_BYTE, START_BYTE, START_BYTE, BOOT_PACKET,
+#ifdef COMMIT_INFO
+    COMMIT_INFO
+#elif
+    0, { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }, 0
+#endif
+};
+
+DataPacket dataPacket;
 
 void setup() {
 	Serial.begin(BAUD_RATE);
@@ -17,18 +27,21 @@ void setup() {
 		Serial.println("No BMP085 Pressure Sensor detected... Check wiring.");
 		while(true) {}
 	}
-	packet.start[0] = START_BYTE;
-	packet.start[1] = START_BYTE;
-	packet.start[2] = START_BYTE;
-	packet.type = DATA_PACKET;
+	// Initializes the constant header of our data packet.
+	dataPacket.start[0] = START_BYTE;
+	dataPacket.start[1] = START_BYTE;
+	dataPacket.start[2] = START_BYTE;
+	dataPacket.type = DATA_PACKET;
+	// Sends our boot packet.
+	Serial.write((const uint8_t*)&bootPacket,sizeof(bootPacket));
 }
 
 void loop() {
 	// Reads BMP180 sensors
-	sensor.getTemperature(&packet.temperature);
-	sensor.getPressure(&packet.pressure);
+	sensor.getTemperature(&dataPacket.temperature);
+	sensor.getPressure(&dataPacket.pressure);
 	// Sends binary packet data
-	Serial.write((const uint8_t*)&packet,sizeof(packet));
+	Serial.write((const uint8_t*)&dataPacket,sizeof(dataPacket));
 	// Waits for about 1 sec...
 	delay(1000);
 }

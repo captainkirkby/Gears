@@ -4,10 +4,22 @@
 #include <stdint.h>
 
 #define START_BYTE 0xFE
+#define BOOT_PACKET 0x00
 #define DATA_PACKET 0x01
 #define NUM_RAW_BYTES 8
 
-// Defines the packet data structure
+// Defines the boot packet structure
+typedef struct {
+	// Header
+	uint8_t start[3];
+	uint8_t type;
+	// Git info about the code we are running.
+    uint32_t commitTimestamp;
+    uint8_t commitID[20];
+    uint8_t commitStatus;
+} BootPacket;
+
+// Defines the data packet structure
 typedef struct {
 	// Header
 	uint8_t start[3];
@@ -26,6 +38,6 @@ typedef struct {
 	// IR sensor raw ADC readings
 	uint16_t rawPhase;
 	uint8_t raw[NUM_RAW_BYTES];
-} Packet;
+} DataPacket;
 
 #endif
