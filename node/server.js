@@ -7,51 +7,7 @@ var express = require('express');
 var serial = require('serialport');
 var mongoose = require('mongoose');
 
-// Assembles fixed-size packets in the specified buffer using the data provided.
-// Call with remaining = 0 the first time, then update remaining with the return value.
-// Calls the specified handler with each completed buffer. Packets are assumed to
-// start with 4 consecutive bytes of 0xFE, which will be included in the assembled
-// packet sent to the handler. Automatically aligns to packet boundaries when called
-// with remaining = 0 or when an assembled packet has an unexpected header.
-function assemblePacket(data,buffer,remaining,handler) {
-	var nextAvail = 0;
-	while(nextAvail < data.length) {
-		if(remaining <= 0) {
-			// Look for a header byte.
-			if(data[nextAvail] == 0xFE) {
-				buffer[-remaining] = 0xFE;
-				remaining -= 1;
-				if(remaining == -4) {
-					// We have found a complete packet header, so start reading its payload.
-					remaining = buffer.length - 4;
-				}
-			}
-			else {
-				// Forget any previously seen header bytes.
-				remaining = 0;
-			}
-			nextAvail++;
-		}
-		else {
-			var toCopy = Math.min(remaining,data.length-nextAvail);
-			data.copy(buffer,buffer.length-remaining,nextAvail,nextAvail+toCopy);
-			nextAvail += toCopy;
-			remaining -= toCopy;
-			if(remaining === 0) {
-				if(buffer.readUInt32LE(0) == 0xFEFEFEFE) {
-					handler(buffer);
-					remaining = buffer.length;
-				}
-				else {
-					console.log("ignoring packet with bad header",buffer);
-					// Go back to header scanning.
-					remaining = 0;
-				}
-			}
-		}
-	}
-	return remaining;
-}
+var assembler = require('./assembler');
 
 // Parses command-line arguments.
 var noSerial = false;
@@ -132,29 +88,16 @@ async.parallel({
 	// with command-line flags.
 	function(err,config) {
 		if(err) throw err;
+		// Record our startup time.
+		config.startupTime = new Date();
 		if(config.db && config.port) {
 			// Logs TickTock packets from the serial port into the database.
 			console.log('starting data logger with',config);
-			var PacketModel = config.db.model;
-			// NB: packet size is hard coded here!
-			var buffer = new Buffer(12);
+			// NB: maximum possible packet size is hard coded here!
+			var buffer = new Buffer(36);
 			var remaining = 0;
 			config.port.on('data',function(data) {
-				console.log('received',data);
-				remaining = assemblePacket(data,buffer,remaining,function(buf) {
-					console.log('assembled',buf);
-					// Prepares packet data for storing to the database.
-					// NB: packet layout is hardcoded here!
-					var p = new PacketModel({
-						'timestamp': new Date(),
-						'temperature': buf.readInt32LE(4)/160.0,
-						'pressure': buf.readInt32LE(8)
-					});
-					console.log(p);
-					p.save(function(err,p) {
-						if(err) console.log('Error writing packet',p);
-					});
-				});
+				return receive(data,buffer,remaining,config.db.model);
 			});
 		}
 		// Defines our webapp routes.
@@ -162,46 +105,75 @@ async.parallel({
 		// Serves static files from our public subdirectory.
 		app.use('/', express.static(__dirname + '/public'));
 		// Serves a dynamically generated information page.
-		app.get('/about', function(req, res) {
-			// TODO: flesh this out and improve handling of --no-serial or --no-database
-			res.send(util.format('tty path is %s and db is %s at %s:%d',
-				config.port.path,config.db.connection.name,config.db.connection.host,
-				config.db.connection.port));
-		});
+		app.get('/about', function(req, res) { return about(req,res,config); });
 		if(config.db) {
 			// Serves data dynamically via AJAX.
-			var PacketModel = config.db.model;
-			app.get('/fetch', function(req,res) {
-				// Gets the date range to fetch.
-				var from = ('from' in req.query) ? req.query.from : '-120';
-				var to = ('to' in req.query) ? req.query.to : 'now';
-				// Converts end date into a javascript Date object.
-				to = new Date(Date.parse(to));
-				if(to == 'Invalid Date') to = new Date();
-				// Converts begin date into a javascript Date object.
-				var relativeSeconds = parseInt(from);
-				if(relativeSeconds < 0) {
-					// Interprets from as number of seconds to fetch before end date.
-					from = new Date(to.getTime() + 1000*relativeSeconds);
-				}
-				else {
-					// Tries to interpret from as a date string.
-					from = new Date(Date.parse(from));
-					if(from == 'Invalid Date') {
-						// Defaults to fetching 120 seconds.
-						from = new Date(to.getTime() - 120000);
-					}
-				}
-				console.log('query',from,to);
-				PacketModel.find()
-					.where('timestamp').gt(from).lte(to)
-					.limit(1000).sort([['timestamp', -1]])
-					.select('timestamp temperature pressure')
-					.exec(function(err,results) { res.send(results); });
-			});
+			app.get('/fetch', function(req,res) { return fetch(req,res,config.db.model); });
 		}
 		// Starts our webapp.
 		console.log('starting web server on port 3000');
 		app.listen(3000);
 	}
 );
+
+// Receives a new chunk of binary data from the serial port.
+function receive(data,buffer,remaining,model) {
+	console.log('received',data);
+	remaining = assembler.ingest(data,buffer,remaining,function(buf) {
+		console.log('assembled',buf);
+		// Prepares packet data for storing to the database.
+		// NB: packet layout is hardcoded here!
+		var p = new model({
+			'timestamp': new Date(),
+			'temperature': buf.readInt32LE(16)/160.0,
+			'pressure': buf.readInt32LE(20)
+		});
+		console.log(p);
+		p.save(function(err,p) {
+			if(err) console.log('Error writing packet',p);
+		});
+	});
+}
+
+// Responds to a request for our about page.
+function about(req,res,config) {
+	res.send(
+		'Server started ' + config.startupTime + '<br/>' +
+		'Server command line: ' + process.argv.join(' ') + '<br/>' +
+		(config.port === null ? 'No serial connection' : (
+			'Connected to tty ' + config.port.path)) + '<br/>' +
+		(config.db === null ? 'No database connection' : (
+			'Connected to db "' + config.db.connection.name + '" at ' +
+			config.db.connection.host + ':' + config.db.connection.port)) + '<br/>'
+	);
+}
+
+// Responds to a request to fetch data.
+function fetch(req,res,model) {
+	// Gets the date range to fetch.
+	var from = ('from' in req.query) ? req.query.from : '-120';
+	var to = ('to' in req.query) ? req.query.to : 'now';
+	// Converts end date into a javascript Date object.
+	to = new Date(Date.parse(to));
+	if(to == 'Invalid Date') to = new Date();
+	// Converts begin date into a javascript Date object.
+	var relativeSeconds = parseInt(from);
+	if(relativeSeconds < 0) {
+		// Interprets from as number of seconds to fetch before end date.
+		from = new Date(to.getTime() + 1000*relativeSeconds);
+	}
+	else {
+		// Tries to interpret from as a date string.
+		from = new Date(Date.parse(from));
+		if(from == 'Invalid Date') {
+			// Defaults to fetching 120 seconds.
+			from = new Date(to.getTime() - 120000);
+		}
+	}
+	console.log('query',from,to);
+	model.find()
+		.where('timestamp').gt(from).lte(to)
+		.limit(1000).sort([['timestamp', -1]])
+		.select('timestamp temperature pressure')
+		.exec(function(err,results) { res.send(results); });
+}

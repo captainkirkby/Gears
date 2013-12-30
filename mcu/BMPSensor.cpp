@@ -17,7 +17,10 @@ void setup() {
 		Serial.println("No BMP085 Pressure Sensor detected... Check wiring.");
 		while(true) {}
 	}
-	packet.header = PACKET_HEADER;
+	packet.start[0] = START_BYTE;
+	packet.start[1] = START_BYTE;
+	packet.start[2] = START_BYTE;
+	packet.type = DATA_PACKET;
 }
 
 void loop() {
