@@ -13,6 +13,10 @@ typedef struct {
 	// Header
 	uint8_t start[3];
 	uint8_t type;
+	// Non-zero if our BMP sensor was sucessfully initialized
+	uint8_t bmpSensorOk;
+	// Non-zero if our GPS serial communication was successfully initialized
+	uint8_t gpsSerialOk;
 	// Git info about the code we are running.
     uint32_t commitTimestamp;
     uint8_t commitID[20];
