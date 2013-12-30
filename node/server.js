@@ -191,9 +191,15 @@ function receive(data,buffer,remaining,model) {
 
 // Responds to a request for our about page.
 function about(req,res,config) {
-	res.send(util.format('tty path is %s and db is %s at %s:%d',
-		config.port.path,config.db.connection.name,config.db.connection.host,
-		config.db.connection.port));
+	res.send(
+		'Server started ' + config.startupTime + '<br/>' +
+		'Server command line: ' + process.argv.join(' ') + '<br/>' +
+		(config.port === null ? 'No serial connection' : (
+			'Connected to tty ' + config.port.path)) + '<br/>' +
+		(config.db === null ? 'No database connection' : (
+			'Connected to db "' + config.db.connection.name + '" at ' +
+			config.db.connection.host + ':' + config.db.connection.port)) + '<br/>'
+	);
 }
 
 // Responds to a request to fetch data.
