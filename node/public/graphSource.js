@@ -162,8 +162,6 @@ $(function() {
 		}
 	});
 
-	$("#footer").prepend("Flot " + $.plot.version + " &ndash; ");
-
 	displayRecentData();
 });
 
