@@ -9,10 +9,13 @@ exports.ingest = function(data,buffer,remaining,handler) {
 	var nextAvail = 0;
 	while(nextAvail < data.length) {
 		if(remaining == -3) {
-			// The next byte is the packet type.
+			// We have already seen 3 consecutive header bytes, so the next byte is the packet type.
 			type = data.readUInt8(nextAvail);
-			if(type == 0x01) {
-				// NB: hardcoded payload size for a DATA_PACKET
+			// NB: payload sizes for each packet type are hardcoded here.
+			if(type == 0x00) {
+				remaining = 27;
+			}
+			else if(type == 0x01) {
 				remaining = 32;
 			}
 			else {
@@ -25,7 +28,7 @@ exports.ingest = function(data,buffer,remaining,handler) {
 				console.log('Skipping packet with payload overflow',remaining+4,buffer.length);
 				return 0;
 			}
-			buffer[4] = type;
+			buffer[3] = type;
 			nextAvail++;
 		}
 		else if(remaining <= 0) {
