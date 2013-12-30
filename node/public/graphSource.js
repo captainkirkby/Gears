@@ -85,7 +85,13 @@ $(function() {
 		$("#to").prop('disabled', !enabled);
 	}
 
-	$("#fetch").click(displayRecentData);
+	$("#fetch").click(function(){
+		var from = new Date($("#from").val());
+		var to = new Date($("#to").val());
+		alert("From :" + from.toUTCString());
+		alert("To :" + to.toUTCString());
+		//displayRecentData();
+	});
 
 	$("#continuousMode").click(function(){
 		if(!realTimeUpdates){
