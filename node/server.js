@@ -37,7 +37,7 @@ function assemblePacket(data,buffer,remaining,handler) {
 			data.copy(buffer,buffer.length-remaining,nextAvail,nextAvail+toCopy);
 			nextAvail += toCopy;
 			remaining -= toCopy;
-			if(remaining == 0) {
+			if(remaining === 0) {
 				if(buffer.readUInt32LE(0) == 0xFEFEFEFE) {
 					handler(buffer);
 					remaining = buffer.length;
