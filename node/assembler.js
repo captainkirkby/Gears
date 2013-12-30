@@ -25,7 +25,7 @@ exports.ingest = function(data,buffer,remaining,handler) {
 				console.log('Skipping packet with payload overflow',remaining+4,buffer.length);
 				return 0;
 			}
-			buffer[4] = type;
+			buffer[3] = type;
 			nextAvail++;
 		}
 		else if(remaining <= 0) {

@@ -97,7 +97,7 @@ async.parallel({
 			var buffer = new Buffer(36);
 			var remaining = 0;
 			config.port.on('data',function(data) {
-				return receive(data,buffer,remaining,config.db.model);
+				remaining = receive(data,buffer,remaining,config.db.model);
 			});
 		}
 		// Defines our webapp routes.
@@ -116,10 +116,11 @@ async.parallel({
 	}
 );
 
-// Receives a new chunk of binary data from the serial port.
+// Receives a new chunk of binary data from the serial port and returns the
+// updated value of remaining that should be used for the next call.
 function receive(data,buffer,remaining,model) {
-	console.log('received',data);
-	remaining = assembler.ingest(data,buffer,remaining,function(buf) {
+	console.log('remaining',remaining,'received',data);
+	return assembler.ingest(data,buffer,remaining,function(buf) {
 		console.log('assembled',buf);
 		// Prepares packet data for storing to the database.
 		// NB: packet layout is hardcoded here!
