@@ -96,7 +96,7 @@ $(function() {
 		$("#fetch").prop('disabled', !enabled);
 		$("#from").prop('disabled', !enabled);
 		$("#to").prop('disabled', !enabled);
-		$("#length").prop('disabled', enabled);
+		$("#length").prop('disabled', !enabled);
 	}
 
 	$("#fetch").click(function(){
