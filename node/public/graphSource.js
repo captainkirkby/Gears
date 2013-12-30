@@ -9,7 +9,7 @@ $(function() {
 
 			// Number of samples to average with (must be an odd number)
 			var NUM_TEMPERATURE_SAMPLES = 11;		// o o X o o
-			var NUM_PRESSURE_SAMPLES = 11;
+			var NUM_PRESSURE_SAMPLES = 55;
 
 			function smoothPoints(field, index, smoothingRadius){
 				console.log(index);
