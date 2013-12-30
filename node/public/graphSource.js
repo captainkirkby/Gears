@@ -104,9 +104,3 @@ $(function() {
 
 	displayRecentData();
 });
-
-function zeroArray(myArray){
-	for(var i=0;i<myArray.length;i++){
-		myArray[i] = 0;
-	}
-}
