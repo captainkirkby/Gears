@@ -68,14 +68,14 @@ async.parallel({
 		db.once('open', function() {
 			console.log('db connection established.');
 			// Defines the data model for our serial packets
-			var packetSchema = mongoose.Schema({
+			var dataPacketSchema = mongoose.Schema({
 				timestamp: { type: Date, index: true },
 				temperature: Number,
 				pressure: Number
 			});
-			var dataModel = mongoose.model('dataModel',packetSchema);
-			// Propagates our database connection and data model to data logger.
-			callback(null,{'connection':db,'model':dataModel});
+			var dataPacketModel = mongoose.model('dataPacketModel',dataPacketSchema);
+			// Propagates our database connection and db models to data logger.
+			callback(null,{'connection':db,'dataPacketModel':dataPacketModel});
 		});
 	}},
 	// Performs steps that require both an open serial port and database connection.
@@ -92,7 +92,7 @@ async.parallel({
 			var buffer = new Buffer(36);
 			var remaining = 0;
 			config.port.on('data',function(data) {
-				remaining = receive(data,buffer,remaining,config.db.model);
+				remaining = receive(data,buffer,remaining,config.db.dataPacketModel);
 			});
 		}
 		// Defines our webapp routes.
@@ -103,7 +103,7 @@ async.parallel({
 		app.get('/about', function(req, res) { return about(req,res,config); });
 		if(config.db) {
 			// Serves data dynamically via AJAX.
-			app.get('/fetch', function(req,res) { return fetch(req,res,config.db.model); });
+			app.get('/fetch', function(req,res) { return fetch(req,res,config.db.dataPacketModel); });
 		}
 		// Starts our webapp.
 		console.log('starting web server on port 3000');
@@ -113,20 +113,20 @@ async.parallel({
 
 // Receives a new chunk of binary data from the serial port and returns the
 // updated value of remaining that should be used for the next call.
-function receive(data,buffer,remaining,model) {
+function receive(data,buffer,remaining,dataPacketModel) {
 	console.log('remaining',remaining,'received',data);
 	return assembler.ingest(data,buffer,remaining,function(buf) {
 		console.log('assembled',buf);
 		// Prepares packet data for storing to the database.
 		// NB: packet layout is hardcoded here!
-		var p = new model({
+		var p = new dataPacketModel({
 			'timestamp': new Date(),
 			'temperature': buf.readInt32LE(16)/160.0,
 			'pressure': buf.readInt32LE(20)
 		});
 		console.log(p);
 		p.save(function(err,p) {
-			if(err) console.log('Error writing packet',p);
+			if(err) console.log('Error saving data packet',p);
 		});
 	});
 }
@@ -145,7 +145,7 @@ function about(req,res,config) {
 }
 
 // Responds to a request to fetch data.
-function fetch(req,res,model) {
+function fetch(req,res,dataPacketModel) {
 	// Gets the date range to fetch.
 	var from = ('from' in req.query) ? req.query.from : '-120';
 	var to = ('to' in req.query) ? req.query.to : 'now';
@@ -167,7 +167,7 @@ function fetch(req,res,model) {
 		}
 	}
 	console.log('query',from,to);
-	model.find()
+	dataPacketModel.find()
 		.where('timestamp').gt(from).lte(to)
 		.limit(1000).sort([['timestamp', -1]])
 		.select('timestamp temperature pressure')
