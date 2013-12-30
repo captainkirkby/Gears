@@ -14,8 +14,7 @@ $(function() {
 			"to" : to
 		});
 		
-		//
-		alert(dataURL);
+		//alert(dataURL);
 
 		function onDataRecieved(data){
 			var temperatureSet = [];
