@@ -177,35 +177,7 @@ async.parallel({
 		app.get('/about', function(req, res) { return about(req,res,config); });
 		if(config.db) {
 			// Serves data dynamically via AJAX.
-			var PacketModel = config.db.model;
-			app.get('/fetch', function(req,res) {
-				// Gets the date range to fetch.
-				var from = ('from' in req.query) ? req.query.from : '-120';
-				var to = ('to' in req.query) ? req.query.to : 'now';
-				// Converts end date into a javascript Date object.
-				to = new Date(Date.parse(to));
-				if(to == 'Invalid Date') to = new Date();
-				// Converts begin date into a javascript Date object.
-				var relativeSeconds = parseInt(from);
-				if(relativeSeconds < 0) {
-					// Interprets from as number of seconds to fetch before end date.
-					from = new Date(to.getTime() + 1000*relativeSeconds);
-				}
-				else {
-					// Tries to interpret from as a date string.
-					from = new Date(Date.parse(from));
-					if(from == 'Invalid Date') {
-						// Defaults to fetching 120 seconds.
-						from = new Date(to.getTime() - 120000);
-					}
-				}
-				console.log('query',from,to);
-				PacketModel.find()
-					.where('timestamp').gt(from).lte(to)
-					.limit(1000).sort([['timestamp', -1]])
-					.select('timestamp temperature pressure')
-					.exec(function(err,results) { res.send(results); });
-			});
+			app.get('/fetch', function(req,res) { return fetch(req,res,config.db.model); });
 		}
 		// Starts our webapp.
 		console.log('starting web server on port 3000');
@@ -217,4 +189,33 @@ function about(req,res,config) {
 	res.send(util.format('tty path is %s and db is %s at %s:%d',
 		config.port.path,config.db.connection.name,config.db.connection.host,
 		config.db.connection.port));
+}
+
+function fetch(req,res,model) {
+	// Gets the date range to fetch.
+	var from = ('from' in req.query) ? req.query.from : '-120';
+	var to = ('to' in req.query) ? req.query.to : 'now';
+	// Converts end date into a javascript Date object.
+	to = new Date(Date.parse(to));
+	if(to == 'Invalid Date') to = new Date();
+	// Converts begin date into a javascript Date object.
+	var relativeSeconds = parseInt(from);
+	if(relativeSeconds < 0) {
+		// Interprets from as number of seconds to fetch before end date.
+		from = new Date(to.getTime() + 1000*relativeSeconds);
+	}
+	else {
+		// Tries to interpret from as a date string.
+		from = new Date(Date.parse(from));
+		if(from == 'Invalid Date') {
+			// Defaults to fetching 120 seconds.
+			from = new Date(to.getTime() - 120000);
+		}
+	}
+	console.log('query',from,to);
+	model.find()
+		.where('timestamp').gt(from).lte(to)
+		.limit(1000).sort([['timestamp', -1]])
+		.select('timestamp temperature pressure')
+		.exec(function(err,results) { res.send(results); });
 }
