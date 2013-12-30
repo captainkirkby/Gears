@@ -2,7 +2,7 @@ $(function() {
 
 	function displayData(from, to){
 		if(from === undefined){
-			from = "";			// Use server default
+			from = "DEFAULT";			// Use server default
 		}
 
 		if(to === undefined){
@@ -102,8 +102,8 @@ $(function() {
 		var from = new Date($("#from").val());
 		var to = new Date($("#to").val());
 
-		var fromArg = "";
-		var toArg = "now";
+		var fromArg;
+		var toArg;
 
 		// Check for valid dates
 		if(!isNaN(from)){
