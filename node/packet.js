@@ -1,22 +1,23 @@
 // Assembles packets using the data provided. Packets are assumed to
-// start with 3 consecutive bytes of 0xFE followed by an unsigned byte that specifies
+// start with repeated identical header bytes followed by an unsigned byte that specifies
 // the packet type. Payload sizes for different packet types are hardcoded.
-// Automatically aligns to packet boundaries when called with remaining = 0 or when
-// an assembled packet has an unexpected header.
+// Automatically aligns to packet boundaries on startup or after a framing error.
 
 exports.Assembler = Assembler;
 
-function Assembler(maxPayloadSize) {
+function Assembler(maxPayloadSize,headerByte,headerSize) {
 	this.remaining = 0;
 	this.packetType = null;
 	this.buffer = new Buffer(maxPayloadSize);
+	this.headerByte = headerByte;
+	this.headerSize = headerSize;
 }
 
 Assembler.prototype.ingest = function(data,handler) {
 	var nextAvail = 0;
 	while(nextAvail < data.length) {
-		if(this.remaining == -3) {
-			// We have already seen 3 consecutive header bytes, so the next byte is the packet type.
+		if(this.remaining == -this.headerSize) {
+			// We have already seen all the header bytes, so the next byte is the packet type.
 			this.packetType = data.readUInt8(nextAvail);
 			// NB: payload sizes for each packet type are hardcoded here.
 			if(this.packetType == 0x00) {
@@ -41,7 +42,7 @@ Assembler.prototype.ingest = function(data,handler) {
 		}
 		else if(this.remaining <= 0) {
 			// Look for a header byte.
-			if(data[nextAvail] == 0xFE) {
+			if(data[nextAvail] == this.headerByte) {
 				this.remaining -= 1;
 			}
 			else {
