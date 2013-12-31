@@ -43,8 +43,8 @@ ARDUINO = $(INSTALL_DIR)/hardware/arduino/cores/arduino
 # --------------------------------------------------------------------------
 # The core C sources to use
 # --------------------------------------------------------------------------
-CORE_C_SRC = avr-libc/malloc.c avr-libc/realloc.c WInterrupts.c wiring.c \
-wiring_analog.c wiring_digital.c wiring_pulse.c wiring_shift.c
+CORE_C_SRC = WInterrupts.c wiring.c wiring_analog.c \
+wiring_digital.c wiring_pulse.c wiring_shift.c
 		
 # --------------------------------------------------------------------------
 # The core C++ sources to use
