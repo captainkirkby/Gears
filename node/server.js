@@ -128,12 +128,9 @@ async.parallel({
 // updated value of remaining that should be used for the next call.
 function receive(data,assembler,bootPacketModel,dataPacketModel) {
 	console.log('remaining',assembler.remaining,'received',data);
-	assembler.ingest(data,function(buf) {
-		console.log('assembled',buf);
-		var p;
-		// Looks up this packet type.
-		var type = buf.readUInt8(3);
-		if(type == 0x00) {
+	assembler.ingest(data,function(ptype,buf) {
+		console.log('assembled type',ptype,buf);
+		if(ptype == 0x00) {
 			// Prepares boot packet for storing to the database.
 			// NB: packet layout is hardcoded here!
 			p = new bootPacketModel({
@@ -145,7 +142,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 				'commitStatus': buf.readUInt8(30)
 			});
 		}
-		else if(type == 0x01) {
+		else if(ptype == 0x01) {
 			// Prepares data packet for storing to the database.
 			// NB: packet layout is hardcoded here!
 			p = new dataPacketModel({
@@ -155,7 +152,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			});
 		}
 		else {
-			console.log('Got unexpected packet type',type);
+			console.log('Got unexpected packet type',ptype);
 			return;
 		}
 		console.log(p);

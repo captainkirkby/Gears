@@ -6,9 +6,10 @@
 
 exports.Assembler = Assembler;
 
-function Assembler(maxSize) {
+function Assembler(maxPayloadSize) {
 	this.remaining = 0;
-	this.buffer = new Buffer(maxSize);
+	this.packetType = null;
+	this.buffer = new Buffer(maxPayloadSize);
 }
 
 Assembler.prototype.ingest = function(data,handler) {
@@ -16,33 +17,31 @@ Assembler.prototype.ingest = function(data,handler) {
 	while(nextAvail < data.length) {
 		if(this.remaining == -3) {
 			// We have already seen 3 consecutive header bytes, so the next byte is the packet type.
-			type = data.readUInt8(nextAvail);
+			this.packetType = data.readUInt8(nextAvail);
 			// NB: payload sizes for each packet type are hardcoded here.
-			if(type == 0x00) {
+			if(this.packetType == 0x00) {
 				this.remaining = 27;
 			}
-			else if(type == 0x01) {
+			else if(this.packetType == 0x01) {
 				this.remaining = 32;
 			}
 			else {
-				console.log('Skipping unexpected packet type',type);
+				console.log('Skipping unexpected packet type',this.packetType);
 				this.remaining = 0;
 				return;
 			}
-			console.log('start packet',type,this.remaining);
+			console.log('start packet',this.packetType,this.remaining);
 			// Check that our buffer is big enough.
-			if(this.remaining + 4 > this.buffer.length) {
-				console.log('Skipping packet with payload overflow',this.remaining+4,this.buffer.length);
+			if(this.remaining > this.buffer.length) {
+				console.log('Skipping packet with payload overflow',this.remaining,this.buffer.length);
 				this.remaining = 0;
 				return;
 			}
-			this.buffer[3] = type;
 			nextAvail++;
 		}
 		else if(this.remaining <= 0) {
 			// Look for a header byte.
 			if(data[nextAvail] == 0xFE) {
-				this.buffer[-this.remaining] = 0xFE;
 				this.remaining -= 1;
 			}
 			else {
@@ -58,7 +57,7 @@ Assembler.prototype.ingest = function(data,handler) {
 			this.remaining -= toCopy;
 			if(this.remaining === 0) {
 				// Calls the specified handler with the assembled packet.
-				handler(this.buffer);
+				handler(this.packetType,this.buffer);
 			}
 		}
 	}	
