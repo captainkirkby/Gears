@@ -7,7 +7,7 @@ var express = require('express');
 var serial = require('serialport');
 var mongoose = require('mongoose');
 
-var assembler = require('./assembler');
+var packet = require('./packet');
 
 // Parses command-line arguments.
 var noSerial = false;
@@ -103,11 +103,9 @@ async.parallel({
 			// Logs TickTock packets from the serial port into the database.
 			console.log('starting data logger with',config);
 			// NB: maximum possible packet size is hard coded here!
-			var buffer = new Buffer(36);
-			var remaining = 0;
+			var assembler = new packet.Assembler(36);
 			config.port.on('data',function(data) {
-				remaining = receive(data,buffer,remaining,
-					config.db.bootPacketModel,config.db.dataPacketModel);
+				receive(data,assembler,config.db.bootPacketModel,config.db.dataPacketModel);
 			});
 		}
 		// Defines our webapp routes.
@@ -128,9 +126,9 @@ async.parallel({
 
 // Receives a new chunk of binary data from the serial port and returns the
 // updated value of remaining that should be used for the next call.
-function receive(data,buffer,remaining,bootPacketModel,dataPacketModel) {
-	console.log('remaining',remaining,'received',data);
-	return assembler.ingest(data,buffer,remaining,function(buf) {
+function receive(data,assembler,bootPacketModel,dataPacketModel) {
+	console.log('remaining',assembler.remaining,'received',data);
+	assembler.ingest(data,function(buf) {
 		console.log('assembled',buf);
 		var p;
 		// Looks up this packet type.
