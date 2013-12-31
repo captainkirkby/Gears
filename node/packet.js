@@ -19,6 +19,22 @@ function Assembler(headerByte,headerSize,payloadSizes) {
 	this.buffer = new Buffer(maxPayloadSize);	
 }
 
+Assembler.prototype.addPacketType = function(type,size) {
+	if(!(type in this.payloadSizes)) {
+		console.log('registering new packet type',type,'with payload size',size);
+		this.payloadSizes[type] = size;
+		if(size > this.buffer.length) {
+			// Creates a new bigger buffer.
+			var newBuffer = new Buffer(size);
+			// Copies any pending data from our original buffer.
+			var pending = this.payloadSizes[this.packetType] - this.remaining;
+			this.buffer.copy(newBuffer,0,0,pending);
+			// Replaces the old buffer with the new buffer.
+			this.buffer = newBuffer;
+		}
+	}
+}
+
 Assembler.prototype.ingest = function(data,handler) {
 	var nextAvail = 0;
 	while(nextAvail < data.length) {

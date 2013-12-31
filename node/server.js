@@ -102,8 +102,8 @@ async.parallel({
 		if(config.db && config.port) {
 			// Logs TickTock packets from the serial port into the database.
 			console.log('starting data logger with',config);
-			// Initializes our binary packet assembler.
-			var assembler = new packet.Assembler(0xFE,3,{0x00:27,0x01:32});
+			// Initializes our binary packet assembler to initially only accept a boot packet.
+			var assembler = new packet.Assembler(0xFE,3,{0x00:27});
 			// Handles incoming chunks of binary data from the device.
 			config.port.on('data',function(data) {
 				receive(data,assembler,config.db.bootPacketModel,config.db.dataPacketModel);
@@ -136,20 +136,22 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			// NB: packet layout is hardcoded here!
 			p = new bootPacketModel({
 				'timestamp': new Date(),
-				'bmpSensorOk': buf.readUInt8(4),
-				'gspSerialOk': buf.readUInt8(5),
-				'commitTimestamp': new Date(1000*buf.readUInt32LE(6)),
+				'bmpSensorOk': buf.readUInt8(0),
+				'gspSerialOk': buf.readUInt8(1),
+				'commitTimestamp': new Date(1000*buf.readUInt32LE(2)),
 				'commitHash': '',
-				'commitStatus': buf.readUInt8(30)
+				'commitStatus': buf.readUInt8(26)
 			});
+			// After seeing a boot packet, we accept data packets.
+			assembler.addPacketType(0x01,32);
 		}
 		else if(ptype == 0x01) {
 			// Prepares data packet for storing to the database.
 			// NB: packet layout is hardcoded here!
 			p = new dataPacketModel({
 				'timestamp': new Date(),
-				'temperature': buf.readInt32LE(16)/160.0,
-				'pressure': buf.readInt32LE(20)
+				'temperature': buf.readInt32LE(12)/160.0,
+				'pressure': buf.readInt32LE(16)
 			});
 		}
 		else {
