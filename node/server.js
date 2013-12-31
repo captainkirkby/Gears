@@ -9,6 +9,8 @@ var mongoose = require('mongoose');
 
 var packet = require('./packet');
 
+sprintf = require('sprintf').sprintf;
+
 // Parses command-line arguments.
 var noSerial = false;
 var noDatabase = false;
@@ -136,12 +138,14 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 		if(ptype == 0x00) {
 			// Prepares boot packet for storing to the database.
 			// NB: packet layout is hardcoded here!
+			hash = '';
+			for(var offset = 6; offset < 26; offset++) hash += sprintf("%02x",buf.readUInt8(offset));
 			p = new bootPacketModel({
 				'timestamp': new Date(),
 				'bmpSensorOk': buf.readUInt8(0),
-				'gspSerialOk': buf.readUInt8(1),
-				'commitTimestamp': new Date(1000*buf.readUInt32LE(2)),
-				'commitHash': '',
+				'gpsSerialOk': buf.readUInt8(1),
+				'commitTimestamp': new Date(buf.readUInt32LE(2)*1000),
+				'commitHash': hash,
 				'commitStatus': buf.readUInt8(26)
 			});
 			// After seeing a boot packet, we accept data packets.
