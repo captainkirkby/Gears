@@ -5,12 +5,13 @@
 
 exports.Assembler = Assembler;
 
-function Assembler(maxPayloadSize,headerByte,headerSize) {
+function Assembler(maxPayloadSize,headerByte,headerSize,payloadSizes) {
 	this.remaining = 0;
 	this.packetType = null;
 	this.buffer = new Buffer(maxPayloadSize);
 	this.headerByte = headerByte;
 	this.headerSize = headerSize;
+	this.payloadSizes = payloadSizes;
 }
 
 Assembler.prototype.ingest = function(data,handler) {
@@ -19,19 +20,16 @@ Assembler.prototype.ingest = function(data,handler) {
 		if(this.remaining == -this.headerSize) {
 			// We have already seen all the header bytes, so the next byte is the packet type.
 			this.packetType = data.readUInt8(nextAvail);
-			// NB: payload sizes for each packet type are hardcoded here.
-			if(this.packetType == 0x00) {
-				this.remaining = 27;
-			}
-			else if(this.packetType == 0x01) {
-				this.remaining = 32;
+			// Is this a packet type we know about?
+			if(this.packetType in this.payloadSizes) {
+				this.remaining = this.payloadSizes[this.packetType];
+				console.log('start packet',this.packetType,'with payload size',this.remaining);
 			}
 			else {
 				console.log('Skipping unexpected packet type',this.packetType);
 				this.remaining = 0;
 				return;
 			}
-			console.log('start packet',this.packetType,this.remaining);
 			// Check that our buffer is big enough.
 			if(this.remaining > this.buffer.length) {
 				console.log('Skipping packet with payload overflow',this.remaining,this.buffer.length);

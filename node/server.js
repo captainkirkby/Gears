@@ -103,7 +103,7 @@ async.parallel({
 			// Logs TickTock packets from the serial port into the database.
 			console.log('starting data logger with',config);
 			// Initializes our binary packet assembler.
-			var assembler = new packet.Assembler(36,0xFE,3);
+			var assembler = new packet.Assembler(36,0xFE,3,{0x00:27,0x01:32});
 			// Handles incoming chunks of binary data from the device.
 			config.port.on('data',function(data) {
 				receive(data,assembler,config.db.bootPacketModel,config.db.dataPacketModel);
