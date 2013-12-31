@@ -20,6 +20,9 @@ $(function() {
 			var temperatureSet = [];
 			var pressureSet = [];
 
+			var smoothTemperatureSet = [];
+			var smoothPressureSet = [];
+
 			// Number of samples to average with (must be an odd number)
 			var NUM_TEMPERATURE_SAMPLES = 11;		// o o X o o
 			var NUM_PRESSURE_SAMPLES = 55;
@@ -57,14 +60,24 @@ $(function() {
 				//Get timestamp as a date object
 				var date = new Date(Date.parse(data[index].timestamp));
 
-				temperatureSet.push([date, smoothPoints("temperature", index, smoothing ? NUM_TEMPERATURE_SAMPLES : 0)]);
-				pressureSet.push([date, smoothPoints("pressure", index, smoothing ? NUM_PRESSURE_SAMPLES : 0)]);
+				temperatureSet.push([date, data[index].temperature]);
+				pressureSet.push([date, data[index].pressure]);
+
+				smoothTemperatureSet.push([date, smoothPoints("temperature", index, NUM_TEMPERATURE_SAMPLES)]);
+				smoothPressureSet.push([date, smoothPoints("pressure", index, NUM_PRESSURE_SAMPLES)]);
+			}
+
+			var dataSet = [
+				{ data: smoothing ? smoothTemperatureSet : temperatureSet , label: "Temperature (°C)", color : 0 },
+				{ data: smoothing ? smoothPressureSet : pressureSet, label: "Pressure (Pa)", yaxis: 2, color : 1 }
+			];
+
+			if(smoothing){
+				dataSet.push({ data: temperatureSet, lines : { show : false}, points : {show : true, radius : 1}, color : 0},
+				{ data: pressureSet, yaxis: 2, lines : { show : false}, points : {show : true, radius : 1}, color : 1  });
 			}
 			
-			$.plot("#placeholder", [
-				{ data: temperatureSet, label: "Temperature (°C)" },
-				{ data: pressureSet, label: "Pressure (Pa)", yaxis: 2 }
-			], {
+			$.plot("#placeholder", dataSet, {
 				xaxes : [{ mode: "time", timezone: "browser"}],		//must include jquery.flot.time.min.js for this!
 				yaxes : [{}, {position: "right"}]
 			});
