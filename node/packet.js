@@ -56,7 +56,8 @@ Assembler.prototype.ingest = function(data,handler) {
 		}
 		else {
 			var toCopy = Math.min(this.remaining,data.length-nextAvail);
-			data.copy(this.buffer,this.buffer.length-this.remaining,nextAvail,nextAvail+toCopy);
+			var offset = this.payloadSizes[this.packetType] - this.remaining;
+			data.copy(this.buffer,offset,nextAvail,nextAvail+toCopy);
 			nextAvail += toCopy;
 			this.remaining -= toCopy;
 			if(this.remaining === 0) {
