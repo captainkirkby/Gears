@@ -5,13 +5,18 @@
 
 exports.Assembler = Assembler;
 
-function Assembler(maxPayloadSize,headerByte,headerSize,payloadSizes) {
+function Assembler(headerByte,headerSize,payloadSizes) {
 	this.remaining = 0;
 	this.packetType = null;
-	this.buffer = new Buffer(maxPayloadSize);
 	this.headerByte = headerByte;
 	this.headerSize = headerSize;
 	this.payloadSizes = payloadSizes;
+	var maxPayloadSize = 0;
+	for(var type in payloadSizes) {
+		maxPayloadSize = Math.max(maxPayloadSize,payloadSizes[type]);
+	}
+	console.log('Initializing packet assembler with max payload size of',maxPayloadSize);
+	this.buffer = new Buffer(maxPayloadSize);	
 }
 
 Assembler.prototype.ingest = function(data,handler) {
