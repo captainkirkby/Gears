@@ -21,8 +21,8 @@ METHOD = usb
 
 # --------------------------------------------------------------------------
 # The MCU architecture to build for
+# Select '644' for the ATMega644a device
 # Select '328' for the ATMega328p device
-# Select '168' for the ATMega168 device
 # --------------------------------------------------------------------------
 DEVICE = 328
 
@@ -66,19 +66,19 @@ LOCAL_CPP_SRC = Adafruit_BMP085_U.cpp Wire.cpp
 # Target device configuration
 # ==========================================================================
 
-ifeq ($(DEVICE),168)
+ifeq ($(DEVICE),644)
 		VARIANT = standard
-		MCU = atmega168
-		BUILD_DIR = build.168
-		AVR_FUSES = -u -U efuse:w:0x01:m -U hfuse:w:0xD7:m -U lfuse:w:0xff:m
-else
+		MCU = atmega644
+		BUILD_DIR = build.644
+		##AVR_FUSES = -u -U efuse:w:0x01:m -U hfuse:w:0xD7:m -U lfuse:w:0xff:m
+else ifeq ($(DEVICE),328)
 		VARIANT = standard
 		MCU = atmega328p
 		BUILD_DIR = build.328
 		## 5V 16MHz full-swing oscillator
 		#AVR_FUSES = -u -U efuse:w:0x07:m -U hfuse:w:0xD1:m -U lfuse:w:0xF7:m
 		## 5V 16MHz low-power oscillator
-		AVR_FUSES = -u -U efuse:w:0x07:m -U hfuse:w:0xD1:m -U lfuse:w:0xFF:m
+		##AVR_FUSES = -u -U efuse:w:0x07:m -U hfuse:w:0xD1:m -U lfuse:w:0xFF:m
 		## 3.3V 2 MHz full-swing oscillator
 		#AVR_FUSES = -u -U efuse:w:0x07:m -U hfuse:w:0xD1:m -U lfuse:w:0x77:m        
 		## 3.3V 2 MHz low-power oscillator
