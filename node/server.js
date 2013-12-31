@@ -72,6 +72,7 @@ async.parallel({
 			// Defines the schema and model for our serial boot packets
 			var bootPacketSchema = mongoose.Schema({
 				timestamp: { type: Date, index: true },
+				serialNumber: String,
 				bmpSensorOk: Boolean,
 				gpsSerialOk: Boolean,
 				commitTimestamp: Date,
@@ -105,7 +106,7 @@ async.parallel({
 			// Logs TickTock packets from the serial port into the database.
 			console.log('starting data logger with',config);
 			// Initializes our binary packet assembler to initially only accept a boot packet.
-			var assembler = new packet.Assembler(0xFE,3,{0x00:27});
+			var assembler = new packet.Assembler(0xFE,3,{0x00:31});
 			// Handles incoming chunks of binary data from the device.
 			config.port.on('data',function(data) {
 				receive(data,assembler,config.db.bootPacketModel,config.db.dataPacketModel);
@@ -142,11 +143,12 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			for(var offset = 6; offset < 26; offset++) hash += sprintf("%02x",buf.readUInt8(offset));
 			p = new bootPacketModel({
 				'timestamp': new Date(),
-				'bmpSensorOk': buf.readUInt8(0),
-				'gpsSerialOk': buf.readUInt8(1),
-				'commitTimestamp': new Date(buf.readUInt32LE(2)*1000),
+				'serialNumber': sprintf("%08x",buf.readUInt32LE(0)),
+				'bmpSensorOk': buf.readUInt8(4),
+				'gpsSerialOk': buf.readUInt8(5),
+				'commitTimestamp': new Date(buf.readUInt32LE(6)*1000),
 				'commitHash': hash,
-				'commitStatus': buf.readUInt8(26)
+				'commitStatus': buf.readUInt8(30)
 			});
 			// After seeing a boot packet, we accept data packets.
 			assembler.addPacketType(0x01,32);

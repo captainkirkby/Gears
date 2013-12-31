@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <Adafruit_BMP085_U.h>
+#include <avr/eeprom.h>
 
 #include "packet.h"
 
@@ -12,7 +13,7 @@ Adafruit_BMP085_Unified bmpSensor = Adafruit_BMP085_Unified(10085);
 // Declares and initializes our boot info packet.
 BootPacket bootPacket = {
 	START_BYTE, START_BYTE, START_BYTE, BOOT_PACKET,
-	0,0,
+	0,0,0,
 #ifdef COMMIT_INFO
     COMMIT_INFO
 #elif
@@ -25,11 +26,13 @@ DataPacket dataPacket;
 void setup() {
 	// We assume that someone is listening since, even if this were not true, who would we tell?
 	Serial.begin(BAUD_RATE);
+	// Copies our serial number from EEPROM address 0x10 into the boot packet
+	bootPacket.serialNumber = eeprom_read_dword((uint32_t*)0x10);
 	// Initializes the BMP air pressure & temperature sensor communication via I2C
 	if(bmpSensor.begin()) bootPacket.bmpSensorOk = 1;
 	// Initializes the GPS serial communication
 	// ...
-	// bootpacket.gpsSerialOk = 1;
+	// bootPacket.gpsSerialOk = 1;
 	// ...
 	// Sends our boot packet.
 	Serial.write((const uint8_t*)&bootPacket,sizeof(bootPacket));
