@@ -116,6 +116,8 @@ async.parallel({
 		// Serves a dynamically generated information page.
 		app.get('/about', function(req, res) { return about(req,res,config); });
 		if(config.db) {
+			// Serves boot packet info.
+			app.get('/boot', function(req,res) { return boot(req,res,config.db.bootPacketModel); });
 			// Serves data dynamically via AJAX.
 			app.get('/fetch', function(req,res) { return fetch(req,res,config.db.dataPacketModel); });
 		}
@@ -176,6 +178,13 @@ function about(req,res,config) {
 			'Connected to db "' + config.db.connection.name + '" at ' +
 			config.db.connection.host + ':' + config.db.connection.port)) + '<br/>'
 	);
+}
+
+// Responds to a request to view boot info.
+function boot(req,res,bootPacketModel) {
+	bootPacketModel.find()
+		.limit(10).sort([['timestamp', -1]])
+		.exec(function(err,results) { res.send(results); });
 }
 
 // Responds to a request to fetch data.
