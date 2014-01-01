@@ -1,8 +1,9 @@
 #ifndef PINS_H
 #define PINS_H
 
-#define LED_GREEN	18
-#define LED_YELLOW	19
-//#define LED_RED		22
+// Defines pins for the custom TickTock circuit
+#define LED_GREEN	20
+#define LED_YELLOW	21
+#define LED_RED		22
 
 #endif

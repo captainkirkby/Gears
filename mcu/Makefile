@@ -79,6 +79,8 @@ ifeq ($(DEVICE),644)
 		AVR_FUSES = -u -U lfuse:w:0xe0:m -U hfuse:w:0xd0:m -U efuse:w:0xff:m
 		# board is clocked at 10MHz
 		F_CPU = 10000000
+		# use our own mapping of device pins to Arduino pins
+		PINS_INC_DIR = include.644
 else ifeq ($(DEVICE),328)
 		# Target device is an Arduino
 		MCU = atmega328p
@@ -89,6 +91,8 @@ else ifeq ($(DEVICE),328)
 		AVR_FUSES = -u -U lfuse:w:0xf7:m -U hfuse:w:0xd0:m -U efuse:w:0xff:m
 		# board is clocked at 16MHz
 		F_CPU = 16000000
+		# use the standard mapping of device pins to Arduino pins
+		PINS_INC_DIR = $(INSTALL_DIR)/hardware/arduino/variants/standard
 endif
 
 # ==========================================================================
@@ -141,10 +145,8 @@ CDEFS = -DF_CPU=$(F_CPU) -DARDUINO=100
 CXXDEFS = -DF_CPU=$(F_CPU) -DARDUINO=100
 
 # Place -I options here
-VARIANTSDIR = $(INSTALL_DIR)/hardware/arduino/variants
-
-CINCS = -I$(ARDUINO) -I$(VARIANTSDIR)/$(VARIANT)
-CXXINCS = -I$(ARDUINO) -I$(VARIANTSDIR)/$(VARIANT)
+CINCS = -I$(ARDUINO) -I$(PINS_INC_DIR)
+CXXINCS = -I$(ARDUINO) -I$(PINS_INC_DIR)
 
 # Compiler flag to set the C Standard level.
 # c89   - "ANSI" C

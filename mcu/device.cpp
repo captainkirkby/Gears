@@ -28,16 +28,16 @@ void setup() {
 	// Initialize I/O pins.
 	pinMode(LED_GREEN,OUTPUT);
 	pinMode(LED_YELLOW,OUTPUT);
-	//pinMode(LED_RED,OUTPUT);
+	pinMode(LED_RED,OUTPUT);
 
 	while(1) {
 		digitalWrite(LED_GREEN,LOW);
 		digitalWrite(LED_YELLOW,LOW);
-		//digitalWrite(LED_RED,LOW);
+		digitalWrite(LED_RED,LOW);
 		delay(500);
 		digitalWrite(LED_GREEN,HIGH);
 		digitalWrite(LED_YELLOW,HIGH);
-		//digitalWrite(LED_RED,HIGH);
+		digitalWrite(LED_RED,HIGH);
 		delay(500);
 	}
 
