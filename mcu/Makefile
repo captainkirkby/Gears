@@ -17,14 +17,14 @@ TARGET = device
 # Select 'spi' to program an AVR directly via its ISP port using an avrisp2
 # Select 'tiny' to program an AVR directly via its ISP port using a usbtiny
 # --------------------------------------------------------------------------
-METHOD = usb
+METHOD = tiny
 
 # --------------------------------------------------------------------------
 # The MCU architecture to build for
-# Select '644' for the ATMega644a device
-# Select '328' for the ATMega328p device
+# Select '644' for the ATMega644a device in a custom TickTock circuit
+# Select '328' for the ATMega328p device in an Arduino or equivalent
 # --------------------------------------------------------------------------
-DEVICE = 328
+DEVICE = 644
 
 # --------------------------------------------------------------------------
 # The location of the Arduino installation to use
@@ -64,28 +64,32 @@ LOCAL_CPP_SRC = Adafruit_BMP085_U.cpp Wire.cpp
 
 # ==========================================================================
 # Target device configuration
+# Fuses set using http://www.engbedded.com/fusecalc
 # ==========================================================================
 
+VARIANT = standard
+
 ifeq ($(DEVICE),644)
-		VARIANT = standard
+		# Target device is a TickTock custom circuit
 		MCU = atmega644
 		BUILD_DIR = build.644
-		##AVR_FUSES = -u -U efuse:w:0x01:m -U hfuse:w:0xD7:m -U lfuse:w:0xff:m
+		# LOW = SUT0+CKSEK3+CKSEL2+CKSEL1+CKSEL0
+		# HIGH = SPIEN+EESAVE+BOOTSZ1+BOOTSZ0+BOOTRST
+		# EXTENDED = (none set)
+		AVR_FUSES = -u -U lfuse:w:0xe0:m -U hfuse:w:0xd0:m -U efuse:w:0xff:m
+		# board is clocked at 10MHz
+		F_CPU = 10000000
 else ifeq ($(DEVICE),328)
-		VARIANT = standard
+		# Target device is an Arduino
 		MCU = atmega328p
 		BUILD_DIR = build.328
-		## 5V 16MHz full-swing oscillator
-		#AVR_FUSES = -u -U efuse:w:0x07:m -U hfuse:w:0xD1:m -U lfuse:w:0xF7:m
-		## 5V 16MHz low-power oscillator
-		##AVR_FUSES = -u -U efuse:w:0x07:m -U hfuse:w:0xD1:m -U lfuse:w:0xFF:m
-		## 3.3V 2 MHz full-swing oscillator
-		#AVR_FUSES = -u -U efuse:w:0x07:m -U hfuse:w:0xD1:m -U lfuse:w:0x77:m        
-		## 3.3V 2 MHz low-power oscillator
-		#AVR_FUSES = -u -U efuse:w:0x07:m -U hfuse:w:0xD1:m -U lfuse:w:0x7F:m        
+		# LOW = CKSEL3
+		# HIGH = SPIEN+EESAVE+BOOTSZ1+BOOTSZ0+BOOTRST
+		# EXTENDED = (none set)
+		AVR_FUSES = -u -U lfuse:w:0xf7:m -U hfuse:w:0xd0:m -U efuse:w:0xff:m
+		# board is clocked at 16MHz
+		F_CPU = 16000000
 endif
-
-F_CPU = 16000000
 
 # ==========================================================================
 # Programmer configuration
