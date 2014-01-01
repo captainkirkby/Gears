@@ -327,23 +327,10 @@ $(BUILD_DIR)/core.a: $(LIBOBJ)
 .S.o:
 		$(CC) -c $(ALL_ASFLAGS) $< -o $@
 
-
-
-# Target: clean project.
+# Clean project.
 clean:
 		$(REMOVE) $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET).eep $(BUILD_DIR)/$(TARGET).cof $(BUILD_DIR)/$(TARGET).elf \
 		$(BUILD_DIR)/$(TARGET).map $(BUILD_DIR)/$(TARGET).sym $(BUILD_DIR)/$(TARGET).lss $(BUILD_DIR)/core.a \
 		$(LIBOBJ) $(SRC:.c=.s) $(SRC:.c=.d) $(CXXSRC:.cpp=.s) $(CXXSRC:.cpp=.d)
 
-depend:
-		if grep '^# DO NOT DELETE' $(MAKEFILE) >/dev/null; \
-		then \
-				sed -e '/^# DO NOT DELETE/,$$d' $(MAKEFILE) > \
-						$(MAKEFILE).$$$$ && \
-				$(MV) $(MAKEFILE).$$$$ $(MAKEFILE); \
-		fi
-		echo '# DO NOT DELETE THIS LINE -- make depend depends on it.' \
-				>> $(MAKEFILE); \
-		$(CC) -M -mmcu=$(MCU) $(CDEFS) $(CINCS) $(SRC) $(ASRC) >> $(MAKEFILE)
-
-.PHONY:        all $(BUILD_DIR) elf hex eep lss sym program coff extcoff clean depend
+.PHONY:        all $(BUILD_DIR) elf hex eep lss sym program coff extcoff clean
