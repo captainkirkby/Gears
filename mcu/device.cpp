@@ -3,6 +3,7 @@
 #include <avr/eeprom.h>
 
 #include "packet.h"
+#include "pins.h"
 
 //Constants
 #define BAUD_RATE 115200
@@ -24,6 +25,22 @@ BootPacket bootPacket = {
 DataPacket dataPacket;
 
 void setup() {
+	// Initialize I/O pins.
+	pinMode(LED_GREEN,OUTPUT);
+	pinMode(LED_YELLOW,OUTPUT);
+	//pinMode(LED_RED,OUTPUT);
+
+	while(1) {
+		digitalWrite(LED_GREEN,LOW);
+		digitalWrite(LED_YELLOW,LOW);
+		//digitalWrite(LED_RED,LOW);
+		delay(500);
+		digitalWrite(LED_GREEN,HIGH);
+		digitalWrite(LED_YELLOW,HIGH);
+		//digitalWrite(LED_RED,HIGH);
+		delay(500);
+	}
+
 	// We assume that someone is listening since, even if this were not true, who would we tell?
 	Serial.begin(BAUD_RATE);
 	// Copies our serial number from EEPROM address 0x10 into the boot packet
