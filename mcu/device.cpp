@@ -7,8 +7,7 @@
 #include "leds.h"
 
 //Constants
-//#define BAUD_RATE 115200
-#define BAUD_RATE 9600
+#define BAUD_RATE 115200
 
 //Sensor object
 Adafruit_BMP085_Unified bmpSensor = Adafruit_BMP085_Unified(10085);
