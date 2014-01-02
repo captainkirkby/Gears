@@ -62,7 +62,6 @@ void loop() {
 		// Reads BMP sensors
 		bmpSensor.getTemperature(&dataPacket.temperature);
 		bmpSensor.getPressure(&dataPacket.pressure);
-		flashNumber(dataPacket.pressure);
 	}
 	// Sends binary packet data
 	Serial.write((const uint8_t*)&dataPacket,sizeof(dataPacket));
