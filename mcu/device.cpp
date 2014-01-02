@@ -4,6 +4,7 @@
 
 #include "packet.h"
 #include "pins.h"
+#include "leds.h"
 
 //Constants
 //#define BAUD_RATE 115200
@@ -30,24 +31,20 @@ void setup() {
 	pinMode(LED_GREEN,OUTPUT);
 	pinMode(LED_YELLOW,OUTPUT);
 	pinMode(LED_RED,OUTPUT);
-
-	while(1) {
-		digitalWrite(LED_GREEN,LOW);
-		digitalWrite(LED_YELLOW,LOW);
-		digitalWrite(LED_RED,LOW);
-		delay(500);
-		digitalWrite(LED_GREEN,HIGH);
-		digitalWrite(LED_YELLOW,HIGH);
-		digitalWrite(LED_RED,HIGH);
-		delay(500);
-	}
-
+	// Turn all LEDs on then off (0.5s + 0.5s)
+	LED_ON(GREEN); LED_ON(YELLOW); LED_ON(RED);
+	delay(500);
+	LED_OFF(GREEN); LED_OFF(YELLOW); LED_OFF(RED);
+	delay(500);
 	// We assume that someone is listening since, even if this were not true, who would we tell?
 	Serial.begin(BAUD_RATE);
 	// Copies our serial number from EEPROM address 0x10 into the boot packet
 	bootPacket.serialNumber = eeprom_read_dword((uint32_t*)0x10);
 	// Initializes the BMP air pressure & temperature sensor communication via I2C
-	if(bmpSensor.begin()) bootPacket.bmpSensorOk = 1;
+	if(bmpSensor.begin()) {
+		bootPacket.bmpSensorOk = 1;
+		LED_ON(GREEN);
+	}
 	// Initializes the GPS serial communication
 	// ...
 	// bootPacket.gpsSerialOk = 1;
@@ -71,6 +68,7 @@ void loop() {
 	Serial.write((const uint8_t*)&dataPacket,sizeof(dataPacket));
 	// Waits for about 1 sec...
 	delay(1000);
+	LED_TOGGLE(YELLOW);
 }
 
 int main(void) {
