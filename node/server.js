@@ -34,7 +34,15 @@ async.parallel({
 						ttyCallback(port.manufacturer == 'FTDI');
 					},
 					// Forwards the corresponding tty device name.
-					function(firstFtdiPort) { portCallback(null,firstFtdiPort.comName); }
+					function(firstFtdiPort) {
+						if(firstFtdiPort == undefined) {
+							// No suitable tty found
+							portCallback(new Error('No FTDI tty port found'));
+						}
+						else {
+							portCallback(null,firstFtdiPort.comName);
+						}
+					}
 					);
 				});
 			},
