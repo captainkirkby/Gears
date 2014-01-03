@@ -173,6 +173,11 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			lastDataSequenceNumber = 0;
 		}
 		else if(ptype == 0x01) {
+			// Calculates the thermistor resistance in ohms assuming 100uA current source.
+			var rtherm = buf.readUInt16LE(24)/65536.0*5.0/100e-6;
+			// Calculates the corresponding temperature in degC using a Steinhart-Hart model.
+			var logr = Math.log(rtherm);
+			var ttherm = 1.0/(0.000878844 + 0.000231913*logr + 7.70349e-8*logr*logr*logr) - 273.15;
 			// Prepares data packet for storing to the database.
 			// NB: the data packet layout is hardcoded here!
 			p = new dataPacketModel({
@@ -180,7 +185,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 				'sequenceNumber': buf.readInt32LE(0),
 				'temperature': buf.readInt32LE(16)/160.0,
 				'pressure': buf.readInt32LE(20),
-				'thermistor': buf.readUInt16LE(24),
+				'thermistor': ttherm,
 				// use nominal 1st order fit from sensor datasheet to calculate RH in %
 				'humidity': (buf.readUInt16LE(26)/65536.0 - 0.1515)/0.00636,
 				// convert IR level to volts
