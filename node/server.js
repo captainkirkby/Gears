@@ -152,6 +152,7 @@ async.parallel({
 // updated value of remaining that should be used for the next call.
 function receive(data,assembler,bootPacketModel,dataPacketModel) {
 	assembler.ingest(data,function(ptype,buf) {
+		var saveMe = true;
 		if(ptype == 0x00) {
 			// Prepares boot packet for storing to the database.
 			// NB: the boot packet layout is hardcoded here!
@@ -197,15 +198,24 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 					p.sequenceNumber,lastDataSequenceNumber+1);
 			}
 			lastDataSequenceNumber = p.sequenceNumber;
+			// Never save the first packet since there is usually a startup glitch
+			// where the serial port sees a second boot packet arriving during the first
+			// data packet that still needs to be debugged...
+			if(lastDataSequenceNumber == 1) saveMe = false;
 		}
 		else {
 			console.log('Got unexpected packet type',ptype);
 			return;
 		}
-		console.log(p);
-		p.save(function(err,p) {
-			if(err) console.log('Error saving data packet',p);
-		});
+		if(saveMe) {
+			console.log(p);
+			p.save(function(err,p) {
+				if(err) console.log('Error saving data packet',p);
+			});
+		}
+		else {
+			console.log('Packet not saved to db.');
+		}
 	});
 }
 
