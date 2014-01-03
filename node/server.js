@@ -181,7 +181,8 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 				'temperature': buf.readInt32LE(16)/160.0,
 				'pressure': buf.readInt32LE(20),
 				'thermistor': buf.readUInt16LE(24),
-				'humidity': buf.readUInt16LE(26),
+				// use nominal 1st order fit from sensor datasheet to calculate RH in %
+				'humidity': (buf.readUInt16LE(26)/65536.0 - 0.1515)/0.00636,
 				'irLevel': buf.readUInt16LE(28)
 			});
 			// Checks for a packet sequence error.
