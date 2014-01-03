@@ -55,7 +55,10 @@ void setup() {
 	// bootPacket.gpsSerialOk = 1;
 	// ...
 	// Sends our boot packet.
+	LED_ON(RED);
 	Serial.write((const uint8_t*)&bootPacket,sizeof(bootPacket));
+	delay(500);
+	LED_OFF(RED);
 
 	// Initializes the constant header of our data packet
 	dataPacket.start[0] = START_BYTE;
