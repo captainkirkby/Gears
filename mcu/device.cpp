@@ -9,10 +9,10 @@
 //Constants
 #define BAUD_RATE 115200
 
-//Sensor object
+// Creates our BMP interface object
 Adafruit_BMP085_Unified bmpSensor = Adafruit_BMP085_Unified(10085);
 
-// Declares and initializes our boot info packet.
+// Declares and initializes our boot info packet
 BootPacket bootPacket = {
 	START_BYTE, START_BYTE, START_BYTE, BOOT_PACKET,
 	0,0,0,
@@ -23,20 +23,26 @@ BootPacket bootPacket = {
 #endif
 };
 
+// Declares the data packet we will transmit periodically
 DataPacket dataPacket;
 
 void setup() {
-	// Initialize I/O pins.
+
+	// Initializes our I/O pins
 	pinMode(LED_GREEN,OUTPUT);
 	pinMode(LED_YELLOW,OUTPUT);
 	pinMode(LED_RED,OUTPUT);
-	// Turn all LEDs on then off (0.5s + 0.5s)
+	analogWrite(PWM_IR_LED,0); // pinMode init not necessary for PWM function
+
+	// Turns all LEDs on then off (0.5s + 0.5s)
 	LED_ON(GREEN); LED_ON(YELLOW); LED_ON(RED);
 	delay(500);
 	LED_OFF(GREEN); LED_OFF(YELLOW); LED_OFF(RED);
 	delay(500);
-	// We assume that someone is listening since, even if this were not true, who would we tell?
+
+	// Initializes serial communications
 	Serial.begin(BAUD_RATE);
+
 	// Copies our serial number from EEPROM address 0x10 into the boot packet
 	bootPacket.serialNumber = eeprom_read_dword((uint32_t*)0x10);
 	// Initializes the BMP air pressure & temperature sensor communication via I2C
@@ -50,7 +56,8 @@ void setup() {
 	// ...
 	// Sends our boot packet.
 	Serial.write((const uint8_t*)&bootPacket,sizeof(bootPacket));
-	// Initializes the constant header of our data packet.
+
+	// Initializes the constant header of our data packet
 	dataPacket.start[0] = START_BYTE;
 	dataPacket.start[1] = START_BYTE;
 	dataPacket.start[2] = START_BYTE;
