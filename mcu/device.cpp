@@ -10,7 +10,7 @@
 #define BAUD_RATE 115200
 
 // Creates our BMP interface object
-Adafruit_BMP085_Unified bmpSensor = Adafruit_BMP085_Unified(10085);
+Adafruit_BMP085_Unified bmpSensor = Adafruit_BMP085_Unified();
 
 // Declares and initializes our boot info packet
 BootPacket bootPacket = {

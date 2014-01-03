@@ -215,9 +215,7 @@ static void readRawPressure(int32_t *pressure)
     @brief  Instantiates a new Adafruit_BMP085_Unified class
 */
 /**************************************************************************/
-Adafruit_BMP085_Unified::Adafruit_BMP085_Unified(int32_t sensorID) {
-  _sensorID = sensorID;
-}
+Adafruit_BMP085_Unified::Adafruit_BMP085_Unified() { }
 
 /***************************************************************************
  PUBLIC FUNCTIONS
