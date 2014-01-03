@@ -6,8 +6,9 @@
 #include "pins.h"
 #include "leds.h"
 
-//Constants
-#define BAUD_RATE 115200
+// Uses the fastest baud rate that can be synthesized from a 10 MHz clock with <2% error
+// See http://www.wormfood.net/avrbaudcalc.php for details on how this is calculated.
+#define BAUD_RATE 76800
 
 // Creates our BMP interface object
 Adafruit_BMP085_Unified bmpSensor = Adafruit_BMP085_Unified();
