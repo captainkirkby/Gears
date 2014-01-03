@@ -91,6 +91,7 @@ async.parallel({
 			// Defines the schema and model for our serial data packets
 			var dataPacketSchema = mongoose.Schema({
 				timestamp: { type: Date, index: true },
+				sequenceNumber: Number,
 				temperature: Number,
 				pressure: Number
 			});
@@ -114,6 +115,7 @@ async.parallel({
 			// Logs TickTock packets from the serial port into the database.
 			console.log('starting data logger with',config);
 			// Initializes our binary packet assembler to initially only accept a boot packet.
+			// NB: the boot packet size is hardcoded here!
 			var assembler = new packet.Assembler(0xFE,3,{0x00:31});
 			// Handles incoming chunks of binary data from the device.
 			config.port.on('data',function(data) {
@@ -146,7 +148,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 		console.log('assembled type',ptype,buf);
 		if(ptype == 0x00) {
 			// Prepares boot packet for storing to the database.
-			// NB: packet layout is hardcoded here!
+			// NB: the boot packet layout is hardcoded here!
 			hash = '';
 			for(var offset = 6; offset < 26; offset++) hash += sprintf("%02x",buf.readUInt8(offset));
 			p = new bootPacketModel({
@@ -159,15 +161,17 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 				'commitStatus': buf.readUInt8(30)
 			});
 			// After seeing a boot packet, we accept data packets.
-			assembler.addPacketType(0x01,32);
+			// NB: the data packet size is hardcoded here!
+			assembler.addPacketType(0x01,40);
 		}
 		else if(ptype == 0x01) {
 			// Prepares data packet for storing to the database.
-			// NB: packet layout is hardcoded here!
+			// NB: the data packet layout is hardcoded here!
 			p = new dataPacketModel({
 				'timestamp': new Date(),
-				'temperature': buf.readInt32LE(12)/160.0,
-				'pressure': buf.readInt32LE(16)
+				'sequenceNumber': buf.readInt32LE(0),
+				'temperature': buf.readInt32LE(16)/160.0,
+				'pressure': buf.readInt32LE(20)
 			});
 		}
 		else {
