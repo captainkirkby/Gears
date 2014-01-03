@@ -11,6 +11,9 @@ var packet = require('./packet');
 
 sprintf = require('sprintf').sprintf;
 
+// Tracks the last seen data packet sequence number to enable sequencing errors to be detected.
+var lastDataSequenceNumber = 0;
+
 // Parses command-line arguments.
 var noSerial = false;
 var noDatabase = false;
@@ -57,6 +60,8 @@ async.parallel({
 				port.on('open',function(err) {
 					if(err) return portCallback(err);
 					console.log('Port open');
+					// Flushes any pending data in the buffer.
+					port.flush();
 					// Forwards the open serial port.
 					portCallback(null,port);
 				});
@@ -115,8 +120,8 @@ async.parallel({
 			// Logs TickTock packets from the serial port into the database.
 			console.log('starting data logger with',config);
 			// Initializes our binary packet assembler to initially only accept a boot packet.
-			// NB: the boot packet size is hardcoded here!
-			var assembler = new packet.Assembler(0xFE,3,{0x00:31});
+			// NB: the maximum and boot packet sizes are hardcoded here!
+			var assembler = new packet.Assembler(0xFE,3,64,{0x00:31},0);
 			// Handles incoming chunks of binary data from the device.
 			config.port.on('data',function(data) {
 				receive(data,assembler,config.db.bootPacketModel,config.db.dataPacketModel);
@@ -143,9 +148,7 @@ async.parallel({
 // Receives a new chunk of binary data from the serial port and returns the
 // updated value of remaining that should be used for the next call.
 function receive(data,assembler,bootPacketModel,dataPacketModel) {
-	console.log('remaining',assembler.remaining,'received',data);
 	assembler.ingest(data,function(ptype,buf) {
-		console.log('assembled type',ptype,buf);
 		if(ptype == 0x00) {
 			// Prepares boot packet for storing to the database.
 			// NB: the boot packet layout is hardcoded here!
@@ -163,6 +166,8 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			// After seeing a boot packet, we accept data packets.
 			// NB: the data packet size is hardcoded here!
 			assembler.addPacketType(0x01,40);
+			// Resets the last seen sequence number.
+			lastDataSequenceNumber = 0;
 		}
 		else if(ptype == 0x01) {
 			// Prepares data packet for storing to the database.
@@ -173,6 +178,12 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 				'temperature': buf.readInt32LE(16)/160.0,
 				'pressure': buf.readInt32LE(20)
 			});
+			// Checks for a packet sequence error.
+			if(p.sequenceNumber != lastDataSequenceNumber+1) {
+				console.log('Got packet #%d when expecting packet #%d',
+					p.sequenceNumber,lastDataSequenceNumber+1);
+			}
+			lastDataSequenceNumber = p.sequenceNumber;
 		}
 		else {
 			console.log('Got unexpected packet type',ptype);
