@@ -98,7 +98,10 @@ async.parallel({
 				timestamp: { type: Date, index: true },
 				sequenceNumber: Number,
 				temperature: Number,
-				pressure: Number
+				pressure: Number,
+				thermistor: Number,
+				humidity: Number,
+				irLevel: Number
 			});
 			var dataPacketModel = mongoose.model('dataPacketModel',dataPacketSchema);
 			// Propagates our database connection and db models to data logger.
@@ -176,7 +179,10 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 				'timestamp': new Date(),
 				'sequenceNumber': buf.readInt32LE(0),
 				'temperature': buf.readInt32LE(16)/160.0,
-				'pressure': buf.readInt32LE(20)
+				'pressure': buf.readInt32LE(20),
+				'thermistor': buf.readUInt16LE(24),
+				'humidity': buf.readUInt16LE(26),
+				'irLevel': buf.readUInt16LE(28)
 			});
 			// Checks for a packet sequence error.
 			if(p.sequenceNumber != lastDataSequenceNumber+1) {
