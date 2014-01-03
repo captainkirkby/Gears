@@ -11,12 +11,12 @@
 #define LED_RED			22
 
 // ADC inputs
-#define ADC_RELHUMIDITY	30
+#define ADC_HUMIDITY	30
 #define ADC_THERMISTOR	28
-#define ADC_PHOTODIODE	27
+#define ADC_IR_IN		27
 
 // PWM outputs
-#define PWM_IR_LED		15
+#define PWM_IR_OUT		15
 
 // ICP inputs
 #define GPS_1PPS		14

@@ -30,6 +30,8 @@ typedef struct {
 	// Header
 	uint8_t start[3];
 	uint8_t type;
+	// Packet sequence number
+	uint32_t sequenceNumber;
 	// GPS timing info
 	uint16_t gpsAlarms;
 	uint16_t gpsStatus;
@@ -41,6 +43,10 @@ typedef struct {
 	int32_t pressure;		// in Pascals
 	// block thermistor reading
 	uint16_t thermistor;	// in ADC counts
+	// relative humidity reading
+	uint16_t humidity;		// in ADC counts
+	// PIN diode IR light level
+	uint16_t irLevel;
 	// IR sensor raw ADC readings
 	uint16_t rawPhase;
 	uint8_t raw[NUM_RAW_BYTES];

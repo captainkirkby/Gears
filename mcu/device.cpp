@@ -32,7 +32,7 @@ void setup() {
 	pinMode(LED_GREEN,OUTPUT);
 	pinMode(LED_YELLOW,OUTPUT);
 	pinMode(LED_RED,OUTPUT);
-	analogWrite(PWM_IR_LED,0); // pinMode init not necessary for PWM function
+	analogWrite(PWM_IR_OUT,0); // pinMode init not necessary for PWM function
 
 	// Turns all LEDs on then off (0.5s + 0.5s)
 	LED_ON(GREEN); LED_ON(YELLOW); LED_ON(RED);
@@ -62,13 +62,26 @@ void setup() {
 	dataPacket.start[1] = START_BYTE;
 	dataPacket.start[2] = START_BYTE;
 	dataPacket.type = DATA_PACKET;
+	dataPacket.sequenceNumber = 0;
 }
 
 void loop() {
+	// Updates our sequence number for the next packet
+	dataPacket.sequenceNumber++;
+	// Reads out the BMP sensor if we have one available
 	if(bootPacket.bmpSensorOk) {
 		// Reads BMP sensors
 		bmpSensor.getTemperature(&dataPacket.temperature);
 		bmpSensor.getPressure(&dataPacket.pressure);
+	}
+	// Reads out the ADC channels with 64x oversampling.
+	// We add the samples since the sum of 64 10-bit samples fully uses the available
+	// 16 bits without any overflow.
+	dataPacket.thermistor = dataPacket.humidity = dataPacket.irLevel = 0;
+	for(uint8_t count = 0; count < 64; ++count) {
+		dataPacket.thermistor += (uint16_t)analogRead(ADC_THERMISTOR);
+		dataPacket.humidity += (uint16_t)analogRead(ADC_HUMIDITY);
+		dataPacket.irLevel += (uint16_t)analogRead(ADC_IR_IN);
 	}
 	// Sends binary packet data
 	Serial.write((const uint8_t*)&dataPacket,sizeof(dataPacket));
