@@ -183,7 +183,8 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 				'thermistor': buf.readUInt16LE(24),
 				// use nominal 1st order fit from sensor datasheet to calculate RH in %
 				'humidity': (buf.readUInt16LE(26)/65536.0 - 0.1515)/0.00636,
-				'irLevel': buf.readUInt16LE(28)
+				// convert IR level to volts
+				'irLevel': buf.readUInt16LE(28)/65536.0*5.0
 			});
 			// Checks for a packet sequence error.
 			if(p.sequenceNumber != lastDataSequenceNumber+1) {
