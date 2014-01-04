@@ -77,6 +77,8 @@ ifeq ($(DEVICE),644)
 		# HIGH = SPIEN+EESAVE+BOOTSZ1+BOOTSZ0+BOOTRST
 		# EXTENDED = (none set)
 		AVR_FUSES = -u -U lfuse:w:0xe0:m -U hfuse:w:0xd0:m -U efuse:w:0xff:m
+		# boot flash section size = 4096 and bootloader starts at 0x7000
+		BOOTSTART = 0x7000
 		# board is clocked at 10MHz
 		F_CPU = 10000000
 		# use our own mapping of device pins to Arduino pins
@@ -190,6 +192,12 @@ ALL_ASFLAGS = -mmcu=$(MCU) -I. -x assembler-with-cpp $(ASFLAGS)
 # --------------------------------------------------------------------------
 all: $(BUILD_DIR)
 		$(SIZE) --target=$(FORMAT) $(BUILD_DIR)/$(TARGET).hex
+
+# --------------------------------------------------------------------------
+# Compiles and links the bootloader binary.
+# --------------------------------------------------------------------------
+boot: optiboot.c boot.h pin_defs.h stk500.h
+		$(CC) -mmcu=$(MCU) -DF_CPU=$(F_CPU) -DLED_START_FLASHES=3 -DLED_DATA_FLASH -Wl,--section-start=.text=$(BOOTSTART) -o $(BUILD_DIR)/boot.elf optiboot.c
 
 # --------------------------------------------------------------------------
 # Special target to initialize MCU fuses
