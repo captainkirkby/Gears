@@ -265,6 +265,6 @@ function fetch(req,res,dataPacketModel) {
 	dataPacketModel.find()
 		.where('timestamp').gt(from).lte(to)
 		.limit(1000).sort([['timestamp', -1]])
-		.select('timestamp temperature pressure')
+		.select('timestamp temperature pressure thermistor humidity irLevel')
 		.exec(function(err,results) { res.send(results); });
 }

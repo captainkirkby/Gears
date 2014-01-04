@@ -34,9 +34,11 @@ $(function() {
 
 			var count = 0;
 
-			displaySet("irLevel", smoothing, NUM_PRESSURE_SAMPLES);
 			displaySet("temperature", smoothing, NUM_TEMPERATURE_SAMPLES);
 			displaySet("pressure", smoothing, NUM_PRESSURE_SAMPLES);
+			displaySet("irLevel", smoothing, NUM_PRESSURE_SAMPLES);
+			displaySet("thermistor", smoothing, NUM_PRESSURE_SAMPLES);
+			displaySet("humidity", smoothing, NUM_PRESSURE_SAMPLES);
 
 
 			function displaySet(name, dataSmoothing, smoothingAmount){
