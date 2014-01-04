@@ -14,7 +14,6 @@ $(function() {
 			"to" : to
 		});
 		
-		//alert(dataURL);
 		var NUM_TEMPERATURE_SAMPLES = 11;		// o o X o o
 		var NUM_PRESSURE_SAMPLES = 55;
 
@@ -22,15 +21,6 @@ $(function() {
 
 		function onDataRecieved(data){
 			var dataSet = [];
-			// var temperatureSet = [];
-			// var pressureSet = [];
-
-			// var smoothTemperatureSet = [];
-			// var smoothPressureSet = [];
-
-			// // Number of samples to average with (must be an odd number)
-			// var NUM_TEMPERATURE_SAMPLES = 11;		// o o X o o
-			// var NUM_PRESSURE_SAMPLES = 55;
 
 			var count = 0;
 
@@ -76,10 +66,7 @@ $(function() {
 			}
 
 			function smoothPoints(field, index, smoothingRadius){
-				//console.log(index);
-				//console.log(smoothingRadius);
 				if(smoothingRadius < 1){
-					//console.log("Smallest radius reached");
 					return data[index][field];
 				}
 
@@ -102,26 +89,6 @@ $(function() {
 
 				return sum/smoothingRadius;
 			}
-
-			// // Iterate through retrieved data
-			// for(var index=0;index<data.length;index++){
-			// 	//Get timestamp as a date object
-			// 	var date = new Date(Date.parse(data[index].timestamp));
-
-			// 	temperatureSet.push([date, data[index].temperature]);
-			// 	pressureSet.push([date, data[index].pressure]);
-
-			// 	smoothTemperatureSet.push([date, smoothPoints("temperature", index, NUM_TEMPERATURE_SAMPLES)]);
-			// 	smoothPressureSet.push([date, smoothPoints("pressure", index, NUM_PRESSURE_SAMPLES)]);
-			// }
-
-			// dataSet.push({ data: smoothing ? smoothTemperatureSet : temperatureSet , label: "Temperature (°C)", color : 0 },
-			// 	{ data: smoothing ? smoothPressureSet : pressureSet, label: "Pressure (Pa)", yaxis: 2, color : 1 });
-
-			// if(smoothing){
-			// 	dataSet.push({ data: temperatureSet, lines : { show : false}, points : {show : true, radius : 1}, color : 0},
-			// 	{ data: pressureSet, yaxis: 2, lines : { show : false}, points : {show : true, radius : 1}, color : 1  });
-			// }
 			
 			$.plot("#placeholder", dataSet, {
 				series : { shadowSize : 0},
