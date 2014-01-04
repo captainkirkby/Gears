@@ -110,7 +110,7 @@ else ifeq ($(METHOD),tiny)
 else
 		AVRDUDE_PORT = /dev/tty.usbserial*
 		AVRDUDE_PROGRAMMER = stk500v1
-		AVRDUDE_BAUDRATE = -b 28800
+		AVRDUDE_BAUDRATE = -b 115200
 endif
 
 AVRDUDE_WRITE_FLASH = -D -U flash:w:$(BUILD_DIR)/$(TARGET).hex
@@ -308,8 +308,8 @@ $(BUILD_DIR)/$(TARGET).elf: $(TARGET).cpp $(BUILD_DIR)/core.a
 
 # Provide different rules specifically for the bootloader. These override the previous generic rule
 # because they appear later in the makefile, and will generate warnings when using TARGET=boot.
-$(BUILD_DIR)/boot.elf: optiboot.c boot.h pin_defs.h stk500.h
-	$(CC) -mmcu=$(MCU) -DF_CPU=$(F_CPU) -DLED_START_FLASHES=3 -DLED_DATA_FLASH -Wl,--section-start=.text=$(BOOTSTART) -o $@ optiboot.c
+$(BUILD_DIR)/boot.elf: boot.cpp boot.h pin_defs.h stk500.h
+	$(CC) -mmcu=$(MCU) -DF_CPU=$(F_CPU) -DBAUD_RATE=115200 -DLED_START_FLASHES=3 -DLED_DATA_FLASH -Wl,--section-start=.text=$(BOOTSTART) -o $@ boot.cpp
 
 $(BUILD_DIR)/core.a: $(LIBOBJ)
 		@for i in $(LIBOBJ); do echo $(AR) rcs $(BUILD_DIR)/core.a $$i; $(AR) rcs $(BUILD_DIR)/core.a $$i; done
