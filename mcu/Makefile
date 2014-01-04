@@ -113,7 +113,7 @@ else
 		AVRDUDE_BAUDRATE = -b 28800
 endif
 
-AVRDUDE_WRITE_FLASH = -U flash:w:$(BUILD_DIR)/$(TARGET).hex
+AVRDUDE_WRITE_FLASH = -D -U flash:w:$(BUILD_DIR)/$(TARGET).hex
 
 CONFIG_FILE = config.dat
 AVRDUDE_WRITE_EEPROM = -U eeprom:w:$(CONFIG_FILE):s
