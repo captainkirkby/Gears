@@ -18,7 +18,7 @@ $(function() {
 		var NUM_TEMPERATURE_SAMPLES = 11;		// o o X o o
 		var NUM_PRESSURE_SAMPLES = 55;
 
-		//displaySet("name")
+		var POINT_SIZE = 0.5;
 
 		function onDataRecieved(data){
 			var dataSet = [];
@@ -54,10 +54,10 @@ $(function() {
 					smoothSet.push([date, smoothPoints(name, index, smoothingAmount)]);
 				}
 
-				dataSet.push({ data: dataSmoothing ? smoothSet : set , label: generateLabel(name), yaxis: (count + 1), color : count });
+				dataSet.push({ data: dataSmoothing ? smoothSet : set , label: generateLabel(name), yaxis: (count + 1), color : count});
 
 				if(smoothing){
-					dataSet.push({ data: set, lines : { show : false}, points : {show : true, radius : 1}, yaxis: (count + 1), color : count });
+					dataSet.push({ data: set, lines : { show : false}, points : {show : true, radius : POINT_SIZE}, yaxis: (count + 1), color : count });
 				}
 
 				count++;
@@ -124,6 +124,7 @@ $(function() {
 			// }
 			
 			$.plot("#placeholder", dataSet, {
+				series : { shadowSize : 0},
 				xaxes : [{ mode: "time", timezone: "browser" }],		//must include jquery.flot.time.min.js for this!
 				yaxes : [{}, { position: "right" }],
 				legend: {show : true, position : "nw" }
