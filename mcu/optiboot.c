@@ -234,7 +234,7 @@ void appStart() __attribute__ ((naked));
 #elif defined(__AVR_ATmega328P__)
 #define RAMSTART (0x100)
 #define NRWWSTART (0x7000)
-#elif defined (__AVR_ATmega644P__)
+#elif defined (__AVR_ATmega644P__) || defined (__AVR_ATmega644__)
 #define RAMSTART (0x100)
 #define NRWWSTART (0xE000)
 #elif defined(__AVR_ATtiny84__)
