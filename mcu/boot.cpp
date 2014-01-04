@@ -323,6 +323,9 @@ int main(void) {
   flash_led(LED_START_FLASHES * 2);
 #endif
 
+  // Start the application code immediately (for testing)
+  appStart();
+
   /* Forever loop */
   for (;;) {
     /* get character from UART */
