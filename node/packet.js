@@ -5,46 +5,61 @@
 
 exports.Assembler = Assembler;
 
-function Assembler(headerByte,headerSize,payloadSizes) {
+// Initializes a new Assembler for packets that begin with headerSize repetitions of headerByte
+// followed by a packet type byte and a payload. The payload size cannot exceed maxPayloadSize
+// and the expected payload size for different packet types that we initially accept are specified
+// in the payloadSizes dictionary. Additional packet types can be registered in the handler
+// passed to our ingest function (see below).
+function Assembler(headerByte,headerSize,maxPayloadSize,payloadSizes,debugLevel) {
 	this.remaining = 0;
 	this.packetType = null;
 	this.headerByte = headerByte;
 	this.headerSize = headerSize;
+	this.maxPayloadSize = maxPayloadSize;
 	this.payloadSizes = payloadSizes;
-	var maxPayloadSize = 0;
 	for(var type in payloadSizes) {
-		maxPayloadSize = Math.max(maxPayloadSize,payloadSizes[type]);
+		if(payloadSizes[type] > maxPayloadSize) {
+			throw new Error('Assembler: Packet payload size exceeds maxPayloadSize');
+		}
 	}
-	console.log('Initializing packet assembler with max payload size of',maxPayloadSize);
+	this.debugLevel = debugLevel;
+	if(this.debugLevel > 0) {
+		console.log('Initializing packet assembler with max payload size of',maxPayloadSize);
+	}
 	this.buffer = new Buffer(maxPayloadSize);	
 }
 
 Assembler.prototype.addPacketType = function(type,size) {
 	if(!(type in this.payloadSizes)) {
-		console.log('registering new packet type',type,'with payload size',size);
+		if(this.debugLevel > 0) {
+			console.log('registering new packet type',type,'with payload size',size);
+		}
 		this.payloadSizes[type] = size;
-		if(size > this.buffer.length) {
-			// Creates a new bigger buffer.
-			var newBuffer = new Buffer(size);
-			// Copies any pending data from our original buffer.
-			var pending = this.payloadSizes[this.packetType] - this.remaining;
-			this.buffer.copy(newBuffer,0,0,pending);
-			// Replaces the old buffer with the new buffer.
-			this.buffer = newBuffer;
+		if(size > this.maxPayloadSize) {
+			throw new Error('Assembler: new packet payload size exceeds maxPayloadSize');
 		}
 	}
 }
 
 Assembler.prototype.ingest = function(data,handler) {
+	if(this.debugLevel > 1) {
+		console.log('with',this.remaining,'remaining, received',data.length,data);
+	}
 	var nextAvail = 0;
 	while(nextAvail < data.length) {
+		if(this.debugLevel > 1) {
+			console.log('remaining',this.remaining,'ingesting from',nextAvail,'of',
+				data.length,data.slice(nextAvail));
+		}
 		if(this.remaining == -this.headerSize) {
 			// We have already seen all the header bytes, so the next byte is the packet type.
 			this.packetType = data.readUInt8(nextAvail);
 			// Is this a packet type we know about?
 			if(this.packetType in this.payloadSizes) {
 				this.remaining = this.payloadSizes[this.packetType];
-				console.log('start packet',this.packetType,'with payload size',this.remaining);
+				if(this.debugLevel > 1) {
+					console.log('start packet',this.packetType,'with payload size',this.remaining);
+				}
 			}
 			else {
 				console.log('Skipping unexpected packet type',this.packetType);
@@ -65,6 +80,9 @@ Assembler.prototype.ingest = function(data,handler) {
 				this.remaining -= 1;
 			}
 			else {
+				if(this.debugLevel > 0) {
+					console.log('Skipping unexpected padding');
+				}
 				// Forget any previously seen header bytes.
 				this.remaining = 0;
 			}
@@ -72,14 +90,18 @@ Assembler.prototype.ingest = function(data,handler) {
 		}
 		else {
 			var toCopy = Math.min(this.remaining,data.length-nextAvail);
-			var offset = this.payloadSizes[this.packetType] - this.remaining;
+			var psize = this.payloadSizes[this.packetType];
+			var offset = psize - this.remaining;
 			data.copy(this.buffer,offset,nextAvail,nextAvail+toCopy);
 			nextAvail += toCopy;
 			this.remaining -= toCopy;
 			if(this.remaining === 0) {
+				if(this.debugLevel > 0) {
+					console.log('assembled type',this.packetType,this.buffer.slice(0,psize));
+				}
 				// Calls the specified handler with the assembled packet.
-				handler(this.packetType,this.buffer);
+				handler(this.packetType,this.buffer.slice(0,psize));
 			}
 		}
-	}	
+	}
 }

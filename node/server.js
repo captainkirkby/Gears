@@ -11,6 +11,9 @@ var packet = require('./packet');
 
 sprintf = require('sprintf').sprintf;
 
+// Tracks the last seen data packet sequence number to enable sequencing errors to be detected.
+var lastDataSequenceNumber = 0;
+
 // Parses command-line arguments.
 var noSerial = false;
 var noDatabase = false;
@@ -50,13 +53,15 @@ async.parallel({
 			function(ttyName,portCallback) {
 				console.log('Opening device %s...',ttyName);
 				var port = new serial.SerialPort(ttyName, {
-					baudrate: 115200,
+					baudrate: 76800,
 					buffersize: 255,
 					parser: serial.parsers.raw
 				});
 				port.on('open',function(err) {
 					if(err) return portCallback(err);
 					console.log('Port open');
+					// Flushes any pending data in the buffer.
+					port.flush();
 					// Forwards the open serial port.
 					portCallback(null,port);
 				});
@@ -91,8 +96,12 @@ async.parallel({
 			// Defines the schema and model for our serial data packets
 			var dataPacketSchema = mongoose.Schema({
 				timestamp: { type: Date, index: true },
+				sequenceNumber: Number,
 				temperature: Number,
-				pressure: Number
+				pressure: Number,
+				thermistor: Number,
+				humidity: Number,
+				irLevel: Number
 			});
 			var dataPacketModel = mongoose.model('dataPacketModel',dataPacketSchema);
 			// Propagates our database connection and db models to data logger.
@@ -114,7 +123,8 @@ async.parallel({
 			// Logs TickTock packets from the serial port into the database.
 			console.log('starting data logger with',config);
 			// Initializes our binary packet assembler to initially only accept a boot packet.
-			var assembler = new packet.Assembler(0xFE,3,{0x00:31});
+			// NB: the maximum and boot packet sizes are hardcoded here!
+			var assembler = new packet.Assembler(0xFE,3,64,{0x00:31},0);
 			// Handles incoming chunks of binary data from the device.
 			config.port.on('data',function(data) {
 				receive(data,assembler,config.db.bootPacketModel,config.db.dataPacketModel);
@@ -141,12 +151,11 @@ async.parallel({
 // Receives a new chunk of binary data from the serial port and returns the
 // updated value of remaining that should be used for the next call.
 function receive(data,assembler,bootPacketModel,dataPacketModel) {
-	console.log('remaining',assembler.remaining,'received',data);
 	assembler.ingest(data,function(ptype,buf) {
-		console.log('assembled type',ptype,buf);
+		var saveMe = true;
 		if(ptype == 0x00) {
 			// Prepares boot packet for storing to the database.
-			// NB: packet layout is hardcoded here!
+			// NB: the boot packet layout is hardcoded here!
 			hash = '';
 			for(var offset = 6; offset < 26; offset++) hash += sprintf("%02x",buf.readUInt8(offset));
 			p = new bootPacketModel({
@@ -159,25 +168,54 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 				'commitStatus': buf.readUInt8(30)
 			});
 			// After seeing a boot packet, we accept data packets.
-			assembler.addPacketType(0x01,32);
+			// NB: the data packet size is hardcoded here!
+			assembler.addPacketType(0x01,40);
+			// Resets the last seen sequence number.
+			lastDataSequenceNumber = 0;
 		}
 		else if(ptype == 0x01) {
+			// Calculates the thermistor resistance in ohms assuming 100uA current source.
+			var rtherm = buf.readUInt16LE(24)/65536.0*5.0/100e-6;
+			// Calculates the corresponding temperature in degC using a Steinhart-Hart model.
+			var logr = Math.log(rtherm);
+			var ttherm = 1.0/(0.000878844 + 0.000231913*logr + 7.70349e-8*logr*logr*logr) - 273.15;
 			// Prepares data packet for storing to the database.
-			// NB: packet layout is hardcoded here!
+			// NB: the data packet layout is hardcoded here!
 			p = new dataPacketModel({
 				'timestamp': new Date(),
-				'temperature': buf.readInt32LE(12)/160.0,
-				'pressure': buf.readInt32LE(16)
+				'sequenceNumber': buf.readInt32LE(0),
+				'temperature': buf.readInt32LE(16)/160.0,
+				'pressure': buf.readInt32LE(20),
+				'thermistor': ttherm,
+				// use nominal 1st order fit from sensor datasheet to calculate RH in %
+				'humidity': (buf.readUInt16LE(26)/65536.0 - 0.1515)/0.00636,
+				// convert IR level to volts
+				'irLevel': buf.readUInt16LE(28)/65536.0*5.0
 			});
+			// Checks for a packet sequence error.
+			if(p.sequenceNumber != lastDataSequenceNumber+1) {
+				console.log('Got packet #%d when expecting packet #%d',
+					p.sequenceNumber,lastDataSequenceNumber+1);
+			}
+			lastDataSequenceNumber = p.sequenceNumber;
+			// Never save the first packet since there is usually a startup glitch
+			// where the serial port sees a second boot packet arriving during the first
+			// data packet that still needs to be debugged...
+			if(lastDataSequenceNumber == 1) saveMe = false;
 		}
 		else {
 			console.log('Got unexpected packet type',ptype);
 			return;
 		}
-		console.log(p);
-		p.save(function(err,p) {
-			if(err) console.log('Error saving data packet',p);
-		});
+		if(saveMe) {
+			console.log(p);
+			p.save(function(err,p) {
+				if(err) console.log('Error saving data packet',p);
+			});
+		}
+		else {
+			console.log('Packet not saved to db.');
+		}
 	});
 }
 
