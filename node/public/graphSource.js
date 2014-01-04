@@ -153,8 +153,8 @@ $(function() {
 			$(this).val("Stop Real Time Updates");
 			// Get value of length field
 			var lengthValue = $("#length").val();
-			if(!isNaN(parseInt(lengthValue))){
-				length = Math.abs(parseInt(lengthValue)) * -1;		//ensure a negative number
+			if(!isNaN(parseInt(lengthValue,10))){
+				length = Math.abs(parseInt(lengthValue,10)) * -1;		//ensure a negative number
 			}
 			// disable manual fetch
 			setManualFetchEnabled(false);
