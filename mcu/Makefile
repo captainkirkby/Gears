@@ -1,13 +1,11 @@
 # ==========================================================================
-# Makefile for @home MCU code
-#
-# David Kirkby, University of California, Irvine, dkirkby@uci.edu
+# Makefile for TickTock MCU code
 # ==========================================================================
 
 # --------------------------------------------------------------------------
 # The name of the top-level program to build:
-# Select 'leaf' for the plug-in devices
-# Select 'hub' for the usb-nordic interface embedded within a hub
+# Select 'device' for main firmware program
+# Select 'boot' for the bootloader
 # --------------------------------------------------------------------------
 TARGET = device
 
