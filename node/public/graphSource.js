@@ -15,17 +15,63 @@ $(function() {
 		});
 		
 		//alert(dataURL);
+		var NUM_TEMPERATURE_SAMPLES = 11;		// o o X o o
+		var NUM_PRESSURE_SAMPLES = 55;
+
+		//displaySet("name")
 
 		function onDataRecieved(data){
-			var temperatureSet = [];
-			var pressureSet = [];
+			var dataSet = [];
+			// var temperatureSet = [];
+			// var pressureSet = [];
 
-			var smoothTemperatureSet = [];
-			var smoothPressureSet = [];
+			// var smoothTemperatureSet = [];
+			// var smoothPressureSet = [];
 
-			// Number of samples to average with (must be an odd number)
-			var NUM_TEMPERATURE_SAMPLES = 11;		// o o X o o
-			var NUM_PRESSURE_SAMPLES = 55;
+			// // Number of samples to average with (must be an odd number)
+			// var NUM_TEMPERATURE_SAMPLES = 11;		// o o X o o
+			// var NUM_PRESSURE_SAMPLES = 55;
+
+			var count = 0;
+
+			displaySet("irLevel", smoothing, NUM_PRESSURE_SAMPLES);
+			displaySet("temperature", smoothing, NUM_TEMPERATURE_SAMPLES);
+			displaySet("pressure", smoothing, NUM_PRESSURE_SAMPLES);
+
+
+			function displaySet(name, dataSmoothing, smoothingAmount){
+				var set = [];
+				var smoothSet = [];
+	
+				// Iterate through retrieved data
+				for(var index=0;index<data.length;index++){
+					//Get timestamp as a date object
+					var date = new Date(Date.parse(data[index].timestamp));
+	
+					set.push([date, data[index][name]]);
+					smoothSet.push([date, smoothPoints(name, index, smoothingAmount)]);
+				}
+
+				dataSet.push({ data: dataSmoothing ? smoothSet : set , label: generateLabel(name), yaxis: (count + 1), color : count });
+
+				if(smoothing){
+					dataSet.push({ data: set, lines : { show : false}, points : {show : true, radius : 1}, yaxis: (count + 1), color : count });
+				}
+
+				count++;
+			}
+
+			function generateLabel(name){
+				var lookUpTable = { "temperature"	: "Temperature (°C)",
+									"pressure"		: "Pressure (Pa)",
+									"irLevel"		: "IR Level (V)",
+									"thermistor"	: "Thermistor (°C)",
+									"humidity"		: "Humidity (%)" };
+				
+				var result = lookUpTable[name];
+				if(!result) result = "UNKNOWN";
+				return result;
+			}
 
 			function smoothPoints(field, index, smoothingRadius){
 				//console.log(index);
@@ -55,31 +101,29 @@ $(function() {
 				return sum/smoothingRadius;
 			}
 
-			// Iterate through retrieved data
-			for(var index=0;index<data.length;index++){
-				//Get timestamp as a date object
-				var date = new Date(Date.parse(data[index].timestamp));
+			// // Iterate through retrieved data
+			// for(var index=0;index<data.length;index++){
+			// 	//Get timestamp as a date object
+			// 	var date = new Date(Date.parse(data[index].timestamp));
 
-				temperatureSet.push([date, data[index].temperature]);
-				pressureSet.push([date, data[index].pressure]);
+			// 	temperatureSet.push([date, data[index].temperature]);
+			// 	pressureSet.push([date, data[index].pressure]);
 
-				smoothTemperatureSet.push([date, smoothPoints("temperature", index, NUM_TEMPERATURE_SAMPLES)]);
-				smoothPressureSet.push([date, smoothPoints("pressure", index, NUM_PRESSURE_SAMPLES)]);
-			}
+			// 	smoothTemperatureSet.push([date, smoothPoints("temperature", index, NUM_TEMPERATURE_SAMPLES)]);
+			// 	smoothPressureSet.push([date, smoothPoints("pressure", index, NUM_PRESSURE_SAMPLES)]);
+			// }
 
-			var dataSet = [
-				{ data: smoothing ? smoothTemperatureSet : temperatureSet , label: "Temperature (°C)", color : 0 },
-				{ data: smoothing ? smoothPressureSet : pressureSet, label: "Pressure (Pa)", yaxis: 2, color : 1 }
-			];
+			// dataSet.push({ data: smoothing ? smoothTemperatureSet : temperatureSet , label: "Temperature (°C)", color : 0 },
+			// 	{ data: smoothing ? smoothPressureSet : pressureSet, label: "Pressure (Pa)", yaxis: 2, color : 1 });
 
-			if(smoothing){
-				dataSet.push({ data: temperatureSet, lines : { show : false}, points : {show : true, radius : 1}, color : 0},
-				{ data: pressureSet, yaxis: 2, lines : { show : false}, points : {show : true, radius : 1}, color : 1  });
-			}
+			// if(smoothing){
+			// 	dataSet.push({ data: temperatureSet, lines : { show : false}, points : {show : true, radius : 1}, color : 0},
+			// 	{ data: pressureSet, yaxis: 2, lines : { show : false}, points : {show : true, radius : 1}, color : 1  });
+			// }
 			
 			$.plot("#placeholder", dataSet, {
-				xaxes : [{ mode: "time", timezone: "browser"}],		//must include jquery.flot.time.min.js for this!
-				yaxes : [{}, {position: "right"}]
+				xaxes : [{ mode: "time", timezone: "browser" }],		//must include jquery.flot.time.min.js for this!
+				yaxes : [{}, { position: "right" }, { show: false}]
 			});
 
 		}
