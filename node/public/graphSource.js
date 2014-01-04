@@ -125,7 +125,8 @@ $(function() {
 			
 			$.plot("#placeholder", dataSet, {
 				xaxes : [{ mode: "time", timezone: "browser" }],		//must include jquery.flot.time.min.js for this!
-				yaxes : [{}, { position: "right" }, { show: false}]
+				yaxes : [{}, { position: "right" }],
+				legend: {show : true, position : "nw" }
 			});
 
 		}
