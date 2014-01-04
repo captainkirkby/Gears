@@ -75,8 +75,8 @@ ifeq ($(DEVICE),644)
 		# HIGH = SPIEN+EESAVE+BOOTSZ1+BOOTSZ0+BOOTRST
 		# EXTENDED = (none set)
 		AVR_FUSES = -u -U lfuse:w:0xe0:m -U hfuse:w:0xd0:m -U efuse:w:0xff:m
-		# boot flash section size = 4096 and bootloader starts at 0x7000
-		BOOTSTART = 0x7000
+		# boot flash section size = 4096 and bootloader starts at 0x7000 words = 0xE000 bytes
+		BOOTSTART = 0xE000
 		# board is clocked at 10MHz
 		F_CPU = 10000000
 		# use our own mapping of device pins to Arduino pins
