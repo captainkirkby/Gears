@@ -219,7 +219,7 @@ atmega644p: $(PROGRAM)_atmega644p.hex
 
 atmega644p_10MHz: TARGET = atmega644p_10MHz
 atmega644p_10MHz: MCU_TARGET = atmega644p
-atmega644p_10MHz: CFLAGS += '-DMAX_TIME_COUNT=F_CPU>>4' '-DNUM_LED_FLASHES=0' '-DBAUD_RATE=76800'
+atmega644p_10MHz: CFLAGS += '-DMAX_TIME_COUNT=F_CPU>>4' '-DNUM_LED_FLASHES=0' '-DBAUD_RATE=28800'
 atmega644p_10MHz: AVR_FREQ = 10000000L
 atmega644p_10MHz: LDSECTION  = --section-start=.text=0x7000
 atmega644p_10MHz: $(PROGRAM)_atmega644p_10MHz.hex

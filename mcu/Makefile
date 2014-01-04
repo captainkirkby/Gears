@@ -110,7 +110,7 @@ else ifeq ($(METHOD),tiny)
 else
 		AVRDUDE_PORT = /dev/tty.usbserial*
 		AVRDUDE_PROGRAMMER = stk500v1
-		AVRDUDE_BAUDRATE = -b 57600
+		AVRDUDE_BAUDRATE = -b 28800
 endif
 
 AVRDUDE_WRITE_FLASH = -U flash:w:$(BUILD_DIR)/$(TARGET).hex
