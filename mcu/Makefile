@@ -194,12 +194,6 @@ all: $(BUILD_DIR)
 		$(SIZE) --target=$(FORMAT) $(BUILD_DIR)/$(TARGET).hex
 
 # --------------------------------------------------------------------------
-# Compiles and links the bootloader binary.
-# --------------------------------------------------------------------------
-boot: optiboot.c boot.h pin_defs.h stk500.h
-		$(CC) -mmcu=$(MCU) -DF_CPU=$(F_CPU) -DLED_START_FLASHES=3 -DLED_DATA_FLASH -Wl,--section-start=.text=$(BOOTSTART) -o $(BUILD_DIR)/boot.elf optiboot.c
-
-# --------------------------------------------------------------------------
 # Special target to initialize MCU fuses
 # --------------------------------------------------------------------------
 fuses:
@@ -312,11 +306,15 @@ extcoff: $(TARGET).elf
 
 # Link: create ELF output file from library.
 $(BUILD_DIR)/$(TARGET).elf: $(TARGET).cpp $(BUILD_DIR)/core.a
-		$(CC) $(ALL_CXXFLAGS) -o $@ $(TARGET).cpp -D COMMIT_INFO="$(shell ./commitInfo.py)" -L. $(BUILD_DIR)/core.a $(LDFLAGS)
+	$(CC) $(ALL_CXXFLAGS) -o $@ $(TARGET).cpp -D COMMIT_INFO="$(shell ./commitInfo.py)" -L. $(BUILD_DIR)/core.a $(LDFLAGS)
+
+# Provide different rules specifically for the bootloader. These override the previous generic rule
+# because they appear later in the makefile, and will generate warnings when using TARGET=boot.
+$(BUILD_DIR)/boot.elf: optiboot.c boot.h pin_defs.h stk500.h
+	$(CC) -mmcu=$(MCU) -DF_CPU=$(F_CPU) -DLED_START_FLASHES=3 -DLED_DATA_FLASH -Wl,--section-start=.text=$(BOOTSTART) -o $@ optiboot.c
 
 $(BUILD_DIR)/core.a: $(LIBOBJ)
 		@for i in $(LIBOBJ); do echo $(AR) rcs $(BUILD_DIR)/core.a $$i; $(AR) rcs $(BUILD_DIR)/core.a $$i; done
-
 
 
 # Compile: create object files from C++ source files.
