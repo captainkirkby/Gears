@@ -1,11 +1,11 @@
 $(function() {
 
 	dataToPlot = {
-		"temperature" : true,
-		"pressure" : true,
-		"irLevel" : true,
-		"thermistor" : true,
-		"humidity" : true
+		"temperature" : 2,
+		"pressure" : 2,
+		"irLevel" : 2,
+		"thermistor" : 2,
+		"humidity" : 2
 	};
 
 	var NUM_TEMPERATURE_SAMPLES = 11;		// o o X o o
@@ -37,6 +37,11 @@ $(function() {
 	function togglePlot(seriesID){
 		dataToPlot[seriesID] = !dataToPlot[seriesID];
 		displayData();		//wont display according to length
+	}
+
+	function boldPlot(seriesID, bold){
+		dataToPlot[seriesID] = bold ? 3 : 2;
+		displayData();
 	}
 
 	function generateLabel(name){
@@ -106,10 +111,10 @@ $(function() {
 					smoothSet.push([date, smoothPoints(name, index, smoothingAmount)]);
 				}
 
-				dataSet.push({ data: dataSmoothing ? smoothSet : set , lines : { show : visible }, label: generateLabel(name), yaxis: (count + 1), color : count});
+				dataSet.push({ data: dataSmoothing ? smoothSet : set , lines : { lineWidth : visible, show : visible }, label: generateLabel(name), yaxis: (count + 1), color : count});
 
 				if(smoothing){
-					dataSet.push({ data: set, lines : { show : false}, points : { show : visible, radius : POINT_SIZE}, yaxis: (count + 1), color : count });
+					dataSet.push({ data: set, lines : { show : false}, points : { lineWidth : visible, show : visible, radius : POINT_SIZE}, yaxis: (count + 1), color : count });
 				}
 
 				//left or right and visible or invisible
@@ -149,7 +154,7 @@ $(function() {
 				series : { shadowSize : 0},
 				xaxes : [{ mode: "time", timezone: "browser" }],		//must include jquery.flot.time.min.js for this!
 				yaxes : YAxesSet,
-				legend: { show : true, position : "nw"/*, labelFormatter : labelFormatter */}
+				legend: { show : true, position : "nw"}
 			});
 
 		}
@@ -186,6 +191,18 @@ $(function() {
 		$(this).css('opacity', '0.50');
 		var clickedField = generateLabel($(this).next().text());
 		togglePlot(clickedField);
+	});
+
+	$("#placeholder").on("mouseenter", ".legendColorBox", function(){
+		//alert("Mouse Entered!");
+		var clickedField = generateLabel($(this).next().text());
+		boldPlot(clickedField, true);
+	});
+
+	$("#placeholder").on("mouseleave", ".legendColorBox", function(){
+		//alert("Mouse Entered!");
+		var clickedField = generateLabel($(this).next().text());
+		boldPlot(clickedField, false);
 	});
 
 	$("#fetch").click(function(){
