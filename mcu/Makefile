@@ -1,13 +1,11 @@
 # ==========================================================================
-# Makefile for @home MCU code
-#
-# David Kirkby, University of California, Irvine, dkirkby@uci.edu
+# Makefile for TickTock MCU code
 # ==========================================================================
 
 # --------------------------------------------------------------------------
 # The name of the top-level program to build:
-# Select 'leaf' for the plug-in devices
-# Select 'hub' for the usb-nordic interface embedded within a hub
+# Select 'device' for main firmware program
+# Select 'boot' for the bootloader
 # --------------------------------------------------------------------------
 TARGET = device
 
@@ -71,12 +69,16 @@ VARIANT = standard
 
 ifeq ($(DEVICE),644)
 		# Target device is a TickTock custom circuit
-		MCU = atmega644
+		# MCU is used as the -mcpu option to avrgcc, PROC is used at the -p option to avrdude
+		MCU = atmega644p
+		PROC = atmega644
 		BUILD_DIR = build.644
 		# LOW = SUT0+CKSEK3+CKSEL2+CKSEL1+CKSEL0
 		# HIGH = SPIEN+EESAVE+BOOTSZ1+BOOTSZ0+BOOTRST
 		# EXTENDED = (none set)
 		AVR_FUSES = -u -U lfuse:w:0xe0:m -U hfuse:w:0xd0:m -U efuse:w:0xff:m
+		# boot flash section size = 4096 and bootloader starts at 0x7000 words = 0xE000 bytes
+		BOOTSTART = 0xE000
 		# board is clocked at 10MHz
 		F_CPU = 10000000
 		# use our own mapping of device pins to Arduino pins
@@ -110,9 +112,10 @@ else ifeq ($(METHOD),tiny)
 else
 		AVRDUDE_PORT = /dev/tty.usbserial*
 		AVRDUDE_PROGRAMMER = stk500v1
-		AVRDUDE_BAUDRATE = -b 28800
+		AVRDUDE_BAUDRATE = -b 115200
 endif
 
+# Add -D below to avoid erasing the whole flash (bootloader + application)
 AVRDUDE_WRITE_FLASH = -U flash:w:$(BUILD_DIR)/$(TARGET).hex
 
 CONFIG_FILE = config.dat
@@ -124,7 +127,7 @@ AVRDUDE_WRITE_EEPROM = -U eeprom:w:$(CONFIG_FILE):s
 # Add -F to disable the signature byte check
 
 AVRDUDE_FLAGS = -v -V -C $(INSTALL_DIR)/hardware/tools/avr/etc/avrdude.conf \
-		-p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) $(AVRDUDE_BAUDRATE)
+		-p $(PROC) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) $(AVRDUDE_BAUDRATE)
 
 # ==========================================================================
 
@@ -304,11 +307,15 @@ extcoff: $(TARGET).elf
 
 # Link: create ELF output file from library.
 $(BUILD_DIR)/$(TARGET).elf: $(TARGET).cpp $(BUILD_DIR)/core.a
-		$(CC) $(ALL_CXXFLAGS) -o $@ $(TARGET).cpp -D COMMIT_INFO="$(shell ./commitInfo.py)" -L. $(BUILD_DIR)/core.a $(LDFLAGS)
+	$(CC) $(ALL_CXXFLAGS) -o $@ $(TARGET).cpp -D COMMIT_INFO="$(shell ./commitInfo.py)" -L. $(BUILD_DIR)/core.a $(LDFLAGS)
+
+# Provide different rules specifically for the bootloader. These override the previous generic rule
+# because they appear later in the makefile, and will generate warnings when using TARGET=boot.
+$(BUILD_DIR)/boot.elf: boot.cpp boot.h pin_defs.h stk500.h
+	$(CC) -mmcu=$(MCU) -DF_CPU=$(F_CPU) -DBAUD_RATE=115200 -DLED_START_FLASHES=3 -DLED_DATA_FLASH -O -Wl,--section-start=.text=$(BOOTSTART) -o $@ boot.cpp
 
 $(BUILD_DIR)/core.a: $(LIBOBJ)
 		@for i in $(LIBOBJ); do echo $(AR) rcs $(BUILD_DIR)/core.a $$i; $(AR) rcs $(BUILD_DIR)/core.a $$i; done
-
 
 
 # Compile: create object files from C++ source files.
