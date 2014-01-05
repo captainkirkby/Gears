@@ -69,7 +69,9 @@ VARIANT = standard
 
 ifeq ($(DEVICE),644)
 		# Target device is a TickTock custom circuit
-		MCU = atmega644
+		# MCU is used as the -mcpu option to avrgcc, PROC is used at the -p option to avrdude
+		MCU = atmega644p
+		PROC = atmega644
 		BUILD_DIR = build.644
 		# LOW = SUT0+CKSEK3+CKSEL2+CKSEL1+CKSEL0
 		# HIGH = SPIEN+EESAVE+BOOTSZ1+BOOTSZ0+BOOTRST
@@ -125,7 +127,7 @@ AVRDUDE_WRITE_EEPROM = -U eeprom:w:$(CONFIG_FILE):s
 # Add -F to disable the signature byte check
 
 AVRDUDE_FLAGS = -v -V -C $(INSTALL_DIR)/hardware/tools/avr/etc/avrdude.conf \
-		-p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) $(AVRDUDE_BAUDRATE)
+		-p $(PROC) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) $(AVRDUDE_BAUDRATE)
 
 # ==========================================================================
 
