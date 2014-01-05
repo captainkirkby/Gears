@@ -43,6 +43,7 @@ void setup() {
 
 	// Initializes serial communications
 	Serial.begin(BAUD_RATE);
+	Serial1.begin(9600);
 
 	// Copies our serial number from EEPROM address 0x10 into the boot packet
 	bootPacket.serialNumber = eeprom_read_dword((uint32_t*)0x10);
@@ -89,8 +90,16 @@ void loop() {
 	}
 	// Sends binary packet data
 	Serial.write((const uint8_t*)&dataPacket,sizeof(dataPacket));
-	// Waits for about 1 sec...
-	delay(1000);
+	// Looks for any incoming data on the 2nd UART
+	char buffer[64];
+	for(uint8_t i = 0; i < 10; i++) {
+		if(Serial1.available() > 0) {
+			LED_ON(RED);
+			Serial1.readBytes(buffer,64);
+		}
+		delay(100);
+		LED_OFF(RED);
+	}
 	LED_TOGGLE(YELLOW);
 }
 
