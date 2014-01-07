@@ -8,18 +8,16 @@ $(function() {
 		"humidity" : 2
 	};
 
+	// Store last request parameters
+	var lastFrom;
+	var lastTo;
+
+	// Smoothing factors
 	var NUM_TEMPERATURE_SAMPLES = 11;		// o o X o o
 	var NUM_PRESSURE_SAMPLES = 55;
 	var NUM_IRLEVEL_SAMPLES = 55;
 	var NUM_THERMISTOR_SAMPLES = 55;
 	var NUM_HUMIDITY_SAMPLES = 55;
-
-
-	// labelFormatter = function(label, series){
-	// 	// return "<span class='myLegendLabel' id='"+generateLabel(label)+"'>"+label+"</span>";
-	// 	return "<span class='myLegendLabel' id='asfdjh'>"+label+"</span>";
-
-	// };
 
 	function smoothingForSet(set){
 		var lookUpTable = {
@@ -36,12 +34,12 @@ $(function() {
 
 	function togglePlot(seriesID){
 		dataToPlot[seriesID] = !dataToPlot[seriesID];
-		displayData();		//wont display according to length
+		displayData(lastFrom, lastTo);
 	}
 
 	function boldPlot(seriesID, bold){
 		dataToPlot[seriesID] = bold ? 3 : 2;
-		displayData();
+		displayData(lastFrom, lastTo);
 	}
 
 	function generateLabel(name){
@@ -77,6 +75,9 @@ $(function() {
 			"from" : from,
 			"to" : to
 		});
+
+		lastFrom = from;
+		lastTo = to;
 
 		var POINT_SIZE = 0.5;
 
