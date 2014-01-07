@@ -19,6 +19,13 @@ $(function() {
 	var NUM_THERMISTOR_SAMPLES = 55;
 	var NUM_HUMIDITY_SAMPLES = 55;
 
+	// Real time parameters
+	var TIMEOUT_VALUE = 333;
+	var realTimeUpdates = false;
+
+	// Smoothing or not
+	var smoothing = false;
+
 	function smoothingForSet(set){
 		var lookUpTable = {
 			"temperature" : NUM_TEMPERATURE_SAMPLES,
@@ -37,8 +44,10 @@ $(function() {
 		displayData(lastFrom, lastTo);
 	}
 
+	//Draw on top of others
 	function boldPlot(seriesID, bold){
 		dataToPlot[seriesID] = bold ? 3 : 2;
+		// Change order of data to plot
 		displayData(lastFrom, lastTo);
 	}
 
@@ -62,6 +71,7 @@ $(function() {
 		return result;
 	}
 
+	// Save data in browser so if we are doing same request we don't have to re-fetch from server (caching does this maybe?)
 	function displayData(from, to){
 		if(from === undefined){
 			from = "DEFAULT";			// Use server default
@@ -90,13 +100,7 @@ $(function() {
 
 			$.each(dataToPlot, function(set, display){
 				displaySet(set, smoothing, smoothingForSet(set), display);
-			})
-
-			// displaySet("temperature", smoothing, NUM_TEMPERATURE_SAMPLES);
-			// displaySet("pressure", smoothing, NUM_PRESSURE_SAMPLES);
-			// displaySet("irLevel", smoothing, NUM_IRLEVEL_SAMPLES);
-			// displaySet("thermistor", smoothing, NUM_THERMISTOR_SAMPLES);
-			// displaySet("humidity", smoothing, NUM_HUMIDITY_SAMPLES);
+			});
 
 
 			function displaySet(name, dataSmoothing, smoothingAmount, visible){
@@ -167,11 +171,6 @@ $(function() {
 			success:onDataRecieved
 		});
 	}
-
-	var TIMEOUT_VALUE = 333;
-	var realTimeUpdates = false;
-
-	var smoothing = false;
 
 
 	function continuousUpdate(length){
