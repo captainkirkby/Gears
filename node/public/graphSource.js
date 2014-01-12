@@ -5,11 +5,11 @@ $(function() {
 
 
 	dataToPlot = {
-		"temperature" : { "width" : 2, "color" : 0},
-		"pressure" : { "width" : 2, "color" : 1},
-		"irLevel" : { "width" : 2, "color" : 2},
-		"thermistor" : { "width" : 2, "color" : 3},
-		"humidity" : { "width" : 2, "color" : 4}
+		"temperature" : { "visible" : true, "width" : 2, "color" : 0},
+		"pressure" : { "visible" : true, "width" : 2, "color" : 1},
+		"irLevel" : { "visible" : true, "width" : 2, "color" : 2},
+		"thermistor" : { "visible" : true, "width" : 2, "color" : 3},
+		"humidity" : { "visible" : true, "width" : 2, "color" : 4}
 	};
 
 	// Store last request parameters
@@ -44,7 +44,7 @@ $(function() {
 	}
 
 	function togglePlot(seriesID){
-		dataToPlot[seriesID].width = !dataToPlot[seriesID].width;
+		dataToPlot[seriesID].visible = !dataToPlot[seriesID].visible;
 		displayData(lastFrom, lastTo);
 	}
 
@@ -104,11 +104,11 @@ $(function() {
 			var axesCount = 0;
 
 			$.each(seriesToPlot, function(index, set){
-				displaySet(set, smoothing, smoothingForSet(set), dataToPlot[set].width);
+				displaySet(set, smoothing, smoothingForSet(set), dataToPlot[set].visible, dataToPlot[set].width);
 			});
 
 
-			function displaySet(name, dataSmoothing, smoothingAmount, visible){
+			function displaySet(name, dataSmoothing, smoothingAmount, visible, width){
 				var set = [];
 				var smoothSet = [];
 	
@@ -121,10 +121,10 @@ $(function() {
 					smoothSet.push([date, smoothPoints(name, index, smoothingAmount)]);
 				}
 
-				dataSet.push({ data: dataSmoothing ? smoothSet : set , lines : { lineWidth : visible, show : visible }, label: generateLabel(name), yaxis: (count + 1), color : dataToPlot[name].color});
+				dataSet.push({ data: dataSmoothing ? smoothSet : set , lines : { lineWidth : width, show : visible }, label: generateLabel(name), yaxis: (count + 1), color : dataToPlot[name].color});
 
 				if(smoothing){
-					dataSet.push({ data: set, lines : { show : false}, points : { lineWidth : visible, show : visible, radius : POINT_SIZE}, yaxis: (count + 1), color : dataToPlot[name].color });
+					dataSet.push({ data: set, lines : { show : false}, points : { lineWidth : width, show : visible, radius : POINT_SIZE}, yaxis: (count + 1), color : dataToPlot[name].color });
 				}
 
 				//left or right and visible or invisible
