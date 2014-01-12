@@ -1,11 +1,16 @@
 $(function() {
 
+	//order
+	//seriesToPlot = ["temperature", "pressure", "irLevel", "thermistor", "humidity"];
+	seriesToPlot = ["humidity", "thermistor", "irLevel", "pressure", "temperature"];
+
+
 	dataToPlot = {
-		"temperature" : 2,
-		"pressure" : 2,
-		"irLevel" : 2,
-		"thermistor" : 2,
-		"humidity" : 2
+		"temperature" : { "width" : 2, "color" : 0},
+		"pressure" : { "width" : 2, "color" : 1},
+		"irLevel" : { "width" : 2, "color" : 2},
+		"thermistor" : { "width" : 2, "color" : 3},
+		"humidity" : { "width" : 2, "color" : 4}
 	};
 
 	// Store last request parameters
@@ -40,13 +45,13 @@ $(function() {
 	}
 
 	function togglePlot(seriesID){
-		dataToPlot[seriesID] = !dataToPlot[seriesID];
+		dataToPlot[seriesID].width = !dataToPlot[seriesID].width;
 		displayData(lastFrom, lastTo);
 	}
 
 	//Draw on top of others
 	function boldPlot(seriesID, bold){
-		dataToPlot[seriesID] = bold ? 3 : 2;
+		dataToPlot[seriesID].width = bold ? 3 : 2;
 		// Change order of data to plot
 		displayData(lastFrom, lastTo);
 	}
@@ -98,8 +103,8 @@ $(function() {
 			var count = 0;
 			var axesCount = 0;
 
-			$.each(dataToPlot, function(set, display){
-				displaySet(set, smoothing, smoothingForSet(set), display);
+			$.each(seriesToPlot, function(index, set){
+				displaySet(set, smoothing, smoothingForSet(set), dataToPlot[set].width);
 			});
 
 
@@ -116,10 +121,10 @@ $(function() {
 					smoothSet.push([date, smoothPoints(name, index, smoothingAmount)]);
 				}
 
-				dataSet.push({ data: dataSmoothing ? smoothSet : set , lines : { lineWidth : visible, show : visible }, label: generateLabel(name), yaxis: (count + 1), color : count});
+				dataSet.push({ data: dataSmoothing ? smoothSet : set , lines : { lineWidth : visible, show : visible }, label: generateLabel(name), yaxis: (count + 1), color : dataToPlot[name].color});
 
 				if(smoothing){
-					dataSet.push({ data: set, lines : { show : false}, points : { lineWidth : visible, show : visible, radius : POINT_SIZE}, yaxis: (count + 1), color : count });
+					dataSet.push({ data: set, lines : { show : false}, points : { lineWidth : visible, show : visible, radius : POINT_SIZE}, yaxis: (count + 1), color : dataToPlot[name].color });
 				}
 
 				//left or right and visible or invisible
@@ -154,12 +159,12 @@ $(function() {
 
 				return sum/smoothingRadius;
 			}
-			
+
 			somePlot = $.plot("#placeholder", dataSet, {
 				series : { shadowSize : 0},
 				xaxes : [{ mode: "time", timezone: "browser" }],		//must include jquery.flot.time.min.js for this!
 				yaxes : YAxesSet,
-				legend: { show : true, position : "nw"}
+				legend: { show : true, position : "nw", sorted : "ascending"}
 			});
 
 		}
@@ -171,7 +176,6 @@ $(function() {
 			success:onDataRecieved
 		});
 	}
-
 
 	function continuousUpdate(length){
 		if(realTimeUpdates){
