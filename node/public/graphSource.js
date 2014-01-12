@@ -1,8 +1,7 @@
 $(function() {
 
-	//order
-	//seriesToPlot = ["temperature", "pressure", "irLevel", "thermistor", "humidity"];
-	seriesToPlot = ["humidity", "thermistor", "irLevel", "pressure", "temperature"];
+	// Reverse Order
+	seriesToPlot = ["temperature", "pressure", "irLevel", "thermistor", "humidity"];
 
 
 	dataToPlot = {
@@ -53,6 +52,7 @@ $(function() {
 	function boldPlot(seriesID, bold){
 		dataToPlot[seriesID].width = bold ? 3 : 2;
 		// Change order of data to plot
+		seriesToPlot.push(seriesToPlot.splice(seriesToPlot.indexOf(seriesID),1)[0]);
 		displayData(lastFrom, lastTo);
 	}
 
