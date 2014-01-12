@@ -50,6 +50,11 @@ $(function() {
 
 	//Draw on top of others
 	function boldPlot(seriesID, bold){
+		// Reset boldness of all series
+		$.each(dataToPlot, function(series, options) {
+			dataToPlot[series].width = 2;
+		});
+		// Bold the series we're interested in
 		dataToPlot[seriesID].width = bold ? 3 : 2;
 		// Change order of data to plot
 		seriesToPlot.push(seriesToPlot.splice(seriesToPlot.indexOf(seriesID),1)[0]);
