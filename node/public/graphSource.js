@@ -134,7 +134,7 @@ $(function() {
 
 				//left or right and visible or invisible
 				var orientation = axesCount%2 ? "right" : "left";
-				YAxesSet.push({position : orientation, show : visible });
+				YAxesSet.push({position : orientation, show : visible, font : { color : width == 3 ? "black" : "lightgrey", weight : width == 3 ? "bold" : "normal"}});
 
 				count++;
 				if(visible) axesCount++;
