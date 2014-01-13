@@ -1,345 +1,102 @@
-# ==========================================================================
-# Makefile for TickTock MCU code
-# ==========================================================================
+# Name: Makefile
+# Author: <insert your name here>
+# Copyright: <insert your copyright message here>
+# License: <insert your license reference here>
 
-# --------------------------------------------------------------------------
-# The name of the top-level program to build:
-# Select 'device' for main firmware program
-# Select 'boot' for the bootloader
-# --------------------------------------------------------------------------
-TARGET = device
+# This is a prototype Makefile. Modify it according to your needs.
+# You should at least check the settings for
+# DEVICE ....... The AVR device you compile for
+# CLOCK ........ Target AVR clock rate in Hertz
+# OBJECTS ...... The object files created from your source files. This list is
+#                usually the same as the list of source files with suffix ".o".
+# PROGRAMMER ... Options to avrdude which define the hardware you use for
+#                uploading to the AVR and the interface where this hardware
+#                is connected. We recommend that you leave it undefined and
+#                add settings like this to your ~/.avrduderc file:
+#                   default_programmer = "stk500v2"
+#                   default_serial = "avrdoper"
+# FUSES ........ Parameters for avrdude to flash the fuses appropriately.
 
-# --------------------------------------------------------------------------
-# The MCU programming method to use:
-# Select 'usb' to program an Arduino via its usb-serial bootloader
-# Select 'spi' to program an AVR directly via its ISP port using an avrisp2
-# Select 'tiny' to program an AVR directly via its ISP port using a usbtiny
-# --------------------------------------------------------------------------
-METHOD = tiny
+DEVICE     = atmega8
+CLOCK      = 8000000
+PROGRAMMER = #-c stk500v2 -P avrdoper
+OBJECTS    = main.o
+FUSES      = -U hfuse:w:0xd9:m -U lfuse:w:0x24:m
 
-# --------------------------------------------------------------------------
-# The MCU architecture to build for
-# Select '644' for the ATMega644a device in a custom TickTock circuit
-# Select '328' for the ATMega328p device in an Arduino or equivalent
-# --------------------------------------------------------------------------
-DEVICE = 644
-
-# --------------------------------------------------------------------------
-# The location of the Arduino installation to use
-# --------------------------------------------------------------------------
-INSTALL_DIR = /Applications/Arduino.app/Contents/Resources/Java
-
-# ==========================================================================
-# Arduino library configuration
-# ==========================================================================
-
-# --------------------------------------------------------------------------
-# The location of the arduino core library sources
-# --------------------------------------------------------------------------
-ARDUINO = $(INSTALL_DIR)/hardware/arduino/cores/arduino
-
-# --------------------------------------------------------------------------
-# The core C sources to use
-# --------------------------------------------------------------------------
-CORE_C_SRC = WInterrupts.c wiring.c wiring_analog.c \
-wiring_digital.c wiring_pulse.c wiring_shift.c
-		
-# --------------------------------------------------------------------------
-# The core C++ sources to use
-# --------------------------------------------------------------------------
-CORE_CPP_SRC = CDC.cpp HardwareSerial.cpp HID.cpp IPAddress.cpp new.cpp \
-Print.cpp Stream.cpp Tone.cpp USBCore.cpp WMath.cpp WString.cpp
-
-# --------------------------------------------------------------------------
-# The local C sources to use
-# --------------------------------------------------------------------------
-LOCAL_C_SRC = twi.c
-
-# --------------------------------------------------------------------------
-# The local C++ sources to use
-# --------------------------------------------------------------------------
-LOCAL_CPP_SRC = Adafruit_BMP085_U.cpp Wire.cpp
-
-# ==========================================================================
-# Target device configuration
-# Fuses set using http://www.engbedded.com/fusecalc
-# ==========================================================================
-
-VARIANT = standard
-
-ifeq ($(DEVICE),644)
-		# Target device is a TickTock custom circuit
-		# MCU is used as the -mcpu option to avrgcc, PROC is used at the -p option to avrdude
-		MCU = atmega644p
-		PROC = atmega644
-		BUILD_DIR = build.644
-		# LOW = SUT0+CKSEK3+CKSEL2+CKSEL1+CKSEL0
-		# HIGH = SPIEN+EESAVE+BOOTSZ1+BOOTSZ0+BOOTRST
-		# EXTENDED = (none set)
-		AVR_FUSES = -u -U lfuse:w:0xe0:m -U hfuse:w:0xd0:m -U efuse:w:0xff:m
-		# boot flash section size = 4096 and bootloader starts at 0x7000 words = 0xE000 bytes
-		BOOTSTART = 0xE000
-		# board is clocked at 10MHz
-		F_CPU = 10000000
-		# use our own mapping of device pins to Arduino pins
-		PINS_INC_DIR = include.644
-else ifeq ($(DEVICE),328)
-		# Target device is an Arduino
-		MCU = atmega328p
-		BUILD_DIR = build.328
-		# LOW = CKSEL3
-		# HIGH = SPIEN+EESAVE+BOOTSZ1+BOOTSZ0+BOOTRST
-		# EXTENDED = (none set)
-		AVR_FUSES = -u -U lfuse:w:0xf7:m -U hfuse:w:0xd0:m -U efuse:w:0xff:m
-		# board is clocked at 16MHz
-		F_CPU = 16000000
-		# use the standard mapping of device pins to Arduino pins
-		PINS_INC_DIR = $(INSTALL_DIR)/hardware/arduino/variants/standard
-endif
-
-# ==========================================================================
-# Programmer configuration
-# ==========================================================================
-
-ifeq ($(METHOD),spi)
-		AVRDUDE_PORT = usb
-		AVRDUDE_PROGRAMMER = avrisp2
-		AVRDUDE_BAUDRATE =
-else ifeq ($(METHOD),tiny)
-		AVRDUDE_PORT = usb
-		AVRDUDE_PROGRAMMER = usbtiny
-		AVRDUDE_BAUDRATE =
-else
-		AVRDUDE_PORT = /dev/tty.usbserial*
-		AVRDUDE_PROGRAMMER = stk500v1
-		AVRDUDE_BAUDRATE = -b 115200
-endif
-
-# Add -D below to avoid erasing the whole flash (bootloader + application)
-AVRDUDE_WRITE_FLASH = -U flash:w:$(BUILD_DIR)/$(TARGET).hex
-
-CONFIG_FILE = config.dat
-AVRDUDE_WRITE_EEPROM = -U eeprom:w:$(CONFIG_FILE):s
-
-# Add -v option for more verbose output
-# Add -V option for faster turnaround: eliminates verify cycle, but can add
-# suprious fuse verify errors (which are safe to ignore if there is a final "Fuses OK")
-# Add -F to disable the signature byte check
-
-AVRDUDE_FLAGS = -v -V -C $(INSTALL_DIR)/hardware/tools/avr/etc/avrdude.conf \
-		-p $(PROC) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) $(AVRDUDE_BAUDRATE)
-
-# ==========================================================================
-
-FORMAT = ihex
-
-# Name of this Makefile (used for "make depend").
-MAKEFILE = Makefile
-
-# Debugging format.
-# Native formats for AVR-GCC's -g are stabs [default], or dwarf-2.
-# AVR (extended) COFF requires stabs, plus an avr-objcopy run.
-DEBUG = stabs
-
-OPT = s
-
-# Place -D or -U options here
-CDEFS = -DF_CPU=$(F_CPU) -DARDUINO=100
-CXXDEFS = -DF_CPU=$(F_CPU) -DARDUINO=100
-
-# Place -I options here
-CINCS = -I$(ARDUINO) -I$(PINS_INC_DIR)
-CXXINCS = -I$(ARDUINO) -I$(PINS_INC_DIR)
-
-# Compiler flag to set the C Standard level.
-# c89   - "ANSI" C
-# gnu89 - c89 plus GCC extensions
-# c99   - ISO C99 standard (not yet fully implemented)
-# gnu99 - c99 plus GCC extensions
-CSTANDARD = -std=gnu99
-CDEBUG = -g$(DEBUG)
-CWARN = -Wall -Wstrict-prototypes
-CTUNING = -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
-#CEXTRA = -Wa,-adhlns=$(<:.c=.lst)
-
-CFLAGS = $(CDEBUG) $(CDEFS) $(CINCS) -O$(OPT) $(CWARN) $(CSTANDARD) $(CEXTRA)
-CXXFLAGS = $(CDEFS) $(CINCS) -O$(OPT)
-#ASFLAGS = -Wa,-adhlns=$(<:.S=.lst),-gstabs 
-LDFLAGS = -lm
-
-
-
-# Program settings
-AVR_TOOLS_PATH = $(INSTALL_DIR)/hardware/tools/avr/bin
-CC = $(AVR_TOOLS_PATH)/avr-gcc
-CXX = $(AVR_TOOLS_PATH)/avr-g++
-OBJCOPY = $(AVR_TOOLS_PATH)/avr-objcopy
-OBJDUMP = $(AVR_TOOLS_PATH)/avr-objdump
-AR  = $(AVR_TOOLS_PATH)/avr-ar
-SIZE = $(AVR_TOOLS_PATH)/avr-size
-NM = $(AVR_TOOLS_PATH)/avr-nm
-AVRDUDE = $(AVR_TOOLS_PATH)/avrdude
-REMOVE = rm -f
-MV = mv -f
-
-# Combine all necessary flags and optional flags.
-# Add target processor to flags.
-ALL_CFLAGS = -mmcu=$(MCU) -I. $(CFLAGS)
-ALL_CXXFLAGS = -mmcu=$(MCU) -I. $(CXXFLAGS)
-ALL_ASFLAGS = -mmcu=$(MCU) -I. -x assembler-with-cpp $(ASFLAGS)
-
-# --------------------------------------------------------------------------
-# Default target.
-# --------------------------------------------------------------------------
-all: $(BUILD_DIR)
-		$(SIZE) --target=$(FORMAT) $(BUILD_DIR)/$(TARGET).hex
-
-# --------------------------------------------------------------------------
-# Special target to initialize MCU fuses
-# --------------------------------------------------------------------------
-fuses:
-		$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVR_FUSES)
-
-# --------------------------------------------------------------------------
-# Special target to load config data into EEPROM. The following make
-# symbols must be defined on the command line when using this target:
+# ATMega8 fuse bits used above (fuse bits for other devices are different!):
+# Example for 8 MHz internal oscillator
+# Fuse high byte:
+# 0xd9 = 1 1 0 1   1 0 0 1 <-- BOOTRST (boot reset vector at 0x0000)
+#        ^ ^ ^ ^   ^ ^ ^------ BOOTSZ0
+#        | | | |   | +-------- BOOTSZ1
+#        | | | |   +---------- EESAVE (set to 0 to preserve EEPROM over chip erase)
+#        | | | +-------------- CKOPT (clock option, depends on oscillator type)
+#        | | +---------------- SPIEN (if set to 1, serial programming is disabled)
+#        | +------------------ WDTON (if set to 0, watchdog is always on)
+#        +-------------------- RSTDISBL (if set to 0, RESET pin is disabled)
+# Fuse low byte:
+# 0x24 = 0 0 1 0   0 1 0 0
+#        ^ ^ \ /   \--+--/
+#        | |  |       +------- CKSEL 3..0 (8M internal RC)
+#        | |  +--------------- SUT 1..0 (slowly rising power)
+#        | +------------------ BODEN (if 0, brown-out detector is enabled)
+#        +-------------------- BODLEVEL (if 0: 4V, if 1: 2.7V)
 #
-#  SERIAL_NUMBER=... 32-bit, decimal or hex (0x...)
-# --------------------------------------------------------------------------
-config:
-		./config.py $(SERIAL_NUMBER) > $(CONFIG_FILE)
-		$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_EEPROM)
-		rm $(CONFIG_FILE)
-
-# --------------------------------------------------------------------------
-# Rules for building the library
-# --------------------------------------------------------------------------
-
-CORE_C_OBJ = $(addprefix $(BUILD_DIR)/obj/, $(CORE_C_SRC:%.c=%.o))
-CORE_CPP_OBJ = $(addprefix $(BUILD_DIR)/obj/, $(CORE_CPP_SRC:%.cpp=%.o))
-LOCAL_C_OBJ = $(addprefix $(BUILD_DIR)/obj/, $(LOCAL_C_SRC:%.c=%.o))
-LOCAL_CPP_OBJ = $(addprefix $(BUILD_DIR)/obj/, $(LOCAL_CPP_SRC:%.cpp=%.o))
-
-$(CORE_C_OBJ) : $(BUILD_DIR)/obj/%.o : $(ARDUINO)/%.c
-		$(CC) -c $(ALL_CFLAGS) $< -o $@
-
-$(CORE_CPP_OBJ) : $(BUILD_DIR)/obj/%.o : $(ARDUINO)/%.cpp
-		$(CXX) -c $(ALL_CXXFLAGS) $< -o $@
-
-$(LOCAL_C_OBJ) : $(BUILD_DIR)/obj/%.o : ./%.c
-		$(CC) -c $(ALL_CFLAGS) $< -o $@
-
-$(LOCAL_CPP_OBJ) : $(BUILD_DIR)/obj/%.o : ./%.cpp
-		$(CXX) -c $(ALL_CXXFLAGS) $< -o $@
-
-LIBOBJ = $(CORE_C_OBJ) $(CORE_CPP_OBJ) $(LOCAL_C_OBJ) $(LOCAL_CPP_OBJ)
-
-# --------------------------------------------------------------------------
-
-# --------------------------------------------------------------------------
-# Check amount of statically allocated SRAM being used.
-# Look for the offset of the _end symbol which should be less than
-# $800 = 2048 bytes. The difference between these is the available
-# space for heap and stack allocation.
-# --------------------------------------------------------------------------
-sram : elf
-		$(NM) -n $(BUILD_DIR)/$(TARGET).elf
-
-# Add 'asm' to to this list to always create an assembly listing
-##$(BUILD_DIR): elf hex asm
-$(BUILD_DIR): elf hex
-
-elf: $(BUILD_DIR)/$(TARGET).elf
-hex: $(BUILD_DIR)/$(TARGET).hex
-eep: $(BUILD_DIR)/$(TARGET).eep
-lss: $(BUILD_DIR)/$(TARGET).lss 
-sym: $(BUILD_DIR)/$(TARGET).sym
-
-asm:
-		$(CC) -S $(ALL_CXXFLAGS) utilities.cpp -o $(BUILD_DIR)/utilties.s
-
-# --------------------------------------------------------------------------
-# Re-compile the target and library if any headers changes
-# --------------------------------------------------------------------------
-HEADERS := $(wildcard *.h)
-
-$(BUILD_DIR)/$(TARGET).elf : $(HEADERS)
-
-$(BUILD_DIR)/core.a: $(HEADERS)
-
-# Program the device.  
-upload: $(BUILD_DIR)/$(TARGET).hex
-		$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH)
+# For computing fuse byte values for other devices and options see
+# the fuse bit calculator at http://www.engbedded.com/fusecalc/
 
 
-# Convert ELF to COFF for use in debugging / simulating in AVR Studio or VMLAB.
-COFFCONVERT=$(OBJCOPY) --debugging \
---change-section-address .data-0x800000 \
---change-section-address .bss-0x800000 \
---change-section-address .noinit-0x800000 \
---change-section-address .eeprom-0x810000 
+# Tune the lines below only if you know what you are doing:
 
+AVRDUDE = avrdude $(PROGRAMMER) -p $(DEVICE)
+COMPILE = avr-gcc -Wall -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE)
 
-coff: $(BUILD_DIR)/$(TARGET).elf
-		$(COFFCONVERT) -O coff-avr $(BUILD_DIR)/$(TARGET).elf $(TARGET).cof
+# symbolic targets:
+all:	main.hex
 
-
-extcoff: $(TARGET).elf
-		$(COFFCONVERT) -O coff-ext-avr $(BUILD_DIR)/$(TARGET).elf $(TARGET).cof
-
-
-.SUFFIXES: .elf .hex .eep .lss .sym
-
-.elf.hex:
-		$(OBJCOPY) -O $(FORMAT) -R .eeprom $< $@
-
-.elf.eep:
-		-$(OBJCOPY) -j .eeprom --set-section-flags=.eeprom="alloc,load" \
-		--change-section-lma .eeprom=0 -O $(FORMAT) $< $@
-
-# Create extended listing file from ELF output file.
-.elf.lss:
-		$(OBJDUMP) -h -S $< > $@
-
-# Create a symbol table from ELF output file.
-.elf.sym:
-		$(NM) -n $< > $@
-
-# Link: create ELF output file from library.
-$(BUILD_DIR)/$(TARGET).elf: $(TARGET).cpp $(BUILD_DIR)/core.a
-	$(CC) $(ALL_CXXFLAGS) -o $@ $(TARGET).cpp -D COMMIT_INFO="$(shell ./commitInfo.py)" -L. $(BUILD_DIR)/core.a $(LDFLAGS)
-
-# Provide different rules specifically for the bootloader. These override the previous generic rule
-# because they appear later in the makefile, and will generate warnings when using TARGET=boot.
-$(BUILD_DIR)/boot.elf: boot.cpp boot.h pin_defs.h stk500.h
-	$(CC) -mmcu=$(MCU) -DF_CPU=$(F_CPU) -DBAUD_RATE=115200 -DLED_START_FLASHES=3 -DLED_DATA_FLASH -O -Wl,--section-start=.text=$(BOOTSTART) -o $@ boot.cpp
-
-$(BUILD_DIR)/core.a: $(LIBOBJ)
-		@for i in $(LIBOBJ); do echo $(AR) rcs $(BUILD_DIR)/core.a $$i; $(AR) rcs $(BUILD_DIR)/core.a $$i; done
-
-
-# Compile: create object files from C++ source files.
-.cpp.o:
-		$(CXX) -c $(ALL_CXXFLAGS) $< -o $@ 
-
-# Compile: create object files from C source files.
 .c.o:
-		$(CC) -c $(ALL_CFLAGS) $< -o $@ 
+	$(COMPILE) -c $< -o $@
 
-
-# Compile: create assembler files from C source files.
-.c.s:
-		$(CC) -S $(ALL_CFLAGS) $< -o $@
-
-
-# Assemble: create object files from assembler source files.
 .S.o:
-		$(CC) -c $(ALL_ASFLAGS) $< -o $@
+	$(COMPILE) -x assembler-with-cpp -c $< -o $@
+# "-x assembler-with-cpp" should not be necessary since this is the default
+# file type for the .S (with capital S) extension. However, upper case
+# characters are not always preserved on Windows. To ensure WinAVR
+# compatibility define the file type manually.
 
-# Clean project.
+.c.s:
+	$(COMPILE) -S $< -o $@
+
+flash:	all
+	$(AVRDUDE) -U flash:w:main.hex:i
+
+fuse:
+	$(AVRDUDE) $(FUSES)
+
+# Xcode uses the Makefile targets "", "clean" and "install"
+install: flash fuse
+
+# if you use a bootloader, change the command below appropriately:
+load: all
+	bootloadHID main.hex
+
 clean:
-		$(REMOVE) $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET).eep $(BUILD_DIR)/$(TARGET).cof $(BUILD_DIR)/$(TARGET).elf \
-		$(BUILD_DIR)/$(TARGET).map $(BUILD_DIR)/$(TARGET).sym $(BUILD_DIR)/$(TARGET).lss $(BUILD_DIR)/core.a \
-		$(LIBOBJ) $(SRC:.c=.s) $(SRC:.c=.d) $(CXXSRC:.cpp=.s) $(CXXSRC:.cpp=.d)
+	rm -f main.hex main.elf $(OBJECTS)
 
-.PHONY:        all $(BUILD_DIR) elf hex eep lss sym program coff extcoff clean
+# file targets:
+main.elf: $(OBJECTS)
+	$(COMPILE) -o main.elf $(OBJECTS)
+
+main.hex: main.elf
+	rm -f main.hex
+	avr-objcopy -j .text -j .data -O ihex main.elf main.hex
+	avr-size --format=avr --mcu=$(DEVICE) main.elf
+# If you have an EEPROM section, you must also create a hex file for the
+# EEPROM and add it to the "flash" target.
+
+# Targets for code debugging and analysis:
+disasm:	main.elf
+	avr-objdump -d main.elf
+
+cpp:
+	$(COMPILE) -E main.c
