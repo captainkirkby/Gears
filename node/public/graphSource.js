@@ -3,13 +3,18 @@ $(function() {
 	// Reverse Order
 	seriesToPlot = ["temperature", "pressure", "irLevel", "thermistor", "humidity"];
 
+	// Drawing Constants
+
+	var NORMAL = 2;
+	var BOLD = 3;
+
 
 	dataToPlot = {
-		"temperature" : { "visible" : true, "width" : 2, "color" : 0},
-		"pressure" : { "visible" : true, "width" : 2, "color" : 1},
-		"irLevel" : { "visible" : true, "width" : 2, "color" : 2},
-		"thermistor" : { "visible" : true, "width" : 2, "color" : 3},
-		"humidity" : { "visible" : true, "width" : 2, "color" : 4}
+		"temperature" : { "visible" : true, "width" : NORMAL, "color" : 0},
+		"pressure" : { "visible" : true, "width" : NORMAL, "color" : 1},
+		"irLevel" : { "visible" : true, "width" : NORMAL, "color" : 2},
+		"thermistor" : { "visible" : true, "width" : NORMAL, "color" : 3},
+		"humidity" : { "visible" : true, "width" : NORMAL, "color" : 4}
 	};
 
 	// Store last request parameters
@@ -52,10 +57,10 @@ $(function() {
 	function boldPlot(seriesID, bold){
 		// Reset boldness of all series
 		$.each(dataToPlot, function(series, options) {
-			dataToPlot[series].width = 2;
+			dataToPlot[series].width = NORMAL;
 		});
 		// Bold the series we're interested in
-		dataToPlot[seriesID].width = bold ? 3 : 2;
+		dataToPlot[seriesID].width = bold ? BOLD : NORMAL;
 		// Change order of data to plot
 		seriesToPlot.push(seriesToPlot.splice(seriesToPlot.indexOf(seriesID),1)[0]);
 		displayData(lastFrom, lastTo);
@@ -129,12 +134,12 @@ $(function() {
 				dataSet.push({ data: dataSmoothing ? smoothSet : set , lines : { lineWidth : width, show : visible }, label: generateLabel(name), yaxis: (count + 1), color : dataToPlot[name].color});
 
 				if(smoothing){
-					dataSet.push({ data: set, lines : { show : false}, points : { lineWidth : width, show : visible, radius : POINT_SIZE}, yaxis: (count + 1), color : dataToPlot[name].color });
+					dataSet.push({ data: set, lines : { show : false}, points : { show : visible, radius : POINT_SIZE}, yaxis: (count + 1), color : dataToPlot[name].color });
 				}
 
 				//left or right and visible or invisible
 				var orientation = axesCount%2 ? "right" : "left";
-				YAxesSet.push({position : orientation, show : visible, font : { color : width == 3 ? "black" : "lightgrey", weight : width == 3 ? "bold" : "normal"}});
+				YAxesSet.push({position : orientation, show : visible, font : { color : width == BOLD ? "black" : "lightgrey", weight : width == BOLD ? "bold" : "normal"}});
 
 				count++;
 				if(visible) axesCount++;
