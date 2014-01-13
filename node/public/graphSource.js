@@ -1,25 +1,39 @@
 $(function() {
 
+	// Reverse Order
+	seriesToPlot = ["temperature", "pressure", "irLevel", "thermistor", "humidity"];
+
+	// Drawing Constants
+
+	var NORMAL = 2;
+	var BOLD = 3;
+
+
 	dataToPlot = {
-		"temperature" : 2,
-		"pressure" : 2,
-		"irLevel" : 2,
-		"thermistor" : 2,
-		"humidity" : 2
+		"temperature" : { "visible" : true, "width" : NORMAL, "color" : 0},
+		"pressure" : { "visible" : true, "width" : NORMAL, "color" : 1},
+		"irLevel" : { "visible" : true, "width" : NORMAL, "color" : 2},
+		"thermistor" : { "visible" : true, "width" : NORMAL, "color" : 3},
+		"humidity" : { "visible" : true, "width" : NORMAL, "color" : 4}
 	};
 
+	// Store last request parameters
+	var lastFrom;
+	var lastTo;
+
+	// Smoothing factors
 	var NUM_TEMPERATURE_SAMPLES = 11;		// o o X o o
 	var NUM_PRESSURE_SAMPLES = 55;
 	var NUM_IRLEVEL_SAMPLES = 55;
 	var NUM_THERMISTOR_SAMPLES = 55;
 	var NUM_HUMIDITY_SAMPLES = 55;
 
+	// Real time parameters
+	var TIMEOUT_VALUE = 333;
+	var realTimeUpdates = false;
 
-	// labelFormatter = function(label, series){
-	// 	// return "<span class='myLegendLabel' id='"+generateLabel(label)+"'>"+label+"</span>";
-	// 	return "<span class='myLegendLabel' id='asfdjh'>"+label+"</span>";
-
-	// };
+	// Smoothing or not
+	var smoothing = false;
 
 	function smoothingForSet(set){
 		var lookUpTable = {
@@ -35,13 +49,21 @@ $(function() {
 	}
 
 	function togglePlot(seriesID){
-		dataToPlot[seriesID] = !dataToPlot[seriesID];
-		displayData();		//wont display according to length
+		dataToPlot[seriesID].visible = !dataToPlot[seriesID].visible;
+		displayData(lastFrom, lastTo);
 	}
 
+	//Draw on top of others
 	function boldPlot(seriesID, bold){
-		dataToPlot[seriesID] = bold ? 3 : 2;
-		displayData();
+		// Reset boldness of all series
+		$.each(dataToPlot, function(series, options) {
+			dataToPlot[series].width = NORMAL;
+		});
+		// Bold the series we're interested in
+		dataToPlot[seriesID].width = bold ? BOLD : NORMAL;
+		// Change order of data to plot
+		seriesToPlot.push(seriesToPlot.splice(seriesToPlot.indexOf(seriesID),1)[0]);
+		displayData(lastFrom, lastTo);
 	}
 
 	function generateLabel(name){
@@ -64,6 +86,7 @@ $(function() {
 		return result;
 	}
 
+	// Save data in browser so if we are doing same request we don't have to re-fetch from server (caching does this maybe?)
 	function displayData(from, to){
 		if(from === undefined){
 			from = "DEFAULT";			// Use server default
@@ -78,6 +101,9 @@ $(function() {
 			"to" : to
 		});
 
+		lastFrom = from;
+		lastTo = to;
+
 		var POINT_SIZE = 0.5;
 
 		function onDataRecieved(data){
@@ -87,18 +113,12 @@ $(function() {
 			var count = 0;
 			var axesCount = 0;
 
-			$.each(dataToPlot, function(set, display){
-				displaySet(set, smoothing, smoothingForSet(set), display);
-			})
-
-			// displaySet("temperature", smoothing, NUM_TEMPERATURE_SAMPLES);
-			// displaySet("pressure", smoothing, NUM_PRESSURE_SAMPLES);
-			// displaySet("irLevel", smoothing, NUM_IRLEVEL_SAMPLES);
-			// displaySet("thermistor", smoothing, NUM_THERMISTOR_SAMPLES);
-			// displaySet("humidity", smoothing, NUM_HUMIDITY_SAMPLES);
+			$.each(seriesToPlot, function(index, set){
+				displaySet(set, smoothing, smoothingForSet(set), dataToPlot[set].visible, dataToPlot[set].width);
+			});
 
 
-			function displaySet(name, dataSmoothing, smoothingAmount, visible){
+			function displaySet(name, dataSmoothing, smoothingAmount, visible, width){
 				var set = [];
 				var smoothSet = [];
 	
@@ -111,15 +131,15 @@ $(function() {
 					smoothSet.push([date, smoothPoints(name, index, smoothingAmount)]);
 				}
 
-				dataSet.push({ data: dataSmoothing ? smoothSet : set , lines : { lineWidth : visible, show : visible }, label: generateLabel(name), yaxis: (count + 1), color : count});
+				dataSet.push({ data: dataSmoothing ? smoothSet : set , lines : { lineWidth : width, show : visible }, label: generateLabel(name), yaxis: (count + 1), color : dataToPlot[name].color});
 
 				if(smoothing){
-					dataSet.push({ data: set, lines : { show : false}, points : { lineWidth : visible, show : visible, radius : POINT_SIZE}, yaxis: (count + 1), color : count });
+					dataSet.push({ data: set, lines : { show : false}, points : { show : visible, radius : POINT_SIZE}, yaxis: (count + 1), color : dataToPlot[name].color });
 				}
 
 				//left or right and visible or invisible
 				var orientation = axesCount%2 ? "right" : "left";
-				YAxesSet.push({position : orientation, show : visible });
+				YAxesSet.push({position : orientation, show : visible, font : { color : width == BOLD ? "black" : "lightgrey", weight : width == BOLD ? "bold" : "normal"}});
 
 				count++;
 				if(visible) axesCount++;
@@ -149,12 +169,12 @@ $(function() {
 
 				return sum/smoothingRadius;
 			}
-			
+
 			somePlot = $.plot("#placeholder", dataSet, {
 				series : { shadowSize : 0},
 				xaxes : [{ mode: "time", timezone: "browser" }],		//must include jquery.flot.time.min.js for this!
 				yaxes : YAxesSet,
-				legend: { show : true, position : "nw"}
+				legend: { show : true, position : "nw", sorted : "ascending"}
 			});
 
 		}
@@ -166,12 +186,6 @@ $(function() {
 			success:onDataRecieved
 		});
 	}
-
-	var TIMEOUT_VALUE = 333;
-	var realTimeUpdates = false;
-
-	var smoothing = false;
-
 
 	function continuousUpdate(length){
 		if(realTimeUpdates){
