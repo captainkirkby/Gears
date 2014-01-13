@@ -24,4 +24,7 @@
 // ICP inputs (not sure if this is needed yet)
 //#define GPS_1PPS		14
 
+// Use ADC2 = PA2 = Arduino#26 as digital output test point
+#define TEST_POINT		26
+
 #endif

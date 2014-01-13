@@ -35,6 +35,10 @@ void setup() {
 	pinMode(LED_RED,OUTPUT);
 	analogWrite(PWM_IR_OUT,0); // pinMode init not necessary for PWM function
 
+	// Use ADC2 = PA2 = Arduino#26 as digital diagnostic output
+	pinMode(TEST_POINT,OUTPUT);
+	digitalWrite(TEST_POINT,LOW);
+
 	// Turns all LEDs on then off (0.5s + 0.5s)
 	LED_ON(GREEN); LED_ON(YELLOW); LED_ON(RED);
 	delay(500);
@@ -93,14 +97,15 @@ void loop() {
 	// Looks for any incoming data on the 2nd UART
 	char buffer[64];
 	for(uint8_t i = 0; i < 10; i++) {
-		if(Serial1.available() > 0) {
-			LED_ON(RED);
+		while(Serial1.available() > 0) {
+			LED_TOGGLE(RED);
+			digitalWrite(TEST_POINT,!digitalRead(TEST_POINT));
 			Serial1.readBytes(buffer,64);
 		}
 		delay(100);
 		LED_OFF(RED);
 	}
-	LED_TOGGLE(YELLOW);
+	LED_TOGGLE(GREEN);
 }
 
 int main(void) {
