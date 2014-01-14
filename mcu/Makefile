@@ -26,6 +26,9 @@ OBJECTS = main.o
 # symbolic targets:
 all: $(TARGET).hex
 
+# source dependencies
+main.o : main.c LED.h
+
 .c.o:
 	$(COMPILE) -c $< -o $@
 
