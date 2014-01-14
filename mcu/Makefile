@@ -1,58 +1,30 @@
-# Name: Makefile
-# Author: <insert your name here>
-# Copyright: <insert your copyright message here>
-# License: <insert your license reference here>
+#################################################################################
+## Makefile for microcontroller firmware. Adapted from the avr-project template.
+## Authors: David & Dylan Kirkby / Jan 2014.
+#################################################################################
 
-# This is a prototype Makefile. Modify it according to your needs.
-# You should at least check the settings for
-# DEVICE ....... The AVR device you compile for
-# CLOCK ........ Target AVR clock rate in Hertz
-# OBJECTS ...... The object files created from your source files. This list is
-#                usually the same as the list of source files with suffix ".o".
-# PROGRAMMER ... Options to avrdude which define the hardware you use for
-#                uploading to the AVR and the interface where this hardware
-#                is connected. We recommend that you leave it undefined and
-#                add settings like this to your ~/.avrduderc file:
-#                   default_programmer = "stk500v2"
-#                   default_serial = "avrdoper"
-# FUSES ........ Parameters for avrdude to flash the fuses appropriately.
+# The target device for cross compiling
+DEVICE     = atmega644a
+# The target device for uploads via avrdude
+# Normally this would be the same as DEVICE, but the 644a is a special case
+# since avrdude does not recognize it, so we instead pick a device with the
+# same hardware signature but different avr-gcc attributes.
+UPLOAD_DEVICE = atmega644
 
-DEVICE     = atmega8
-CLOCK      = 8000000
-PROGRAMMER = #-c stk500v2 -P avrdoper
-OBJECTS    = main.o
-FUSES      = -U hfuse:w:0xd9:m -U lfuse:w:0x24:m
+# The target device's clock speed in Hz
+CLOCK      = 10000000
 
-# ATMega8 fuse bits used above (fuse bits for other devices are different!):
-# Example for 8 MHz internal oscillator
-# Fuse high byte:
-# 0xd9 = 1 1 0 1   1 0 0 1 <-- BOOTRST (boot reset vector at 0x0000)
-#        ^ ^ ^ ^   ^ ^ ^------ BOOTSZ0
-#        | | | |   | +-------- BOOTSZ1
-#        | | | |   +---------- EESAVE (set to 0 to preserve EEPROM over chip erase)
-#        | | | +-------------- CKOPT (clock option, depends on oscillator type)
-#        | | +---------------- SPIEN (if set to 1, serial programming is disabled)
-#        | +------------------ WDTON (if set to 0, watchdog is always on)
-#        +-------------------- RSTDISBL (if set to 0, RESET pin is disabled)
-# Fuse low byte:
-# 0x24 = 0 0 1 0   0 1 0 0
-#        ^ ^ \ /   \--+--/
-#        | |  |       +------- CKSEL 3..0 (8M internal RC)
-#        | |  +--------------- SUT 1..0 (slowly rising power)
-#        | +------------------ BODEN (if 0, brown-out detector is enabled)
-#        +-------------------- BODLEVEL (if 0: 4V, if 1: 2.7V)
-#
-# For computing fuse byte values for other devices and options see
-# the fuse bit calculator at http://www.engbedded.com/fusecalc/
+PROGRAMMER = -c avrisp2 -P usb
+##FUSES      = -U hfuse:w:0xd9:m -U lfuse:w:0x24:m
 
-
-# Tune the lines below only if you know what you are doing:
-
-AVRDUDE = avrdude $(PROGRAMMER) -p $(DEVICE)
+AVRDUDE = avrdude $(PROGRAMMER) -p $(UPLOAD_DEVICE)
 COMPILE = avr-gcc -Wall -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE)
 
+TARGET = firmware
+OBJECTS = main.o
+
 # symbolic targets:
-all:	main.hex
+all: $(TARGET).hex
 
 .c.o:
 	$(COMPILE) -c $< -o $@
@@ -70,11 +42,8 @@ all:	main.hex
 flash:	all
 	$(AVRDUDE) -U flash:w:main.hex:i
 
-fuse:
-	$(AVRDUDE) $(FUSES)
-
-# Xcode uses the Makefile targets "", "clean" and "install"
-install: flash fuse
+#fuse:
+#	$(AVRDUDE) $(FUSES)
 
 # if you use a bootloader, change the command below appropriately:
 load: all
@@ -84,19 +53,19 @@ clean:
 	rm -f main.hex main.elf $(OBJECTS)
 
 # file targets:
-main.elf: $(OBJECTS)
-	$(COMPILE) -o main.elf $(OBJECTS)
+$(TARGET).elf: $(OBJECTS)
+	$(COMPILE) -o $(TARGET).elf $(OBJECTS)
 
-main.hex: main.elf
-	rm -f main.hex
-	avr-objcopy -j .text -j .data -O ihex main.elf main.hex
-	avr-size --format=avr --mcu=$(DEVICE) main.elf
+$(TARGET).hex: $(TARGET).elf
+	rm -f $(TARGET).hex
+	avr-objcopy -j .text -j .data -O ihex $(TARGET).elf $(TARGET).hex
+	avr-size --format=avr --mcu=$(DEVICE) $(TARGET).elf
 # If you have an EEPROM section, you must also create a hex file for the
 # EEPROM and add it to the "flash" target.
 
 # Targets for code debugging and analysis:
-disasm:	main.elf
-	avr-objdump -d main.elf
+disasm:	$(TARGET).elf
+	avr-objdump -d $(TARGET).elf
 
 cpp:
-	$(COMPILE) -E main.c
+	$(COMPILE) -E $(TARGET).c
