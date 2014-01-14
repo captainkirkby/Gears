@@ -5,13 +5,18 @@
 #define FTDI_BAUD_RATE	9600
 #define GPSDO_BAUD_RATE	9600
 
-// writes one byte to the specified port (0 or 1)
+// Writes one byte to the specified port (0 or 1). This is a synchronous operation
+// and will block until the transmit buffer is available.
 #define PUTC(PORT,BYTE) { \
 	// wait until the transmit buffer is empty \
 	while(!(UCSR##PORT##A & _BV(UDRE##PORT))); \
 	// write this byte to the transmit buffer \
 	UDR##PORT = BYTE; \
 }
+
+// Returns the next available byte from the specified port (0 or 1) or returns -1
+// if the receive buffer is empty.
+#define GETC(PORT) ((UCSR##PORT##A & _BV(RXC##PORT)) ? UDR##PORT : -1)
 
 void initUARTs() {
 	#define BAUD FTDI_BAUD_RATE
