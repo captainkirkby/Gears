@@ -14,7 +14,7 @@ UPLOAD_DEVICE = atmega644
 # The target device's clock speed in Hz
 CLOCK      = 10000000
 
-PROGRAMMER = -c avrisp2 -P usb
+PROGRAMMER = -c usbtiny -P usb
 ##FUSES      = -U hfuse:w:0xd9:m -U lfuse:w:0x24:m
 
 AVRDUDE = avrdude $(PROGRAMMER) -p $(UPLOAD_DEVICE)
@@ -40,17 +40,17 @@ all: $(TARGET).hex
 	$(COMPILE) -S $< -o $@
 
 flash:	all
-	$(AVRDUDE) -U flash:w:main.hex:i
+	$(AVRDUDE) -U flash:w:$(TARGET).hex:i
 
 #fuse:
 #	$(AVRDUDE) $(FUSES)
 
 # if you use a bootloader, change the command below appropriately:
 load: all
-	bootloadHID main.hex
+	bootloadHID $(TARGET).hex
 
 clean:
-	rm -f main.hex main.elf $(OBJECTS)
+	rm -f $(TARGET).hex $(TARGET).elf $(OBJECTS)
 
 # file targets:
 $(TARGET).elf: $(OBJECTS)
