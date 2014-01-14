@@ -1,6 +1,16 @@
 #################################################################################
 ## Makefile for microcontroller firmware. Adapted from the avr-project template.
 ## Authors: David & Dylan Kirkby / Jan 2014.
+##
+## Compiles sources into firmware.hex:
+## % make
+##
+## Burns firmware.hex into flash:
+## % make flash
+##
+## Writes assembly for main.c to build/main.s:
+## % make build/main.s
+##
 #################################################################################
 
 # The target device for cross compiling
@@ -20,8 +30,10 @@ PROGRAMMER = -c usbtiny -P usb
 AVRDUDE = avrdude $(PROGRAMMER) -p $(UPLOAD_DEVICE)
 COMPILE = avr-gcc -Wall -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE)
 
-TARGET = firmware
-OBJECTS = main.o
+SOURCES = main.c
+OBJECTS = $(addprefix build/, $(SOURCES:%.c=%.o))
+ASSEMS = $(addprefix build/, $(SOURCES:%.c=%.s))
+TARGET = build/firmware
 
 # symbolic targets:
 all: $(TARGET).hex
@@ -29,17 +41,12 @@ all: $(TARGET).hex
 # source dependencies
 main.o : main.c LED.h
 
-.c.o:
+# rule for compiling .c into a corresponding .o under build/
+$(OBJECTS) : build/%.o : %.c
 	$(COMPILE) -c $< -o $@
 
-.S.o:
-	$(COMPILE) -x assembler-with-cpp -c $< -o $@
-# "-x assembler-with-cpp" should not be necessary since this is the default
-# file type for the .S (with capital S) extension. However, upper case
-# characters are not always preserved on Windows. To ensure WinAVR
-# compatibility define the file type manually.
-
-.c.s:
+# rule for compiling .c into a corresponding .s under build/
+$(ASSEMS) : build/%.s : %.c
 	$(COMPILE) -S $< -o $@
 
 flash:	all
