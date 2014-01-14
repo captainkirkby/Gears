@@ -39,7 +39,7 @@ TARGET = build/firmware
 all: $(TARGET).hex
 
 # source dependencies
-main.o build/main.s : main.c LED.h UART.h
+build/main.o build/main.s : main.c LED.h UART.h
 
 # rule for compiling .c into a corresponding .o under build/
 $(OBJECTS) : build/%.o : %.c
