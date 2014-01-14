@@ -10,11 +10,12 @@
 #include <util/delay.h>
 
 #include "LED.h"
+#include "UART.h"
 
 int main(void)
 {
-	// initialize LEDs
 	initLEDs();
+	initUARTs();
 
     for(;;){
     	_delay_ms(500);
