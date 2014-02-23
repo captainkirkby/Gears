@@ -9,7 +9,10 @@ $(function() {
 
 	// Recent Fetch Stack
 	var stack = [];
-	var maxStackHeight = 1000;
+	var MAX_STACK_HEIGHT = 1000;
+
+	// Tick significant figures
+	var TICK_SIG_FIGS = 6;
 
 	// Plot Settings
 	var dataToPlot = {
@@ -152,6 +155,7 @@ $(function() {
 				var orientation = axesCount%2 ? "right" : "left";
 				YAxesSet.push({	position : orientation,
 								show : visible,
+								tickFormatter : function(val, axis){ return val.toPrecision(TICK_SIG_FIGS); },
 								font : { color : width == BOLD ? "black" : "lightgrey", weight : width == BOLD ? "bold" : "normal"}});
 
 				count++;
