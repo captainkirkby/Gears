@@ -129,7 +129,7 @@ $(function() {
 				for(var index=0;index<data.length;index++){
 					//Get timestamp as a date object
 					var date = new Date(Date.parse(data[index].timestamp));
-	
+
 					set.push([date, data[index][name]]);
 					smoothSet.push([date, smoothPoints(name, index, smoothingAmount)]);
 				}
@@ -220,8 +220,10 @@ $(function() {
 		togglePlot(clickedField);
 	});
 
+// Note: The following two bindings give a considerable performance hit, and in my case, the click no longer fired.
+/*
 	$("#placeholder").on("mouseenter", ".legendColorBox", function(){
-		//alert("Mouse Entered!");
+		console.log("Mouse Entered!");
 		var clickedField = generateLabel($(this).next().text());
 		boldPlot(clickedField, true);
 	});
@@ -231,6 +233,7 @@ $(function() {
 		var clickedField = generateLabel($(this).next().text());
 		boldPlot(clickedField, false);
 	});
+*/
 
 	$("#fetch").click(function(){
 		var from = new Date($("#from").val());
