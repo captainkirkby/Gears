@@ -4,11 +4,14 @@ $(function() {
 	seriesToPlot = ["temperature", "pressure", "irLevel", "thermistor", "humidity"];
 
 	// Drawing Constants
-
 	var NORMAL = 2;
 	var BOLD = 3;
 
+	// Recent Fetch Stack
+	var stack = [];
+	var maxStackHeight = 1000;
 
+	// Plot Settings
 	dataToPlot = {
 		"temperature" : { "visible" : true, "width" : NORMAL, "color" : 0},
 		"pressure" : { "visible" : true, "width" : NORMAL, "color" : 1},
@@ -131,15 +134,25 @@ $(function() {
 					smoothSet.push([date, smoothPoints(name, index, smoothingAmount)]);
 				}
 
-				dataSet.push({ data: dataSmoothing ? smoothSet : set , lines : { lineWidth : width, show : visible }, label: generateLabel(name), yaxis: (count + 1), color : dataToPlot[name].color});
+				dataSet.push({	data: dataSmoothing ? smoothSet : set,
+								lines : { lineWidth : width, show : visible },
+								label: generateLabel(name),
+								yaxis: (count + 1),
+								color : dataToPlot[name].color});
 
 				if(smoothing){
-					dataSet.push({ data: set, lines : { show : false}, points : { show : visible, radius : POINT_SIZE}, yaxis: (count + 1), color : dataToPlot[name].color });
+					dataSet.push({	data: set,
+									lines : { show : false},
+									points : { show : visible, radius : POINT_SIZE},
+									yaxis: (count + 1),
+									color : dataToPlot[name].color });
 				}
 
 				//left or right and visible or invisible
 				var orientation = axesCount%2 ? "right" : "left";
-				YAxesSet.push({position : orientation, show : visible, font : { color : width == BOLD ? "black" : "lightgrey", weight : width == BOLD ? "bold" : "normal"}});
+				YAxesSet.push({	position : orientation,
+								show : visible,
+								font : { color : width == BOLD ? "black" : "lightgrey", weight : width == BOLD ? "bold" : "normal"}});
 
 				count++;
 				if(visible) axesCount++;
