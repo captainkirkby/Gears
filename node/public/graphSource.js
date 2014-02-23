@@ -1,7 +1,7 @@
 $(function() {
 
 	// Reverse Order
-	seriesToPlot = ["temperature", "pressure", "irLevel", "thermistor", "humidity"];
+	var seriesToPlot = ["temperature", "pressure", "irLevel", "thermistor", "humidity"];
 
 	// Drawing Constants
 	var NORMAL = 2;
@@ -12,7 +12,7 @@ $(function() {
 	var maxStackHeight = 1000;
 
 	// Plot Settings
-	dataToPlot = {
+	var dataToPlot = {
 		"temperature" : { "visible" : true, "width" : NORMAL, "color" : 0},
 		"pressure" : { "visible" : true, "width" : NORMAL, "color" : 1},
 		"irLevel" : { "visible" : true, "width" : NORMAL, "color" : 2},
