@@ -7,9 +7,9 @@ $(function() {
 	var NORMAL = 2;
 	var BOLD = 3;
 
-	// Recent Fetch Stack
-	var stack = [];
-	var MAX_STACK_HEIGHT = 1000;
+	// Recent Fetch Cache
+	var cache = [];
+	var MAX_CACHE_LENGTH = 500;
 
 	// Tick significant figures
 	var TICK_SIG_FIGS = 6;
@@ -92,8 +92,17 @@ $(function() {
 		return result;
 	}
 
+	function cacheDataPoint(data, dataPoint){
+		// Insert data point in beginning of cache, pop from end if we exceed the cache limit
+		if(cache.unshift({key : data, value : dataPoint}) > MAX_CACHE_LENGTH){
+			cache.pop();
+		}
+	}
+
 	// Save data in browser so if we are doing same request we don't have to re-fetch from server (caching does this maybe?)
 	function displayData(from, to){
+		// Figure out if we already have the data we need in our cache and make the modified request
+
 		if(from === undefined){
 			from = "DEFAULT";			// Use server default
 		}
@@ -123,6 +132,11 @@ $(function() {
 				displaySet(set, smoothing, smoothingForSet(set), dataToPlot[set].visible, dataToPlot[set].width);
 			});
 
+			// Cache data point if we had to retrieve it
+			$.each(data, function(index, set){
+				cacheDataPoint(data[index].timestamp, data[index]);
+			});
+
 
 			function displaySet(name, dataSmoothing, smoothingAmount, visible, width){
 				var set = [];
@@ -130,7 +144,7 @@ $(function() {
 	
 				// Iterate through retrieved data
 				for(var index=0;index<data.length;index++){
-					//Get timestamp as a date object
+					// Get timestamp as a date object
 					var date = new Date(Date.parse(data[index].timestamp));
 
 					set.push([date, data[index][name]]);
