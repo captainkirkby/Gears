@@ -8,7 +8,7 @@ $(function() {
 	var BOLD = 3;
 
 	// Recent Fetch Cache
-	var cache = [];
+	var cache = {};
 	var MAX_CACHE_LENGTH = 500;
 
 	// Tick significant figures
@@ -92,11 +92,15 @@ $(function() {
 		return result;
 	}
 
-	function cacheDataPoint(data, dataPoint){
+	function cacheDataPoint(date, dataPoint){
 		// Insert data point in beginning of cache, pop from end if we exceed the cache limit
-		if(cache.unshift({key : data, value : dataPoint}) > MAX_CACHE_LENGTH){
+		if(cache.unshift({key : date, value : dataPoint}) > MAX_CACHE_LENGTH){
 			cache.pop();
 		}
+	}
+
+	function hasCachedPointForDate(date){
+		return date in cache;
 	}
 
 	// Save data in browser so if we are doing same request we don't have to re-fetch from server (caching does this maybe?)
