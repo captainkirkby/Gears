@@ -174,6 +174,13 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			lastDataSequenceNumber = 0;
 		}
 		else if(ptype == 0x01) {
+			console.log("Got Data!");
+			// Gets the raw data from the packet.raw field
+			var initialOffset = 30;
+			var raw = [];
+			for(var readFffset = initialReadOffset; readOffset < 1632; readOffset=readOffset+2) {
+				raw[readOffset-initialReadOffset]=buf.readUInt16LE(readOffset);
+			}
 			// Calculates the thermistor resistance in ohms assuming 100uA current source.
 			var rtherm = buf.readUInt16LE(24)/65536.0*5.0/100e-6;
 			// Calculates the corresponding temperature in degC using a Steinhart-Hart model.
@@ -190,7 +197,8 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 				// use nominal 1st order fit from sensor datasheet to calculate RH in %
 				'humidity': (buf.readUInt16LE(26)/65536.0 - 0.1515)/0.00636,
 				// convert IR level to volts
-				'irLevel': buf.readUInt16LE(28)/65536.0*5.0
+				'irLevel': buf.readUInt16LE(28)/65536.0*5.0,
+				'raw': raw
 			});
 			// Checks for a packet sequence error.
 			if(p.sequenceNumber != lastDataSequenceNumber+1) {
