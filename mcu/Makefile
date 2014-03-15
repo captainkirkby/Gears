@@ -13,9 +13,10 @@ TARGET = device
 # The MCU programming method to use:
 # Select 'usb' to program an Arduino via its usb-serial bootloader
 # Select 'spi' to program an AVR directly via its ISP port using an avrisp2
+# Select 'avrisp' to program an AVR with an Arduino acting as an ISP
 # Select 'tiny' to program an AVR directly via its ISP port using a usbtiny
 # --------------------------------------------------------------------------
-METHOD = tiny
+METHOD = avrisp
 
 # --------------------------------------------------------------------------
 # The MCU architecture to build for
@@ -109,6 +110,10 @@ else ifeq ($(METHOD),tiny)
 		AVRDUDE_PORT = usb
 		AVRDUDE_PROGRAMMER = usbtiny
 		AVRDUDE_BAUDRATE =
+else ifeq ($(METHOD),avrisp)
+		AVRDUDE_PORT = /dev/tty.usbserial*
+		AVRDUDE_PROGRAMMER = avrisp
+		AVRDUDE_BAUDRATE = -b 57600
 else
 		AVRDUDE_PORT = /dev/tty.usbserial*
 		AVRDUDE_PROGRAMMER = stk500v1
@@ -127,7 +132,7 @@ AVRDUDE_WRITE_EEPROM = -U eeprom:w:$(CONFIG_FILE):s
 # Add -F to disable the signature byte check
 
 AVRDUDE_FLAGS = -v -V -C $(INSTALL_DIR)/hardware/tools/avr/etc/avrdude.conf \
-		-p $(PROC) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) $(AVRDUDE_BAUDRATE)
+		-p $(PROC) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) $(AVRDUDE_BAUDRATE) -F
 
 # ==========================================================================
 
