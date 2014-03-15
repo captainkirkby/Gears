@@ -132,7 +132,7 @@ AVRDUDE_WRITE_EEPROM = -U eeprom:w:$(CONFIG_FILE):s
 # Add -F to disable the signature byte check
 
 AVRDUDE_FLAGS = -v -V -C $(INSTALL_DIR)/hardware/tools/avr/etc/avrdude.conf \
-		-p $(PROC) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) $(AVRDUDE_BAUDRATE) -D
+		-p $(PROC) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) $(AVRDUDE_BAUDRATE)
 
 # ==========================================================================
 
