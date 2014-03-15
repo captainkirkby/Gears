@@ -77,7 +77,7 @@ async.parallel({
 	db: function(callback) {
 		if(noDatabase) return callback(null,null);
 		console.log('Connecting to the database...');
-		mongoose.connect('mongodb://localhost:27017/ticktock-demotest');
+		mongoose.connect('mongodb://localhost:27017/ticktockDemoTest');
 		var db = mongoose.connection;
 		db.on('error', console.error.bind(console, 'db connection error:'));
 		db.once('open', function() {

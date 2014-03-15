@@ -136,10 +136,10 @@ $(function() {
 				displaySet(set, smoothing, smoothingForSet(set), dataToPlot[set].visible, dataToPlot[set].width);
 			});
 
-			// Cache data point if we had to retrieve it
-			$.each(data, function(index, set){
-				cacheDataPoint(data[index].timestamp, data[index]);
-			});
+			// // Cache data point if we had to retrieve it
+			// $.each(data, function(index, set){
+			// 	cacheDataPoint(data[index].timestamp, data[index]);
+			// });
 
 
 			function displaySet(name, dataSmoothing, smoothingAmount, visible, width){
