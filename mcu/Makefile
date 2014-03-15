@@ -112,8 +112,8 @@ else ifeq ($(METHOD),tiny)
 		AVRDUDE_BAUDRATE =
 else ifeq ($(METHOD),avrisp)
 		AVRDUDE_PORT = /dev/tty.usbserial*
-		AVRDUDE_PROGRAMMER = avrisp
-		AVRDUDE_BAUDRATE = -b 57600
+		AVRDUDE_PROGRAMMER = stk500v1
+		AVRDUDE_BAUDRATE = -b 19200
 else
 		AVRDUDE_PORT = /dev/tty.usbserial*
 		AVRDUDE_PROGRAMMER = stk500v1
@@ -132,7 +132,7 @@ AVRDUDE_WRITE_EEPROM = -U eeprom:w:$(CONFIG_FILE):s
 # Add -F to disable the signature byte check
 
 AVRDUDE_FLAGS = -v -V -C $(INSTALL_DIR)/hardware/tools/avr/etc/avrdude.conf \
-		-p $(PROC) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) $(AVRDUDE_BAUDRATE) -F
+		-p $(PROC) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) $(AVRDUDE_BAUDRATE) -D
 
 # ==========================================================================
 
