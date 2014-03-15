@@ -176,9 +176,9 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 		else if(ptype == 0x01) {
 			console.log("Got Data!");
 			// Gets the raw data from the packet.raw field
-			var initialOffset = 30;
 			var raw = [];
-			for(var readFffset = initialReadOffset; readOffset < 1632; readOffset=readOffset+2) {
+			var initialReadOffset = 30;
+			for(var readOffset = initialReadOffset; readOffset < 1632; readOffset=readOffset+2) {
 				raw[readOffset-initialReadOffset]=buf.readUInt16LE(readOffset);
 			}
 			// Calculates the thermistor resistance in ohms assuming 100uA current source.
