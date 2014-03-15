@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <Adafruit_BMP085_U.h>
 #include <avr/eeprom.h>
-#include <avr/interrupts.h>
 
 #include "packet.h"
 #include "pins.h"
@@ -34,8 +33,8 @@ DataPacket dataPacket;
 volatile uint16_t adcValue;
 
 //Create buffer hardcoded with 800 elements
-const uint16_t BUFFER_LENGTH = 800;
-uint16_t circularbuffer[BUFFER_LENGTH];
+const uint16_t CIRCULAR_BUFFER_LENGTH = 800;
+uint16_t circularbuffer[CIRCULAR_BUFFER_LENGTH];
 uint16_t currentElementIndex;
 
 //High when the buffer is ready to be dumped
@@ -177,7 +176,7 @@ void loop() {
 
 	// Store ADC run and kick off new conversion
 	if(done){
-		dataPacket.raw = circularbuffer;
+		memcpy(&dataPacket.raw, &circularbuffer,NUM_RAW_BYTES);
 
 		done = 0;
 		// Set ADEN in ADCSRA (0x7A) to enable the ADC and ADSC in ADCSRA to start the ADC conversion
