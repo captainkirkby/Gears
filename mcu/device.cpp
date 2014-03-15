@@ -214,18 +214,18 @@ ISR(ADC_vect){
    	// Must read low first
  	adcValue = ADCL | (ADCH << 8);
 
-	if(digitalRead(DIGITAL_PULSE_PIN)){
-		digitalWrite(DIGITAL_PULSE_PIN, LOW);
-	} else {
-		digitalWrite(DIGITAL_PULSE_PIN, HIGH);
-	}
+	// if(digitalRead(DIGITAL_PULSE_PIN)){
+	// 	digitalWrite(DIGITAL_PULSE_PIN, LOW);
+	// } else {
+	// 	digitalWrite(DIGITAL_PULSE_PIN, HIGH);
+	// }
 
 	if(timer > 0){
 		//if we are still filling buffer before dump
 		++timer;
 
 		//Time padding
-		digitalWrite(DIGITAL_TRIGGER_PIN, LOW);
+		// digitalWrite(DIGITAL_TRIGGER_PIN, LOW);
 
 		//check if we are done filling the buffer
 		if(timer == END_TIMER){
@@ -250,7 +250,7 @@ ISR(ADC_vect){
 		if(adcValue >= THRESHOLD){
 			//start timer
 			timer = 1;
-			digitalWrite(DIGITAL_TRIGGER_PIN, HIGH);
+			// digitalWrite(DIGITAL_TRIGGER_PIN, HIGH);
 
 
 			//Waste a few clock cycles to note on the oscilloscope that we have started the timer
@@ -258,7 +258,7 @@ ISR(ADC_vect){
 		} else {
 			//make sure timer is stopped
 			timer = 0;
-			digitalWrite(DIGITAL_TRIGGER_PIN, LOW);
+			// digitalWrite(DIGITAL_TRIGGER_PIN, LOW);
 		}
 	}
 
