@@ -50,7 +50,7 @@ const uint16_t END_TIMER = 500;
 //Set pins
 // const uint8_t DIGITAL_TRIGGER_PIN = 4;
 // const uint8_t DIGITAL_PULSE_PIN = 3;
-const uint8_t ANALOG_READ_PIN = 2;
+// const uint8_t ANALOG_READ_PIN = 2;
 
 ///////////////////////////////////////////////////
 
@@ -92,7 +92,7 @@ void setup() {
 	// Do not set above 15! You will overrun other parts of ADMUX. A full
 	// list of possible inputs is available in Table 24-4 of the ATMega328
 	// datasheet
-	ADMUX |= ANALOG_READ_PIN;
+	ADMUX |= ADC_IR_IN;
 	// ADMUX |= B00000010; // Binary equivalent
 	
 	// Set ADEN in ADCSRA (0x7A) to enable the ADC.
@@ -187,11 +187,11 @@ void loop() {
 	// We add the samples since the sum of 64 10-bit samples fully uses the available
 	// 16 bits without any overflow.
 	dataPacket.thermistor = dataPacket.humidity = dataPacket.irLevel = 0;
-	for(uint8_t count = 0; count < 64; ++count) {
-		dataPacket.thermistor += (uint16_t)analogRead(ADC_THERMISTOR);
-		dataPacket.humidity += (uint16_t)analogRead(ADC_HUMIDITY);
-		dataPacket.irLevel += (uint16_t)analogRead(ADC_IR_IN);
-	}
+	// for(uint8_t count = 0; count < 64; ++count) {
+	// 	dataPacket.thermistor += (uint16_t)analogRead(ADC_THERMISTOR);
+	// 	dataPacket.humidity += (uint16_t)analogRead(ADC_HUMIDITY);
+	// 	dataPacket.irLevel += (uint16_t)analogRead(ADC_IR_IN);
+	// }
 	// Sends binary packet data
 	Serial.write((const uint8_t*)&dataPacket,sizeof(dataPacket));
 	// Looks for any incoming data on the 2nd UART
