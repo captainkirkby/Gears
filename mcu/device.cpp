@@ -193,19 +193,25 @@ void loop() {
 	// 	dataPacket.irLevel += (uint16_t)analogRead(ADC_IR_IN);
 	// }
 	// Sends binary packet data
+	LED_ON(RED);
 	Serial.write((const uint8_t*)&dataPacket,sizeof(dataPacket));
-	// Looks for any incoming data on the 2nd UART
-	char buffer[64];
-	for(uint8_t i = 0; i < 10; i++) {
-		while(Serial1.available() > 0) {
-			LED_TOGGLE(RED);
-			digitalWrite(TEST_POINT,!digitalRead(TEST_POINT));
-			Serial1.readBytes(buffer,64);
-		}
-		delay(100);
-		LED_OFF(RED);
-	}
-	LED_TOGGLE(GREEN);
+	delay(500);
+	LED_OFF(RED);
+
+	// // Looks for any incoming data on the 2nd UART
+	// char buffer[64];
+	// for(uint8_t i = 0; i < 10; i++) {
+	// 	while(Serial1.available() > 0) {
+	// 		LED_TOGGLE(RED);
+	// 		digitalWrite(TEST_POINT,!digitalRead(TEST_POINT));
+	// 		Serial1.readBytes(buffer,64);
+	// 	}
+	// 	delay(100);
+	// 	LED_OFF(RED);
+	// }
+	// LED_TOGGLE(GREEN);
+	delay(500);
+
 }
 
 // Interrupt service routine for the ADC completion
