@@ -221,7 +221,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			return;
 		}
 		if(saveMe) {
-			console.log(p);
+			//console.log(p);
 			p.save(function(err,p) {
 				if(err) console.log('Error saving data packet',p);
 			});

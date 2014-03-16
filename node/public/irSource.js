@@ -159,22 +159,8 @@ $(function() {
 	});
 */
 
-	$("#fetch").click(function(){
-		var from = new Date($("#from").val());
-		var to = new Date($("#to").val());
-
-		var fromArg;
-		var toArg;
-
-		// Check for valid dates
-		if(!isNaN(from)){
-			fromArg = from.toISOString();
-		}
-		if(!isNaN(to)){
-			toArg = to.toISOString();
-		}
-
-		displayData(fromArg,toArg);
+	$("#fetchLatest").click(function(){
+		displayData();
 	});
 
 	$("#continuousMode").click(function(){
@@ -199,16 +185,6 @@ $(function() {
 		}
 
 		continuousUpdate(length);
-	});
-
-	$("#toggleSmoothing").click(function(){
-		if(smoothing){
-			$(this).val("Use Smoothing");
-			smoothing = false;
-		} else {
-			$(this).val("Don't Use Smoothing");
-			smoothing = true;
-		}
 	});
 
 	displayData();
