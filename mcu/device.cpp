@@ -8,7 +8,7 @@
 
 // Uses the fastest baud rate that can be synthesized from a 10 MHz clock with <2% error
 // See http://www.wormfood.net/avrbaudcalc.php for details on how this is calculated.
-#define BAUD_RATE 9600
+#define BAUD_RATE 57600
 
 // Creates our BMP interface object
 Adafruit_BMP085_Unified bmpSensor = Adafruit_BMP085_Unified();
@@ -52,15 +52,17 @@ const uint16_t END_TIMER = 500;
 // const uint8_t DIGITAL_PULSE_PIN = 3;
 // const uint8_t ANALOG_READ_PIN = 2;
 
-//Dumps the circular buffer from current element, wrapping around, to itself.
-void dumpToSerialPort(){
-	for(uint16_t i=currentElementIndex;i<CIRCULAR_BUFFER_LENGTH;++i){
-		Serial.println(circularbuffer[i]);
-	}
-	for(uint16_t i=0;i<currentElementIndex;++i){
-		Serial.println(circularbuffer[i]);
-	}
-}
+// //Dumps the circular buffer from current element, wrapping around, to itself.
+// void dumpToSerialPort(){
+// 	Serial.println();
+// 	for(uint16_t i=currentElementIndex;i<CIRCULAR_BUFFER_LENGTH;++i){
+// 		Serial.println(circularbuffer[i]);
+// 	}
+// 	for(uint16_t i=0;i<currentElementIndex;++i){
+// 		Serial.println(circularbuffer[i]);
+// 	}
+// 	Serial.println();
+// }
 
 ///////////////////////////////////////////////////
 
@@ -162,7 +164,7 @@ void setup() {
 	// ...
 	// Sends our boot packet.
 	LED_ON(RED);
-	//Serial.write((const uint8_t*)&bootPacket,sizeof(bootPacket));
+	Serial.write((const uint8_t*)&bootPacket,sizeof(bootPacket));
 	delay(500);
 	LED_OFF(RED);
 
@@ -197,7 +199,7 @@ void loop() {
 			dataPacket.raw[rawFill++] = circularbuffer[i];
 		}
 
-		dumpToSerialPort();
+		// dumpToSerialPort();
 
 		done = 0;
 		// Set ADEN in ADCSRA (0x7A) to enable the ADC.
@@ -223,7 +225,7 @@ void loop() {
 	// }
 	// Sends binary packet data
 	LED_ON(RED);
-	//Serial.write((const uint8_t*)&dataPacket,sizeof(dataPacket));
+	Serial.write((const uint8_t*)&dataPacket,sizeof(dataPacket));
 	delay(500);
 	LED_OFF(RED);
 
