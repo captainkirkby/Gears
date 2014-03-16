@@ -102,7 +102,8 @@ async.parallel({
 				pressure: Number,
 				thermistor: Number,
 				humidity: Number,
-				irLevel: Number
+				irLevel: Number,
+				raw: Array
 			});
 			var dataPacketModel = mongoose.model('dataPacketModel',dataPacketSchema);
 			// Propagates our database connection and db models to data logger.
@@ -180,8 +181,8 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			var raw = [];
 			var initialReadOffset = 32;
 			for(var readOffset = initialReadOffset; readOffset < 1632; readOffset=readOffset+2) {
-				raw[readOffset-initialReadOffset] = buf.readUInt16LE(readOffset);
-				fs.appendFileSync('runningData.dat', (raw[readOffset-initialReadOffset]).toString() + '\n');
+				raw[(readOffset-initialReadOffset)/2] = buf.readUInt16LE(readOffset);
+				fs.appendFileSync('runningData.dat', (raw[(readOffset-initialReadOffset)/2]).toString() + '\n');
 			}
 
 			// Calculates the thermistor resistance in ohms assuming 100uA current source.
@@ -203,7 +204,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 				'irLevel': buf.readUInt16LE(28)/65536.0*5.0,
 				'raw': raw
 			});
-			console.log(raw);
+			//console.log(raw);
 			// Checks for a packet sequence error.
 			if(p.sequenceNumber != lastDataSequenceNumber+1) {
 				console.log('Got packet #%d when expecting packet #%d',
