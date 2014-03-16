@@ -54,7 +54,7 @@ async.parallel({
 			function(ttyName,portCallback) {
 				console.log('Opening device %s...',ttyName);
 				var port = new serial.SerialPort(ttyName, {
-					baudrate: 76800,
+					baudrate: 57600,
 					buffersize: 255,
 					parser: serial.parsers.raw
 				});
@@ -201,9 +201,9 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 				'humidity': (buf.readUInt16LE(26)/65536.0 - 0.1515)/0.00636,
 				// convert IR level to volts
 				'irLevel': buf.readUInt16LE(28)/65536.0*5.0,
-				'raw': raw[1]
+				'raw': raw
 			});
-			//console.log(buf.toString('hex'));
+			console.log(buf.toString('hex'));
 			// Checks for a packet sequence error.
 			if(p.sequenceNumber != lastDataSequenceNumber+1) {
 				console.log('Got packet #%d when expecting packet #%d',
