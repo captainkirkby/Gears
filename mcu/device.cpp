@@ -181,6 +181,7 @@ void loop() {
 		done = 0;
 		// Set ADEN in ADCSRA (0x7A) to enable the ADC and ADSC in ADCSRA to start the ADC conversion
 		ADCSRA |= B10000000;
+		ADCSRA &= ~B01000000;
 		sei();
 	}
 	// Reads out the ADC channels with 64x oversampling.
@@ -234,6 +235,7 @@ ISR(ADC_vect){
 
 		//check if we are done filling the buffer
 		if(timer == END_TIMER){
+			LED_TOGGLE(YELLOW);
 			//uncomment this for mutiple buffers.
 			timer = 0;
 
