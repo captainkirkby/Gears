@@ -77,7 +77,7 @@ async.parallel({
 	db: function(callback) {
 		if(noDatabase) return callback(null,null);
 		console.log('Connecting to the database...');
-		mongoose.connect('mongodb://localhost:27017/ticktockDemoTest2');
+		mongoose.connect('mongodb://localhost:27017/ticktockDemoTest3');
 		var db = mongoose.connection;
 		db.on('error', console.error.bind(console, 'db connection error:'));
 		db.once('open', function() {
@@ -200,6 +200,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 				'irLevel': buf.readUInt16LE(28)/65536.0*5.0,
 				'raw': raw
 			});
+			console.log(raw);
 			// Checks for a packet sequence error.
 			if(p.sequenceNumber != lastDataSequenceNumber+1) {
 				console.log('Got packet #%d when expecting packet #%d',
