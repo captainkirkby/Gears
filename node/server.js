@@ -178,10 +178,10 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			console.log("Got Data!");
 			// Gets the raw data from the packet.raw field
 			var raw = [];
-			var initialReadOffset = 30;
+			var initialReadOffset = 32;
 			for(var readOffset = initialReadOffset; readOffset < 1632; readOffset=readOffset+2) {
 				raw[readOffset-initialReadOffset] = buf.readUInt16LE(readOffset);
-				fs.appendFileSync('data.dat', (raw[readOffset-initialReadOffset]).toString() + '\n');
+				fs.appendFileSync('runningData.dat', (raw[readOffset-initialReadOffset]).toString() + '\n');
 			}
 
 			// Calculates the thermistor resistance in ohms assuming 100uA current source.
@@ -203,7 +203,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 				'irLevel': buf.readUInt16LE(28)/65536.0*5.0,
 				'raw': raw
 			});
-			console.log(buf.toString('hex'));
+			console.log(raw);
 			// Checks for a packet sequence error.
 			if(p.sequenceNumber != lastDataSequenceNumber+1) {
 				console.log('Got packet #%d when expecting packet #%d',
