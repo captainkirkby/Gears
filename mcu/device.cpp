@@ -8,7 +8,7 @@
 
 // Uses the fastest baud rate that can be synthesized from a 10 MHz clock with <2% error
 // See http://www.wormfood.net/avrbaudcalc.php for details on how this is calculated.
-#define BAUD_RATE 76800
+#define BAUD_RATE 9600
 
 // Creates our BMP interface object
 Adafruit_BMP085_Unified bmpSensor = Adafruit_BMP085_Unified();
@@ -30,7 +30,7 @@ DataPacket dataPacket;
 /////////////// Free Running ADC ////////////////////
 
 // Value to store analog result
-volatile uint16_t adcValue;
+volatile uint16_t adcValue = 2;
 
 //Create buffer hardcoded with 800 elements
 const uint16_t CIRCULAR_BUFFER_LENGTH = 800;
@@ -51,6 +51,16 @@ const uint16_t END_TIMER = 500;
 // const uint8_t DIGITAL_TRIGGER_PIN = 4;
 // const uint8_t DIGITAL_PULSE_PIN = 3;
 // const uint8_t ANALOG_READ_PIN = 2;
+
+//Dumps the circular buffer from current element, wrapping around, to itself.
+void dumpToSerialPort(){
+	for(uint16_t i=currentElementIndex;i<CIRCULAR_BUFFER_LENGTH;++i){
+		Serial.println(circularbuffer[i]);
+	}
+	for(uint16_t i=0;i<currentElementIndex;++i){
+		Serial.println(circularbuffer[i]);
+	}
+}
 
 ///////////////////////////////////////////////////
 
@@ -152,7 +162,7 @@ void setup() {
 	// ...
 	// Sends our boot packet.
 	LED_ON(RED);
-	Serial.write((const uint8_t*)&bootPacket,sizeof(bootPacket));
+	//Serial.write((const uint8_t*)&bootPacket,sizeof(bootPacket));
 	delay(500);
 	LED_OFF(RED);
 
@@ -176,18 +186,36 @@ void loop() {
 
 	// Store ADC run and kick off new conversion
 	if(done){
-		memcpy(&dataPacket.raw, &circularbuffer,NUM_RAW_BYTES);
+		//memcpy(&dataPacket.raw, &circularbuffer,NUM_RAW_BYTES);
+		// Data packet has 1600 1 byte entries
+		// Circular buffer has 800 2 byte entries
+		uint16_t rawFill = 0;
+		for(uint16_t i=currentElementIndex;i<CIRCULAR_BUFFER_LENGTH;++i){
+			dataPacket.raw[rawFill++] = circularbuffer[i];
+		}
+		for(uint16_t i=0;i<currentElementIndex;++i){
+			dataPacket.raw[rawFill++] = circularbuffer[i];
+		}
+
+		dumpToSerialPort();
 
 		done = 0;
-		// Set ADEN in ADCSRA (0x7A) to enable the ADC and ADSC in ADCSRA to start the ADC conversion
+		// Set ADEN in ADCSRA (0x7A) to enable the ADC.
+		// Note, this instruction takes 12 ADC clocks to execute
 		ADCSRA |= B10000000;
-		ADCSRA &= ~B01000000;
+		
+		// Enable global interrupts
+		// AVR macro included in <avr/interrupts.h>, which the Arduino IDE
+		// supplies by default.
 		sei();
+	
+		// Set ADSC in ADCSRA (0x7A) to start the ADC conversion
+		ADCSRA |=B01000000;
 	}
 	// Reads out the ADC channels with 64x oversampling.
 	// We add the samples since the sum of 64 10-bit samples fully uses the available
 	// 16 bits without any overflow.
-	dataPacket.thermistor = dataPacket.humidity = dataPacket.irLevel = 0;
+	dataPacket.thermistor = dataPacket.humidity = dataPacket.irLevel = adcValue;
 	// for(uint8_t count = 0; count < 64; ++count) {
 	// 	dataPacket.thermistor += (uint16_t)analogRead(ADC_THERMISTOR);
 	// 	dataPacket.humidity += (uint16_t)analogRead(ADC_HUMIDITY);
@@ -195,7 +223,7 @@ void loop() {
 	// }
 	// Sends binary packet data
 	LED_ON(RED);
-	Serial.write((const uint8_t*)&dataPacket,sizeof(dataPacket));
+	//Serial.write((const uint8_t*)&dataPacket,sizeof(dataPacket));
 	delay(500);
 	LED_OFF(RED);
 
@@ -270,7 +298,7 @@ ISR(ADC_vect){
 	}
 
 	//Add value to buffer
-	currentElementIndex = (currentElementIndex + 1) % BUFFER_LENGTH;
+	currentElementIndex = (currentElementIndex + 1) % CIRCULAR_BUFFER_LENGTH;
 	circularbuffer[currentElementIndex] = adcValue;
   
 	// Not needed because free-running mode is enabled.

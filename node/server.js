@@ -1,6 +1,7 @@
 // Implements the combined data logger and web server component of the clock metrology project.
 // Created by D & D Kirkby, Dec 2013
 
+var fs = require('fs');
 var util = require('util');
 var async = require('async');
 var express = require('express');
@@ -179,8 +180,10 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			var raw = [];
 			var initialReadOffset = 30;
 			for(var readOffset = initialReadOffset; readOffset < 1632; readOffset=readOffset+2) {
-				raw[readOffset-initialReadOffset]=buf.readUInt16LE(readOffset);
+				raw[readOffset-initialReadOffset] = buf.readUInt16LE(readOffset);
+				fs.appendFileSync('data.dat', (raw[readOffset-initialReadOffset]).toString() + '\n');
 			}
+
 			// Calculates the thermistor resistance in ohms assuming 100uA current source.
 			var rtherm = buf.readUInt16LE(24)/65536.0*5.0/100e-6;
 			// Calculates the corresponding temperature in degC using a Steinhart-Hart model.
@@ -198,9 +201,9 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 				'humidity': (buf.readUInt16LE(26)/65536.0 - 0.1515)/0.00636,
 				// convert IR level to volts
 				'irLevel': buf.readUInt16LE(28)/65536.0*5.0,
-				'raw': raw
+				'raw': raw[1]
 			});
-			console.log(raw);
+			//console.log(buf.toString('hex'));
 			// Checks for a packet sequence error.
 			if(p.sequenceNumber != lastDataSequenceNumber+1) {
 				console.log('Got packet #%d when expecting packet #%d',
