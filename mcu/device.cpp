@@ -192,10 +192,10 @@ void loop() {
 		// Data packet has 1600 1 byte entries
 		// Circular buffer has 800 2 byte entries
 		uint16_t rawFill = 0;
-		for(uint16_t i=currentElementIndex;i<CIRCULAR_BUFFER_LENGTH;++i){
+		for(uint16_t i=currentElementIndex+1;i<CIRCULAR_BUFFER_LENGTH;++i){
 			dataPacket.raw[rawFill++] = circularbuffer[i];
 		}
-		for(uint16_t i=0;i<currentElementIndex;++i){
+		for(uint16_t i=0;i<currentElementIndex+1;++i){
 			dataPacket.raw[rawFill++] = circularbuffer[i];
 		}
 
