@@ -1,1 +1,47 @@
-Hello World
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>Plot</title>
+	<link href="examples.css" rel="stylesheet" type="text/css">
+	<!--[if lte IE 8]><script language="javascript" type="text/javascript" src="../../excanvas.min.js"></script><![endif]-->
+	<script language="javascript" type="text/javascript" src="jquery-1.10.2.min.js"></script>
+	<script language="javascript" type="text/javascript" src="jquery.flot.min.js"></script>
+	<script language="javascript" type="text/javascript" src="jquery.flot.time.min.js"></script>
+	<script language="javascript" type="text/javascript">
+		$(function(){
+			$.ajax({
+				type : "GET",
+				url : "about",
+				success : function(data){
+					var html = $.parseHTML(data);
+					$("#status").text("").append(html);
+				}
+			});
+		});
+	</script>
+</head>
+<body>
+
+	<div id="header">
+		<h2>Tick Tock Homepage</h2>
+	</div>
+
+	<div id="content">
+
+		<h3>Status</h3>
+		<p id="status">...</p>
+
+		<br/><br/>
+
+		<h3><a href="irPlot.html">IR Data</a></h3>
+		<h3><a href="sensorPlot.html">Sensor Data</a></h3>
+
+	</div>
+
+	<div id="footer">
+		This software is maintained on <a href="https://github.com/captainkirkby/Gears">github</a>
+	</div>
+
+</body>
+</html>
