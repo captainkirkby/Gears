@@ -284,7 +284,7 @@ ISR(ADC_vect){
 		in either case, fill buffer once and increment pointer
 		*/	
 	
-		if(adcValue >= THRESHOLD){
+		if(adcValue <= THRESHOLD){
 			//start timer
 			timer = 1;
 			digitalWrite(TRIGGER_TEST_POINT, HIGH);
