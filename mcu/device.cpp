@@ -40,7 +40,7 @@ uint16_t currentElementIndex;
 //High when the buffer is ready to be dumped
 volatile int done;
 
-//Set trigger
+//Set trigger (percent of a 10 bit sample)
 const uint16_t THRESHOLD = 500;
 
 //Declare timer
@@ -218,11 +218,11 @@ void loop() {
 	// We add the samples since the sum of 64 10-bit samples fully uses the available
 	// 16 bits without any overflow.
 	dataPacket.thermistor = dataPacket.humidity = dataPacket.irLevel = 0;
-	for(uint8_t count = 0; count < 64; ++count) {
-		dataPacket.thermistor += (uint16_t)analogRead(ADC_THERMISTOR);
-		dataPacket.humidity += (uint16_t)analogRead(ADC_HUMIDITY);
-		dataPacket.irLevel += (uint16_t)analogRead(ADC_IR_IN);
-	}
+	// for(uint8_t count = 0; count < 64; ++count) {									// Note: Uncommenting this section breaks it....
+	// 	dataPacket.thermistor += (uint16_t)analogRead(ADC_THERMISTOR);
+	// 	dataPacket.humidity += (uint16_t)analogRead(ADC_HUMIDITY);
+	// 	dataPacket.irLevel += (uint16_t)analogRead(ADC_IR_IN);
+	// }
 	// Sends binary packet data
 	LED_ON(RED);
 	Serial.write((const uint8_t*)&dataPacket,sizeof(dataPacket));
