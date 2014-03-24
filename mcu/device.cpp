@@ -30,7 +30,7 @@ DataPacket dataPacket;
 /////////////// Free Running ADC ////////////////////
 
 // Value to store analog result
-volatile uint16_t adcValue = 2;
+volatile uint16_t adcValue = 0;
 
 //Create buffer hardcoded with 800 elements
 const uint16_t CIRCULAR_BUFFER_LENGTH = 800;
@@ -74,13 +74,13 @@ void setup() {
 	pinMode(LED_RED,OUTPUT);
 	analogWrite(PWM_IR_OUT,0); // pinMode init not necessary for PWM function
 
-	// //Setup Digital output pins
-	// pinMode(DIGITAL_PULSE_PIN, OUTPUT);
-	// digitalWrite(DIGITAL_PULSE_PIN, LOW);
+	//Setup Digital pulse pins
+	pinMode(PULSE_TEST_POINT, OUTPUT);
+	digitalWrite(PULSE_TEST_POINT, LOW);
 
-	// //Setup Digital trigger pins
-	// pinMode(DIGITAL_TRIGGER_PIN, OUTPUT);
-	// digitalWrite(DIGITAL_TRIGGER_PIN, LOW);
+	//Setup Digital trigger pins
+	pinMode(TRIGGER_TEST_POINT, OUTPUT);
+	digitalWrite(TRIGGER_TEST_POINT, LOW);
 
 	//Setup circular buffer
 	currentElementIndex = 0;
@@ -217,12 +217,12 @@ void loop() {
 	// Reads out the ADC channels with 64x oversampling.
 	// We add the samples since the sum of 64 10-bit samples fully uses the available
 	// 16 bits without any overflow.
-	dataPacket.thermistor = dataPacket.humidity = dataPacket.irLevel = adcValue;
-	// for(uint8_t count = 0; count < 64; ++count) {
-	// 	dataPacket.thermistor += (uint16_t)analogRead(ADC_THERMISTOR);
-	// 	dataPacket.humidity += (uint16_t)analogRead(ADC_HUMIDITY);
-	// 	dataPacket.irLevel += (uint16_t)analogRead(ADC_IR_IN);
-	// }
+	dataPacket.thermistor = dataPacket.humidity = dataPacket.irLevel = 0;
+	for(uint8_t count = 0; count < 64; ++count) {
+		dataPacket.thermistor += (uint16_t)analogRead(ADC_THERMISTOR);
+		dataPacket.humidity += (uint16_t)analogRead(ADC_HUMIDITY);
+		dataPacket.irLevel += (uint16_t)analogRead(ADC_IR_IN);
+	}
 	// Sends binary packet data
 	LED_ON(RED);
 	Serial.write((const uint8_t*)&dataPacket,sizeof(dataPacket));
@@ -250,18 +250,18 @@ ISR(ADC_vect){
    	// Must read low first
  	adcValue = ADCL | (ADCH << 8);
 
-	// if(digitalRead(DIGITAL_PULSE_PIN)){
-	// 	digitalWrite(DIGITAL_PULSE_PIN, LOW);
-	// } else {
-	// 	digitalWrite(DIGITAL_PULSE_PIN, HIGH);
-	// }
+	if(digitalRead(PULSE_TEST_POINT)){
+		digitalWrite(PULSE_TEST_POINT, LOW);
+	} else {
+		digitalWrite(PULSE_TEST_POINT, HIGH);
+	}
 
 	if(timer > 0){
 		//if we are still filling buffer before dump
 		++timer;
 
 		//Time padding
-		// digitalWrite(DIGITAL_TRIGGER_PIN, LOW);
+		digitalWrite(TRIGGER_TEST_POINT, LOW);
 
 		//check if we are done filling the buffer
 		if(timer == END_TIMER){
@@ -287,7 +287,7 @@ ISR(ADC_vect){
 		if(adcValue >= THRESHOLD){
 			//start timer
 			timer = 1;
-			// digitalWrite(DIGITAL_TRIGGER_PIN, HIGH);
+			digitalWrite(TRIGGER_TEST_POINT, HIGH);
 
 
 			//Waste a few clock cycles to note on the oscilloscope that we have started the timer
@@ -295,7 +295,7 @@ ISR(ADC_vect){
 		} else {
 			//make sure timer is stopped
 			timer = 0;
-			// digitalWrite(DIGITAL_TRIGGER_PIN, LOW);
+			digitalWrite(TRIGGER_TEST_POINT, LOW);
 		}
 	}
 

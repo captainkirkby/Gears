@@ -16,7 +16,7 @@ TARGET = device
 # Select 'avrisp' to program an AVR with an Arduino acting as an ISP
 # Select 'tiny' to program an AVR directly via its ISP port using a usbtiny
 # --------------------------------------------------------------------------
-METHOD = avrisp
+METHOD = tiny
 
 # --------------------------------------------------------------------------
 # The MCU architecture to build for
