@@ -13,6 +13,7 @@
 #include "LED.h"
 #include "UART.h"
 #include "TWI.h"
+#include "BMP180.h"
 
 #include "packet.h"
 
