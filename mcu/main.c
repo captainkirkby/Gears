@@ -43,9 +43,20 @@ int main(void)
     _delay_ms(500);
     LED_OFF(RED);
 
+    // Initializes the constant header of our data packet
+    dataPacket.start[0] = START_BYTE;
+    dataPacket.start[1] = START_BYTE;
+    dataPacket.start[2] = START_BYTE;
+    dataPacket.type = DATA_PACKET;
+    dataPacket.sequenceNumber = 0;
+
     while(1) {
         rippleUp();
         rippleDown();
+        // Updates our sequence number for the next packet
+        dataPacket.sequenceNumber++;
+        // Sends binary packet data
+        serialWriteUSB((const uint8_t*)&dataPacket,sizeof(dataPacket));
     }
     return 0; // never actually reached
 }
