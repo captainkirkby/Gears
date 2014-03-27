@@ -12,6 +12,7 @@
 
 #include "LED.h"
 #include "UART.h"
+#include "TWI.h"
 
 #include "packet.h"
 
