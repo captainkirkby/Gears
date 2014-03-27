@@ -28,7 +28,7 @@ PROGRAMMER = -c usbtiny -P usb
 ##FUSES      = -U hfuse:w:0xd9:m -U lfuse:w:0x24:m
 
 AVRDUDE = avrdude $(PROGRAMMER) -p $(UPLOAD_DEVICE)
-COMPILE = avr-gcc -Wall -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE)
+COMPILE = avr-gcc -Wall -Os -std=c99 -DF_CPU=$(CLOCK) -mmcu=$(DEVICE)
 
 SOURCES = main.c
 OBJECTS = $(addprefix build/, $(SOURCES:%.c=%.o))
