@@ -35,6 +35,9 @@ OBJECTS = $(addprefix build/, $(SOURCES:%.c=%.o))
 ASSEMS = $(addprefix build/, $(SOURCES:%.c=%.s))
 TARGET = build/firmware
 
+# run the commitInfo.py script to capture our git status
+COMMIT_INFO := $(shell ./commitInfo.py)
+
 # symbolic targets:
 all: $(TARGET).hex
 
@@ -43,7 +46,7 @@ build/main.o build/main.s : main.c LED.h UART.h packet.h
 
 # rule for compiling .c into a corresponding .o under build/
 $(OBJECTS) : build/%.o : %.c
-	$(COMPILE) -c $< -o $@
+	$(COMPILE) -c $< -o $@ -DCOMMIT_INFO="$(COMMIT_INFO)"
 
 # rule for compiling .c into a corresponding .s under build/
 $(ASSEMS) : build/%.s : %.c
