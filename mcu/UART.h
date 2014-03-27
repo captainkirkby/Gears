@@ -64,10 +64,10 @@ void initUARTs() {
 
 // Performs a synchronous write of the specified binary data to the specified UART
 void serialWriteUSB(const uint8_t *data, size_t len) {
-	while(--len) putc0(*data++);
+	while(len--) putc0(*data++);
 }
 void serialWriteGPS(const uint8_t *data, size_t len) {
-	while(--len) putc1(*data++);
+	while(len--) putc1(*data++);
 }
 
 #endif
