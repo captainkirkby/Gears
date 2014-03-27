@@ -37,28 +37,15 @@ int main(void)
     // Copies our serial number from EEPROM address 0x10 into the boot packet
     bootPacket.serialNumber = eeprom_read_dword((uint32_t*)0x10);
 
-	putc0('0');
-	putc1('1');
+    // Sends our boot packet.
+    LED_ON(RED);
+    serialWriteUSB((const uint8_t*)&bootPacket,sizeof(bootPacket));
+    _delay_ms(500);
+    LED_OFF(RED);
 
     while(1) {
-    	// Copy any input on port 0 to port 1
-    	int c0 = getc0();
-    	if(c0 < -1) {
-    		LED_TOGGLE(RED);
-    	}
-    	else if(c0 >= 0) {
-    		LED_TOGGLE(GREEN);
-    		putc1((char)c0);
-    	}
-    	// Copy any input on port 1 to port 0
-    	int c1 = getc1();
-    	if(c1 < -1) {
-    		LED_TOGGLE(RED);
-    	}
-    	else if(c1 >= 0) {
-    		LED_TOGGLE(YELLOW);
-    		putc0((char)c1);
-    	}
+        rippleUp();
+        rippleDown();
     }
     return 0; // never actually reached
 }
