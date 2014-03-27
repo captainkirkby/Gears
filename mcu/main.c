@@ -12,6 +12,22 @@
 #include "LED.h"
 #include "UART.h"
 
+#include "packet.h"
+
+// Declares and initializes our boot info packet
+BootPacket bootPacket = {
+    START_BYTE, START_BYTE, START_BYTE, BOOT_PACKET,
+    0,0,0,
+#ifdef COMMIT_INFO
+    COMMIT_INFO
+#else
+    0, { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }, 0
+#endif
+};
+
+// Declares the data packet we will transmit periodically
+DataPacket dataPacket;
+
 int main(void)
 {
 	initLEDs();
