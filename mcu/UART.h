@@ -63,4 +63,12 @@ void initUARTs() {
 	UCSR1C = _BV(UCSZ11) | _BV(UCSZ10);
 }
 
+// Performs a synchronous write of the specified binary data to the specified UART
+void serialWriteUSB(uint8_t *data, size_t len) {
+	while(--len) putc0(*data++);
+}
+void serialWriteGPS(uint8_t *data, size_t len) {
+	while(--len) putc1(*data++);
+}
+
 #endif
