@@ -18,7 +18,8 @@
 
 // Declares and initializes our boot info packet
 BootPacket bootPacket = {
-    START_BYTE, START_BYTE, START_BYTE, BOOT_PACKET,
+    { START_BYTE, START_BYTE, START_BYTE },
+    BOOT_PACKET,
     0,0,0,
 #ifdef COMMIT_INFO
     COMMIT_INFO
