@@ -8,6 +8,7 @@
 
 #include <avr/io.h>
 #include <util/delay.h>
+#include <avr/eeprom.h>
 
 #include "LED.h"
 #include "UART.h"
@@ -32,6 +33,9 @@ int main(void)
 {
 	initLEDs();
 	initUARTs();
+
+    // Copies our serial number from EEPROM address 0x10 into the boot packet
+    bootPacket.serialNumber = eeprom_read_dword((uint32_t*)0x10);
 
 	putc0('0');
 	putc1('1');
