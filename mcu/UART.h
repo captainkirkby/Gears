@@ -1,8 +1,7 @@
 #ifndef UART_H
 #define UART_H
 
-//#define FTDI_BAUD_RATE	76800
-#define FTDI_BAUD_RATE	9600
+#define FTDI_BAUD_RATE	57600
 #define GPSDO_BAUD_RATE	9600
 
 // Writes one byte to the specified port (0 or 1). This is a synchronous operation

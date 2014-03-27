@@ -53,7 +53,7 @@ async.parallel({
 			function(ttyName,portCallback) {
 				console.log('Opening device %s...',ttyName);
 				var port = new serial.SerialPort(ttyName, {
-					baudrate: 76800,
+					baudrate: 57600,
 					buffersize: 255,
 					parser: serial.parsers.raw
 				});
