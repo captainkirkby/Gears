@@ -5,6 +5,9 @@
 // See section 5.2 of the datasheet.
 #define BMP180_ADDRESS 0xEE
 
+// The hardcoded chip ID returned by a BMP180
+#define BMP180_CHIPID 0x55
+
 // Copied from Adafruit BMP085 interface code
 /*=========================================================================
     REGISTERS
@@ -65,20 +68,22 @@
 /*=========================================================================*/
 
 // Initializes communications with the BMP sensor. The possible returned error codes are:
-// 1X = initial TWI write failed (to request sensor ID)
+// 1X = initial TWI write failed (to request chip ID), probably indicating general TWI problem
+// 2X = readback of TWI chip ID failed
+// 3X = got unexpected chip ID
 uint8_t initBMP180() {
 	uint8_t error;
+	// send a request for the chip ID as a test of the TWI communication and to check
+	// that we have a BMP180 (or BMP085) at the other end
 	uint8_t data = BMP085_REGISTER_CHIPID;
 	error = twiWrite(BMP180_ADDRESS,&data,sizeof(data));
 	if(error) return 10+error;
-
+	// read the chip ID and check its value
+	error = twiRead(BMP180_ADDRESS,&data,sizeof(data));
+	if(error) return 20+error;
+	if(data != BMP180_CHIPID) return 30;
+	// all done with no errors
 	return 0;
-	/*
-	read8(BMP085_REGISTER_CHIPID, &id);
-	if(id != 0x55) {
-		// uh-oh...
-	}
-	*/
 }
 
 #endif
