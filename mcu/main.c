@@ -40,7 +40,7 @@ int main(void)
     initTWI();
 
     // Initializes communication with the BMP sensor
-    if(bootPacket.bmpSensorStatus = initBMP180()) {
+    if((bootPacket.bmpSensorStatus = initBMP180()) != 0) {
         // A non-zero status indicates a problem, so flash an error code
         flashNumber(100+bootPacket.bmpSensorStatus);
     }
