@@ -35,9 +35,8 @@ void initTWI() {
 	TWCR = _BV(TWEN);
 }
 
-// Perform a synchronous write of the specified data to the specified TWI bus address.
-// This code follows the example in section 21.6
-uint8_t twiWrite(uint8_t address, const uint8_t *data, size_t len) {
+// Transmits a START condition synchronously and returns 1 if successful, else 0.
+inline uint8_t twiStart() {
 	// start transmitting start condition
 	TWCR = _BV(TWINT) | _BV(TWEN) | _BV(TWSTA);
 	// wait for the start condition to complete transmitting
@@ -45,8 +44,25 @@ uint8_t twiWrite(uint8_t address, const uint8_t *data, size_t len) {
 	// check that the start condition was transmitted successfully
 	if((TWSR & TW_STATUS_MASK) != TW_START) {
 		flashDigit(1);
-		return 1;
+		return 0;
 	}
+	return 1;
+}
+
+// Transmits a STOP condition synchronously. There is no error condition to check
+// so this has no return value, but will block until the stop condition has
+// finished transmitting.
+inline void twiStop() {
+	// start transmitting stop condition
+	TWCR = _BV(TWINT) | _BV(TWEN) | _BV(TWSTO);
+	// wait for stop condition to finish transmitting (TWINT is not set after a STOP!)
+	while(TWCR & _BV(TWSTO));
+}
+
+// Perform a synchronous write of the specified data to the specified TWI bus address.
+// This code follows the example in section 21.6
+uint8_t twiWrite(uint8_t address, const uint8_t *data, size_t len) {
+	if(!twiStart()) return 1;
 	// load the data register with the address we want, and set the WRITE direction bit (SLA+W)
 	TWDR = address | TW_WRITE;
 	// start transmitting the address
@@ -54,10 +70,7 @@ uint8_t twiWrite(uint8_t address, const uint8_t *data, size_t len) {
 	// wait for the address to complete transmitting
 	while(!(TWCR & _BV(TWINT)));
 	// check that the address was transmitted successfully and acknowledged with an ACK
-	if((TWSR & TW_STATUS_MASK) != TW_MT_SLA_ACK) {
-		flashDigit(2);
-		return 2;
-	}
+	if((TWSR & TW_STATUS_MASK) != TW_MT_SLA_ACK) return 2;
 	// loop over data bytes to write
 	while(len--) {
 		// load the data register with the next byte to write
@@ -67,15 +80,9 @@ uint8_t twiWrite(uint8_t address, const uint8_t *data, size_t len) {
 		// wait for the data byte to finish transmitting
 		while(!(TWCR & _BV(TWINT)));
 		// check that the data was transmitted successfully
-		if((TWSR & TW_STATUS_MASK) != TW_MT_DATA_ACK) {
-			flashDigit(3);
-			return 3;
-		}
+		if((TWSR & TW_STATUS_MASK) != TW_MT_DATA_ACK) return 3;
 	}
-	// start transmitting stop condition
-	TWCR = _BV(TWINT) | _BV(TWEN) | _BV(TWSTO);
-	// wait for stop condition to finish transmitting (TWINT is not set after a STOP!)
-	while(TWCR & _BV(TWSTO));
+	twiStop();
 	// all done
 	return 0;
 }
