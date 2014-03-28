@@ -3,14 +3,6 @@
 
 #include <util/twi.h>
 
-#define TWI_READY 0
-#define TWI_MRX   1
-#define TWI_MTX   2
-#define TWI_SRX   3
-#define TWI_STX   4
-
-static volatile uint8_t twi_state;
-
 // the port used for TWI
 #define TWI_PORT	PORTC
 #define TWI_DDR		DDRC
@@ -26,9 +18,6 @@ static volatile uint8_t twi_state;
 // https://github.com/arduino/Arduino/blob/master/libraries/Wire/utility/twi.c
 
 void initTWI() {
-	// initialize our state
-	twi_state = TWI_READY;
-
 	// configure TWI lines (SCL,SDA) as inputs with internal pullup
 	TWI_DDR &= ~(_BV(PIN_SCL)|_BV(PIN_SDA));
 	TWI_PORT |= _BV(PIN_SCL)|_BV(PIN_SDA);
@@ -46,19 +35,49 @@ void initTWI() {
 	TWCR = _BV(TWEN);
 }
 
+// Perform a synchronous write of the specified data to the specified TWI bus address.
 // This code follows the example in section 21.6
-void twiRead(uint8_t address, const uint8_t *data, size_t len) {
-	// send start condition
-	TWCR = _BV(TWINT)|_BV(TWEN)|_BV(TWSTA);
+uint8_t twiWrite(uint8_t address, const uint8_t *data, size_t len) {
+	// start transmitting start condition
+	TWCR = _BV(TWINT) | _BV(TWEN) | _BV(TWSTA);
 	// wait for the start condition to complete transmitting
 	while (!(TWCR & _BV(TWINT)));
 	// check that the start condition was transmitted successfully
 	if((TWSR & TW_STATUS_MASK) != TW_START) {
-		LED_ON(RED);
-		_delay_ms(2000);
+		flashDigit(1);
+		return 1;
 	}
-	// load the data register with the address we want, and set the READ direction bit
-	TWDR = address | TW_READ;
+	// load the data register with the address we want, and set the WRITE direction bit (SLA+W)
+	TWDR = address | TW_WRITE;
+	// start transmitting the address
+	TWCR = _BV(TWINT) | _BV(TWEN);
+	// wait for the address to complete transmitting
+	while(!(TWCR & _BV(TWINT)));
+	// check that the address was transmitted successfully and acknowledged with an ACK
+	if((TWSR & TW_STATUS_MASK) != TW_MT_SLA_ACK) {
+		flashDigit(2);
+		return 2;
+	}
+	// loop over data bytes to write
+	while(len--) {
+		// load the data register with the next byte to write
+		TWDR = *data++;
+		// start transmitting this data byte
+		TWCR = _BV(TWINT) | _BV(TWEN);
+		// wait for the data byte to finish transmitting
+		while(!(TWCR & _BV(TWINT)));
+		// check that the data was transmitted successfully
+		if((TWSR & TW_STATUS_MASK) != TW_MT_DATA_ACK) {
+			flashDigit(3);
+			return 3;
+		}
+	}
+	// start transmitting stop condition
+	TWCR = _BV(TWINT) | _BV(TWEN) | _BV(TWSTO);
+	// wait for stop condition to finish transmitting (TWINT is not set after a STOP!)
+	while(TWCR & _BV(TWSTO));
+	// all done
+	return 0;
 }
 
 /*

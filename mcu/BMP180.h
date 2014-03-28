@@ -64,10 +64,15 @@
     } bmp085_calib_data;
 /*=========================================================================*/
 
-void initBMP180() {
+// Initializes communications with the BMP sensor. The possible returned error codes are:
+// 1X = initial TWI write failed (to request sensor ID)
+uint8_t initBMP180() {
+	uint8_t error;
 	uint8_t data = BMP085_REGISTER_CHIPID;
-	uint8_t id;
-	twiRead(BMP180_ADDRESS,&data,sizeof(data));
+	error = twiWrite(BMP180_ADDRESS,&data,sizeof(data));
+	if(error) return 10+error;
+
+	return 0;
 	/*
 	read8(BMP085_REGISTER_CHIPID, &id);
 	if(id != 0x55) {

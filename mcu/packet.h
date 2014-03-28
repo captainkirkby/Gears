@@ -15,8 +15,8 @@ typedef struct {
 	uint8_t type;
 	// Serial number read from EEPROM at startup
 	uint32_t serialNumber;
-	// Non-zero if our BMP sensor was sucessfully initialized
-	uint8_t bmpSensorOk;
+	// Stores the status code returned by initBMP180()
+	uint8_t bmpSensorStatus;
 	// Non-zero if our GPS serial communication was successfully initialized
 	uint8_t gpsSerialOk;
 	// Git info about the code we are running.

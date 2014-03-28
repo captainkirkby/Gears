@@ -34,16 +34,21 @@ DataPacket dataPacket;
 
 int main(void)
 {
-    // hardware initialization
+    // Initializes low-level hardware
 	initLEDs();
 	initUARTs();
     initTWI();
-    initBMP180();
+
+    // Initializes communication with the BMP sensor
+    if(bootPacket.bmpSensorStatus = initBMP180()) {
+        // A non-zero status indicates a problem, so flash an error code
+        flashNumber(100+bootPacket.bmpSensorStatus);
+    }
 
     // Copies our serial number from EEPROM address 0x10 into the boot packet
     bootPacket.serialNumber = eeprom_read_dword((uint32_t*)0x10);
 
-    // Sends our boot packet.
+    // Sends our boot packet
     LED_ON(RED);
     serialWriteUSB((const uint8_t*)&bootPacket,sizeof(bootPacket));
     _delay_ms(500);
