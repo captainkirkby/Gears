@@ -34,8 +34,11 @@ DataPacket dataPacket;
 
 int main(void)
 {
+    // hardware initialization
 	initLEDs();
 	initUARTs();
+    initTWI();
+    initBMP180();
 
     // Copies our serial number from EEPROM address 0x10 into the boot packet
     bootPacket.serialNumber = eeprom_read_dword((uint32_t*)0x10);

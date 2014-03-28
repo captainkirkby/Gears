@@ -43,7 +43,34 @@ void initTWI() {
 
 	// Enable the TWI module, which turns on slew-rate limiters and spike filters (section 21.9.2).
 	// Note that we do not enable TWI interrupts.
-	TWCR = _BV(TWEA)|_BV(TWEN);
+	TWCR = _BV(TWEN);
 }
+
+// This code follows the example in section 21.6
+void twiRead(uint8_t address, const uint8_t *data, size_t len) {
+	// send start condition
+	TWCR = _BV(TWINT)|_BV(TWEN)|_BV(TWSTA);
+	// wait for the start condition to complete transmitting
+	while (!(TWCR & _BV(TWINT)));
+	// check that the start condition was transmitted successfully
+	if((TWSR & TW_STATUS_MASK) != TW_START) {
+		LED_ON(RED);
+		_delay_ms(2000);
+	}
+	// load the data register with the address we want, and set the READ direction bit
+	TWDR = address | TW_READ;
+}
+
+/*
+static void read8(byte reg, uint8_t *value)
+{
+	Wire.beginTransmission((uint8_t)BMP085_ADDRESS);
+	Wire.write((uint8_t)reg);
+	Wire.endTransmission();
+	Wire.requestFrom((uint8_t)BMP085_ADDRESS, (byte)1);
+	*value = Wire.read();
+	Wire.endTransmission();
+}
+*/
 
 #endif
