@@ -34,15 +34,19 @@ DataPacket dataPacket;
 
 int main(void)
 {
+    uint8_t error;
+
     // Initializes low-level hardware
 	initLEDs();
 	initUARTs();
     initTWI();
 
     // Initializes communication with the BMP sensor
-    if((bootPacket.bmpSensorStatus = initBMP180()) != 0) {
+    error = initBMP180();
+    if(error) {
         // A non-zero status indicates a problem, so flash an error code
         flashNumber(100+bootPacket.bmpSensorStatus);
+        bootPacket.bmpSensorStatus = error;
     }
 
     // Copies our serial number from EEPROM address 0x10 into the boot packet
@@ -66,6 +70,9 @@ int main(void)
         rippleDown();
         // Updates our sequence number for the next packet
         dataPacket.sequenceNumber++;
+        // Reads the BMP180 sensor values and saves the results in the data packet
+        error = readBMP180Sensors(&dataPacket.temperature,&dataPacket.pressure);
+        if(error) flashNumber(200+error);
         // Sends binary packet data
         serialWriteUSB((const uint8_t*)&dataPacket,sizeof(dataPacket));
     }
