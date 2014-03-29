@@ -9,17 +9,7 @@
 #define BMP180_CHIPID 0x55
 
 // The BMP180 register addresses (from datasheet Figure 6)
-#define BMP180_REGISTER_CAL_AC1         0xAA
-#define BMP180_REGISTER_CAL_AC2         0xAC
-#define BMP180_REGISTER_CAL_AC3         0xAE
-#define BMP180_REGISTER_CAL_AC4         0xB0
-#define BMP180_REGISTER_CAL_AC5         0xB2
-#define BMP180_REGISTER_CAL_AC6         0xB4
-#define BMP180_REGISTER_CAL_B1          0xB6
-#define BMP180_REGISTER_CAL_B2          0xB8
-#define BMP180_REGISTER_CAL_MB          0xBA
-#define BMP180_REGISTER_CAL_MC          0xBC
-#define BMP180_REGISTER_CAL_MD          0xBE
+#define BMP180_REGISTER_CALIB_BASE      0xAA
 #define BMP180_REGISTER_CHIPID          0xD0
 #define BMP180_REGISTER_VERSION         0xD1
 #define BMP180_REGISTER_SOFTRESET       0xE0
@@ -115,31 +105,10 @@ uint8_t initBMP180() {
 	// check that we got the expected chip ID
 	if(id != BMP180_CHIPID) return 20;
 	// read the chip's internal calibration coefficients
-	error =
-		readBMP180Register(BMP180_REGISTER_CAL_AC1, (uint8_t*)&calib.ac1, 2) |
-		readBMP180Register(BMP180_REGISTER_CAL_AC2, (uint8_t*)&calib.ac2, 2) |
-		readBMP180Register(BMP180_REGISTER_CAL_AC3, (uint8_t*)&calib.ac3, 2) |
-		readBMP180Register(BMP180_REGISTER_CAL_AC4, (uint8_t*)&calib.ac4, 2) |
-		readBMP180Register(BMP180_REGISTER_CAL_AC5, (uint8_t*)&calib.ac5, 2) |
-		readBMP180Register(BMP180_REGISTER_CAL_AC6, (uint8_t*)&calib.ac6, 2) |
-		readBMP180Register(BMP180_REGISTER_CAL_B1,  (uint8_t*)&calib.b1,  2) |
-		readBMP180Register(BMP180_REGISTER_CAL_B2,  (uint8_t*)&calib.b2,  2) |
-		readBMP180Register(BMP180_REGISTER_CAL_MB,  (uint8_t*)&calib.mb,  2) |
-		readBMP180Register(BMP180_REGISTER_CAL_MC,  (uint8_t*)&calib.mc,  2) |
-		readBMP180Register(BMP180_REGISTER_CAL_MD,  (uint8_t*)&calib.md,  2);
+	error = readBMP180Register(BMP180_REGISTER_CALIB_BASE, (uint8_t*)&calib, sizeof(calib));
 	if(error) return 30+error;
-	// swap bytes
-	swapBytes((uint8_t*)&calib.ac1,1);
-	swapBytes((uint8_t*)&calib.ac2,1);
-	swapBytes((uint8_t*)&calib.ac3,1);
-	swapBytes((uint8_t*)&calib.ac4,1);
-	swapBytes((uint8_t*)&calib.ac5,1);
-	swapBytes((uint8_t*)&calib.ac6,1);
-	swapBytes((uint8_t*)&calib.b1, 1);
-	swapBytes((uint8_t*)&calib.b2, 1);
-	swapBytes((uint8_t*)&calib.mb, 1);
-	swapBytes((uint8_t*)&calib.mc, 1);
-	swapBytes((uint8_t*)&calib.md, 1);
+	// swap bytes so that calibration data is formatted at 16-bit ints
+	swapBytes((uint8_t*)&calib.ac1,11);
 	// all done with no errors
 	return 0;
 }
@@ -167,22 +136,15 @@ uint8_t readBMP180Sensors(int32_t *temperature, int32_t *pressure) {
 	// wait for the temperature conversion to complete
 	_delay_ms(BMP180_MAX_CONV_TIME_TEMPERATURE);
 	// read back the raw 16-bit temperature ADC value
-	uint16_t raw;
-	error = readBMP180Register(BMP180_REGISTER_OUTPUT_MSB,(uint8_t*)&raw,sizeof(raw));
+	uint16_t UT;
+	error = readBMP180Register(BMP180_REGISTER_OUTPUT_MSB,(uint8_t*)&UT,sizeof(UT));
 	if(error) return 20+error;
-	// swap bytes
-	swapBytes((uint8_t*)&raw,1);
-	int32_t UT = raw;
+	// swap bytes to format the conversion result as a 16-bit short
+	swapBytes((uint8_t*)&UT,1);
 	// convert the ADC value to degC * 160 (following Fig.4 of the datasheet)
 	int32_t X1 = (((int32_t)UT - calib.ac6)*calib.ac5) >> 15;
 	int32_t X2 = (((int32_t)calib.mc) << 11)/(X1+calib.md);
 	*temperature = X1 + X2 + 8;
-	/*
-	int32_t X1 = (UT - (int32_t)calib.ac6) * ((int32_t)calib.ac5) / pow(2,15);
-	int32_t X2 = ((int32_t)calib.mc * pow(2,11)) / (X1+(int32_t)calib.md);
-	int32_t B5 = X1 + X2;
-	*temperature = B5 + 8;
-	*/
 	// initiate a pressure reading with maximum oversampling (8x)
 	error = sendBMP180Command(BMP180_READ_PRESSURE_OSS3);
 	if(error) return 30+error;
