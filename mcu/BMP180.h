@@ -144,17 +144,53 @@ uint8_t readBMP180Sensors(int32_t *temperature, int32_t *pressure) {
 	// convert the ADC value to degC * 160 (following Fig.4 of the datasheet)
 	int32_t X1 = (((int32_t)UT - calib.ac6)*calib.ac5) >> 15;
 	int32_t X2 = (((int32_t)calib.mc) << 11)/(X1+calib.md);
-	*temperature = X1 + X2 + 8;
+	int32_t B5 = X1 + X2;
+	*temperature = B5 + 8;
 	// initiate a pressure reading with maximum oversampling (8x)
 	error = sendBMP180Command(BMP180_READ_PRESSURE_OSS3);
 	if(error) return 30+error;
 	// wait for the pressure conversion to complete
 	_delay_ms(BMP180_MAX_CONV_TIME_PRESSURE_OSS3);
 	// read back the raw 19-bit pressure ADC value (we only fill 3 of the 4 bytes)
+	uint16_t p16;
+	uint8_t p8;
+	error =
+		readBMP180Register(BMP180_REGISTER_OUTPUT_MSB,(uint8_t*)&p16,sizeof(p16)) |
+		readBMP180Register(BMP180_REGISTER_OUTPUT_XLSB,(uint8_t*)&p8,sizeof(p8));
+	if(error) return 40+error;
+	// swap bytes to format the conversion result as a 32-bit int
+	swapBytes((uint8_t*)&p16,1);
+	int32_t UP = ((((int32_t)p16) << 8) | p8) >> 5;
+	/*
 	uint32_t UP;
 	error = readBMP180Register(BMP180_REGISTER_OUTPUT_MSB,(uint8_t*)&UP,3);
 	if(error) return 40+error;
-	*pressure = UP;
+	// swap bytes to format the conversion result as a 32-bit int
+	swapBytes((uint8_t*)&UP,1); 
+	*/
+	// convert the ADC value to Pascals (following Fig.4 of the datasheet)
+	const uint8_t oss = 3;
+	int32_t B6 = B5 - 4000;
+	X1 = (calib.b2 * ((B6*B6) >> 12)) >> 11;
+	X2 = (calib.ac2 * B6) >> 11;
+	int32_t X3 = X1 + X2;
+	int32_t B3 = (((((int32_t)calib.ac1)*4 + X3) << oss) + 2) >> 2;
+	X1 = (calib.ac3 * B6) >> 13;
+	X2 = (calib.b1 * ((B6*B6) >> 12)) >> 16;
+	X3 = ((X1 + X2) + 2) >> 2;
+	uint32_t B4 = (calib.ac4 * (uint32_t) (X3 + 32768)) >> 15;
+	uint32_t B7 = ((uint32_t)UP - B3) * (50000 >> oss);
+	int32_t p;
+	if (B7 < 0x80000000) {
+		p = (B7 << 1) / B4;
+	}
+	else {
+		p = (B7/B4) << 1;
+	}
+	X1 = (p >> 8) * (p >> 8);
+	X1 = (X1 * 3038) >> 16;
+	X2 = (-7357 * p) >> 16;
+	*pressure = p + ((X1 + X2 + 3791) >> 4);
 	// all done
 	return 0;
 }
