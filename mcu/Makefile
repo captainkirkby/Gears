@@ -42,7 +42,7 @@ COMMIT_INFO := $(shell ./commitInfo.py)
 all: $(TARGET).hex
 
 # source dependencies
-build/main.o build/main.s : main.c LED.h UART.h TWI.h BMP180.h packet.h
+build/main.o build/main.s : main.c LED.h IR.h UART.h TWI.h BMP180.h packet.h
 
 # rule for compiling .c into a corresponding .o under build/
 $(OBJECTS) : build/%.o : %.c

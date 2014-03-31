@@ -11,6 +11,7 @@
 #include <avr/eeprom.h>
 
 #include "LED.h"
+#include "IR.h"
 #include "UART.h"
 #include "TWI.h"
 #include "BMP180.h"
@@ -38,6 +39,7 @@ int main(void)
 
     // Initializes low-level hardware
 	initLEDs();
+    initIR();
 	initUARTs();
     initTWI();
 
