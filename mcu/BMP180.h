@@ -59,14 +59,14 @@ static BMP180CommandRequest cmdreq;
 // B1 B2 B3 B4 B5 B5 => B2 B1 B4 B3 B6 B5
 // This is necessary to convert the TWI buffer byte order into the order required for (u)int16_t
 inline void swapBytes(uint8_t *buffer, uint8_t nswap) {
-	uint8_t msb;
+	uint8_t msb,lsb;
 	// swap MSB LSB => LSB MSB nswap times
 	while(nswap--) {
-		// save MSB
-		msb = *buffer;
-		// overwrite MSB with LSB
-		*buffer++ = *buffer;
-		// restore MSB
+		// save MSB,LSB
+		msb = buffer[0];
+		lsb = buffer[1];
+		// re-write contents with LSB,MSB
+		*buffer++ = lsb;
 		*buffer++ = msb;
 	}
 }
