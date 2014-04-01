@@ -1,15 +1,21 @@
 $(function() {
 
 	// Reverse Order
-	seriesToPlot = ["temperature", "pressure", "irLevel", "thermistor", "humidity"];
+	var seriesToPlot = ["temperature", "pressure", "irLevel", "thermistor", "humidity"];
 
 	// Drawing Constants
-
 	var NORMAL = 2;
 	var BOLD = 3;
 
+	// Recent Fetch Cache
+	var cache = {};
+	var MAX_CACHE_LENGTH = 500;
 
-	dataToPlot = {
+	// Tick significant figures
+	var TICK_SIG_FIGS = 6;
+
+	// Plot Settings
+	var dataToPlot = {
 		"temperature" : { "visible" : true, "width" : NORMAL, "color" : 0},
 		"pressure" : { "visible" : true, "width" : NORMAL, "color" : 1},
 		"irLevel" : { "visible" : true, "width" : NORMAL, "color" : 2},
@@ -86,8 +92,21 @@ $(function() {
 		return result;
 	}
 
+	function cacheDataPoint(date, dataPoint){
+		// Insert data point in beginning of cache, pop from end if we exceed the cache limit
+		if(cache.unshift({key : date, value : dataPoint}) > MAX_CACHE_LENGTH){
+			cache.pop();
+		}
+	}
+
+	function hasCachedPointForDate(date){
+		return date in cache;
+	}
+
 	// Save data in browser so if we are doing same request we don't have to re-fetch from server (caching does this maybe?)
 	function displayData(from, to){
+		// Figure out if we already have the data we need in our cache and make the modified request
+
 		if(from === undefined){
 			from = "DEFAULT";			// Use server default
 		}
@@ -98,7 +117,8 @@ $(function() {
 
 		var dataURL = "fetch?" + $.param({
 			"from" : from,
-			"to" : to
+			"to" : to,
+			"series" : seriesToPlot
 		});
 
 		lastFrom = from;
@@ -117,6 +137,11 @@ $(function() {
 				displaySet(set, smoothing, smoothingForSet(set), dataToPlot[set].visible, dataToPlot[set].width);
 			});
 
+			// // Cache data point if we had to retrieve it
+			// $.each(data, function(index, set){
+			// 	cacheDataPoint(data[index].timestamp, data[index]);
+			// });
+
 
 			function displaySet(name, dataSmoothing, smoothingAmount, visible, width){
 				var set = [];
@@ -124,22 +149,33 @@ $(function() {
 	
 				// Iterate through retrieved data
 				for(var index=0;index<data.length;index++){
-					//Get timestamp as a date object
+					// Get timestamp as a date object
 					var date = new Date(Date.parse(data[index].timestamp));
-	
+
 					set.push([date, data[index][name]]);
 					smoothSet.push([date, smoothPoints(name, index, smoothingAmount)]);
 				}
 
-				dataSet.push({ data: dataSmoothing ? smoothSet : set , lines : { lineWidth : width, show : visible }, label: generateLabel(name), yaxis: (count + 1), color : dataToPlot[name].color});
+				dataSet.push({	data: dataSmoothing ? smoothSet : set,
+								lines : { lineWidth : width, show : visible },
+								label: generateLabel(name),
+								yaxis: (count + 1),
+								color : dataToPlot[name].color});
 
 				if(smoothing){
-					dataSet.push({ data: set, lines : { show : false}, points : { show : visible, radius : POINT_SIZE}, yaxis: (count + 1), color : dataToPlot[name].color });
+					dataSet.push({	data: set,
+									lines : { show : false},
+									points : { show : visible, radius : POINT_SIZE},
+									yaxis: (count + 1),
+									color : dataToPlot[name].color });
 				}
 
 				//left or right and visible or invisible
 				var orientation = axesCount%2 ? "right" : "left";
-				YAxesSet.push({position : orientation, show : visible, font : { color : width == BOLD ? "black" : "lightgrey", weight : width == BOLD ? "bold" : "normal"}});
+				YAxesSet.push({	position : orientation,
+								show : visible,
+								tickFormatter : function(val, axis){ return val.toPrecision(TICK_SIG_FIGS); },
+								font : { color : width == BOLD ? "black" : "lightgrey", weight : width == BOLD ? "bold" : "normal"}});
 
 				count++;
 				if(visible) axesCount++;
@@ -207,8 +243,10 @@ $(function() {
 		togglePlot(clickedField);
 	});
 
+// Note: The following two bindings give a considerable performance hit, and in my case, the click no longer fired.
+/*
 	$("#placeholder").on("mouseenter", ".legendColorBox", function(){
-		//alert("Mouse Entered!");
+		console.log("Mouse Entered!");
 		var clickedField = generateLabel($(this).next().text());
 		boldPlot(clickedField, true);
 	});
@@ -218,6 +256,7 @@ $(function() {
 		var clickedField = generateLabel($(this).next().text());
 		boldPlot(clickedField, false);
 	});
+*/
 
 	$("#fetch").click(function(){
 		var from = new Date($("#from").val());

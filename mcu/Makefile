@@ -24,10 +24,23 @@ UPLOAD_DEVICE = atmega644
 # The target device's clock speed in Hz
 CLOCK      = 10000000
 
-PROGRAMMER = -c usbtiny -P usb
+# Select programmer from the following list
+# usbtiny.........Program an AVR directly via its ISP port using a USBTinyISP
+# arduino.........Program an AVR with an Arduino acting as an ISP
+PROGRAMMER = usbtiny
+
 ##FUSES      = -U hfuse:w:0xd9:m -U lfuse:w:0x24:m
 
-AVRDUDE = avrdude $(PROGRAMMER) -p $(UPLOAD_DEVICE)
+ifeq ($(METHOD),usbtiny)
+	PROGRAMMER_ARGS = -c usbtiny -P usb
+else ifeq ($(METHOD),arduino)
+	PROGRAMMER_ARGS = -c stk500v1 -P /dev/tty.usbserial* -b 19200
+else
+	PROGRAMMER_ARGS = -c usbtiny -P usb
+endif
+
+
+AVRDUDE = avrdude $(PROGRAMMER_ARGS) -p $(UPLOAD_DEVICE)
 COMPILE = avr-gcc -Wall -Os -std=c99 -DF_CPU=$(CLOCK) -mmcu=$(DEVICE)
 
 SOURCES = main.c
@@ -61,9 +74,6 @@ flash:	all
 # if you use a bootloader, change the command below appropriately:
 load: all
 	bootloadHID $(TARGET).hex
-
-clean:
-	rm -f $(TARGET).hex $(TARGET).elf $(OBJECTS)
 
 # file targets:
 $(TARGET).elf: $(OBJECTS)

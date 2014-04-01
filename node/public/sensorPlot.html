@@ -8,34 +8,38 @@
 	<script language="javascript" type="text/javascript" src="jquery-1.10.2.min.js"></script>
 	<script language="javascript" type="text/javascript" src="jquery.flot.min.js"></script>
 	<script language="javascript" type="text/javascript" src="jquery.flot.time.min.js"></script>
-	<script language="javascript" type="text/javascript">
-		$(function(){
-			$.ajax({
-				type : "GET",
-				url : "about",
-				success : function(data){
-					var html = $.parseHTML(data);
-					$("#status").text("").append(html);
-				}
-			});
-		});
-	</script>
+	<script language="javascript" type="text/javascript" src="sensorSource.js"></script>
 </head>
 <body>
 
 	<div id="header">
-		<h2>Tick Tock Homepage</h2>
+		<h2>Sensor Data</h2>
 	</div>
 
 	<div id="content">
 
-		<h3>Status</h3>
-		<p id="status">...</p>
+		<div class="demo-container">
+			<div id="placeholder" class="demo-placeholder"></div>
+		</div>
 
-		<br/><br/>
+		<input type="button" id="fetch" value="Get me my data!"></input>
+		<input type="button" id="continuousMode" value="Start Real Time Updates"></input>
+		<input type="button" id="toggleSmoothing" value="Use Smoothing"></input>
 
-		<h3><a href="irPlot.html">IR Data</a></h3>
-		<h3><a href="sensorPlot.html">Sensor Data</a></h3>
+		<br/> From:
+		<input type="text" id="from" size="30" value=""></input>
+
+
+		<br/> To:
+		<input type="text" id="to" size="30" value=""></input>
+
+		<br/>
+
+		Format: YYYY-MM-DDTHH:mm:ss.sssZ
+
+		<br/><br/> Samples:
+		<input type="text" id="length" size="10" value=""></input>
+
 
 	</div>
 

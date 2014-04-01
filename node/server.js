@@ -1,6 +1,7 @@
 // Implements the combined data logger and web server component of the clock metrology project.
 // Created by D & D Kirkby, Dec 2013
 
+var fs = require('fs');
 var util = require('util');
 var async = require('async');
 var express = require('express');
@@ -77,7 +78,7 @@ async.parallel({
 	db: function(callback) {
 		if(noDatabase) return callback(null,null);
 		console.log('Connecting to the database...');
-		mongoose.connect('mongodb://localhost:27017/ticktock');
+		mongoose.connect('mongodb://localhost:27017/ticktockDemoTest3');
 		var db = mongoose.connection;
 		db.on('error', console.error.bind(console, 'db connection error:'));
 		db.once('open', function() {
@@ -101,7 +102,8 @@ async.parallel({
 				pressure: Number,
 				thermistor: Number,
 				humidity: Number,
-				irLevel: Number
+				irLevel: Number,
+				raw: Array
 			});
 			var dataPacketModel = mongoose.model('dataPacketModel',dataPacketSchema);
 			// Propagates our database connection and db models to data logger.
@@ -124,7 +126,7 @@ async.parallel({
 			console.log('starting data logger with',config);
 			// Initializes our binary packet assembler to initially only accept a boot packet.
 			// NB: the maximum and boot packet sizes are hardcoded here!
-			var assembler = new packet.Assembler(0xFE,3,64,{0x00:31},0);
+			var assembler = new packet.Assembler(0xFE,3,1632,{0x00:31},0);
 			// Handles incoming chunks of binary data from the device.
 			config.port.on('data',function(data) {
 				receive(data,assembler,config.db.bootPacketModel,config.db.dataPacketModel);
@@ -169,11 +171,20 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			});
 			// After seeing a boot packet, we accept data packets.
 			// NB: the data packet size is hardcoded here!
-			assembler.addPacketType(0x01,40);
+			assembler.addPacketType(0x01,1632);
 			// Resets the last seen sequence number.
 			lastDataSequenceNumber = 0;
 		}
 		else if(ptype == 0x01) {
+			console.log("Got Data!");
+			// Gets the raw data from the packet.raw field
+			var raw = [];
+			var initialReadOffset = 32;
+			for(var readOffset = initialReadOffset; readOffset < 1632; readOffset=readOffset+2) {
+				raw[(readOffset-initialReadOffset)/2] = buf.readUInt16LE(readOffset);
+				fs.appendFileSync('runningData.dat', (raw[(readOffset-initialReadOffset)/2]).toString() + '\n');
+			}
+
 			// Calculates the thermistor resistance in ohms assuming 100uA current source.
 			var rtherm = buf.readUInt16LE(24)/65536.0*5.0/100e-6;
 			// Calculates the corresponding temperature in degC using a Steinhart-Hart model.
@@ -190,8 +201,10 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 				// use nominal 1st order fit from sensor datasheet to calculate RH in %
 				'humidity': (buf.readUInt16LE(26)/65536.0 - 0.1515)/0.00636,
 				// convert IR level to volts
-				'irLevel': buf.readUInt16LE(28)/65536.0*5.0
+				'irLevel': buf.readUInt16LE(28)/65536.0*5.0,
+				'raw': raw
 			});
+			//console.log(raw);
 			// Checks for a packet sequence error.
 			if(p.sequenceNumber != lastDataSequenceNumber+1) {
 				console.log('Got packet #%d when expecting packet #%d',
@@ -208,7 +221,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			return;
 		}
 		if(saveMe) {
-			console.log(p);
+			//console.log(p);
 			p.save(function(err,p) {
 				if(err) console.log('Error saving data packet',p);
 			});
@@ -265,6 +278,6 @@ function fetch(req,res,dataPacketModel) {
 	dataPacketModel.find()
 		.where('timestamp').gt(from).lte(to)
 		.limit(1000).sort([['timestamp', -1]])
-		.select('timestamp temperature pressure thermistor humidity irLevel')
+		.select(('series' in req.query) ? 'timestamp ' + req.query.series.join(" ") : '')
 		.exec(function(err,results) { res.send(results); });
 }
