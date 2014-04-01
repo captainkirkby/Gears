@@ -22,7 +22,7 @@
 #define ADC_IR_IN		4
 
 // Test Points
-// These Arduino pin numbers.
+// These are Arduino pin numbers.
 #define TRIGGER_TEST_POINT 31		// TP3 on schematic
 #define PULSE_TEST_POINT 29			// TP1 on schematic
 
