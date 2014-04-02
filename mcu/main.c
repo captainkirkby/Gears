@@ -9,12 +9,13 @@
 #include <avr/io.h>
 #include <util/delay.h>
 #include <avr/eeprom.h>
+#include <avr/interrupt.h>
 
 #include "LED.h"
 #include "IR.h"
 #include "UART.h"
 #include "TWI.h"
-#include "ACD.h"
+#include "ADC.h"
 #include "BMP180.h"
 
 #include "packet.h"
