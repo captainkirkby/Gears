@@ -31,9 +31,9 @@ PROGRAMMER = usbtiny
 
 ##FUSES      = -U hfuse:w:0xd9:m -U lfuse:w:0x24:m
 
-ifeq ($(METHOD),usbtiny)
+ifeq ($(PROGRAMMER),usbtiny)
 	PROGRAMMER_ARGS = -c usbtiny -P usb
-else ifeq ($(METHOD),arduino)
+else ifeq ($(PROGRAMMER),arduino)
 	PROGRAMMER_ARGS = -c stk500v1 -P /dev/tty.usbserial* -b 19200
 else
 	PROGRAMMER_ARGS = -c usbtiny -P usb
