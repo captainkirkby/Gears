@@ -48,79 +48,9 @@ volatile int done;
 //Declare timer
 volatile uint16_t timer;
 
-void startFreeRunningADC()
-{
-    //Setup circular buffer
-    currentElementIndex = 0;
-
-    //Setup timer
-    timer = 0;
-    
-    // clear ADLAR in ADMUX (0x7C) to right-adjust the result
-    // ADCL will contain lower 8 bits, ADCH upper 2 (in last two bits)
-    ADMUX &= 0B11011111;
-    
-    // Set REFS1..0 in ADMUX (0x7C) to change reference voltage to the
-    // proper source (01)
-    ADMUX |= 0B01000000;
-    
-    // Clear MUX3..0 in ADMUX (0x7C) in preparation for setting the analog
-    // input
-    ADMUX &= 0B11110000;
-    
-    // Set MUX3..0 in ADMUX (0x7C) to read from the IR Photodiode
-    // Do not set above 15! You will overrun other parts of ADMUX. A full
-    // list of possible inputs is available in the datasheet
-    ADMUX |= ADC_IR_IN;
-    
-    // Set ADEN in ADCSRA (0x7A) to enable the ADC.
-    // Note, this instruction takes 12 ADC clocks to execute
-    ADCSRA |= 0B10000000;
-    
-    // Set ADATE in ADCSRA (0x7A) to enable auto-triggering.
-    ADCSRA |= 0B00100000;
-    
-    // Clear ADTS2..0 in ADCSRB (0x7B) to set trigger mode to free running.
-    // This means that as soon as an ADC has finished, the next will be
-    // immediately started.
-    ADCSRB &= 0B11111000;
-    
-    // Set the Prescaler to 128 (10000KHz/128 = 78.125KHz)
-    // Above 200KHz 10-bit results are not reliable.
-    ADCSRA |= 0B00000111;
-    
-    // Set ADIE in ADCSRA (0x7A) to enable the ADC interrupt.
-    // Without this, the internal interrupt will not trigger.
-    ADCSRA |= 0B00001000;
-    
-    // Enable global interrupts
-    // AVR macro included in <avr/interrupts.h>, which the Arduino IDE
-    // supplies by default.
-    sei();
-    
-    // Set ADSC in ADCSRA (0x7A) to start the ADC conversion
-    ADCSRA |= 0B01000000;
-}
-
-void restartFreeRunningADC()
-{
-    done = 0;
-    // Set ADEN in ADCSRA (0x7A) to enable the ADC.
-    // Note, this instruction takes 12 ADC clocks to execute
-    ADCSRA |= 0B10000000;
-    
-    // Enable global interrupts
-    // AVR macro included in <avr/interrupts.h>, which the Arduino IDE
-    // supplies by default.
-    sei();
-        
-    // Set ADSC in ADCSRA (0x7A) to start the ADC conversion
-    ADCSRA |= 0B01000000;
-}
-
 int main(void)
 {
-    uint8_t error;
+    uint8_t bmpError, adcError;
 
     // Initializes low-level hardware
 	initLEDs();
@@ -129,14 +59,23 @@ int main(void)
     initTWI();
 
     // Initializes communication with the BMP sensor
-    error = initBMP180();
-    if(error) {
-        // A non-zero status indicates a problem, so flash an error code
+    bmpError = initBMP180();
+    if(bmpError) {
+        // A non-zero status indicates a problem, so flash an bmpError code
         flashNumber(100+bootPacket.bmpSensorStatus);
-        bootPacket.bmpSensorStatus = error;
+        bootPacket.bmpSensorStatus = bmpError;
     }
 
-    startFreeRunningADC();
+    adcError = (testADC() < THRESHOLD);
+    if(adcError){
+        flashNumber(100+adcError);
+        // Add boot packet adc error
+    } else {
+        //Setup circular buffer and timer
+        currentElementIndex = 0;
+        timer = 0;
+        startFreeRunningADC();
+    }
 
     // Copies our serial number from EEPROM address 0x10 into the boot packet
     bootPacket.serialNumber = eeprom_read_dword((uint32_t*)0x10);
@@ -161,11 +100,11 @@ int main(void)
         // Updates our sequence number for the next packet
         dataPacket.sequenceNumber++;
         // Reads the BMP180 sensor values and saves the results in the data packet
-        error = readBMP180Sensors(&dataPacket.temperature,&dataPacket.pressure);
-        if(error) flashNumber(200+error);
+        bmpError = readBMP180Sensors(&dataPacket.temperature,&dataPacket.pressure);
+        if(bmpError) flashNumber(200+bmpError);
 
         // Store ADC run and kick off new conversion
-        if(done){
+        if(done && !adcError){
             // Circular buffer has 800 2 byte entries
             uint16_t rawFill = 0;
             for(uint16_t i=currentElementIndex+1;i<CIRCULAR_BUFFER_LENGTH;++i){
@@ -175,6 +114,7 @@ int main(void)
                 dataPacket.raw[rawFill++] = circularbuffer[i];
             }
             
+            done = 0;
             restartFreeRunningADC();
         }
 
