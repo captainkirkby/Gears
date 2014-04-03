@@ -16,6 +16,7 @@
 #include "UART.h"
 #include "TWI.h"
 #include "BMP180.h"
+#include "FreeRunningADC.h"
 
 #include "packet.h"
 
@@ -34,26 +35,18 @@ BootPacket bootPacket = {
 // Declares the data packet we will transmit periodically
 DataPacket dataPacket;
 
-void initFreeRunningADC()
-{
-    // Value to store analog result
-    volatile uint16_t adcValue = 0;
-    
-    //Create buffer hardcoded with 800 elements
-    const uint16_t CIRCULAR_BUFFER_LENGTH = 800;
-    uint16_t circularbuffer[CIRCULAR_BUFFER_LENGTH];
-    uint16_t currentElementIndex;
-    
-    //High when the buffer is ready to be dumped
-    volatile int done;
-    
-    //Set trigger (percent of a 10 bit sample)
-    const uint16_t THRESHOLD = 500;
-    
-    //Declare timer
-    volatile uint16_t timer;
-    const uint16_t END_TIMER = 500;
-}
+// Value to store analog result
+volatile uint16_t adcValue = 0;
+
+//Create buffer
+uint16_t circularbuffer[CIRCULAR_BUFFER_LENGTH];
+uint16_t currentElementIndex;
+
+//High when the buffer is ready to be dumped
+volatile int done;
+
+//Declare timer
+volatile uint16_t timer;
 
 void startFreeRunningADC()
 {
@@ -65,15 +58,15 @@ void startFreeRunningADC()
     
     // clear ADLAR in ADMUX (0x7C) to right-adjust the result
     // ADCL will contain lower 8 bits, ADCH upper 2 (in last two bits)
-    ADMUX &= B11011111;
+    ADMUX &= 0B11011111;
     
     // Set REFS1..0 in ADMUX (0x7C) to change reference voltage to the
     // proper source (01)
-    ADMUX |= B01000000;
+    ADMUX |= 0B01000000;
     
     // Clear MUX3..0 in ADMUX (0x7C) in preparation for setting the analog
     // input
-    ADMUX &= B11110000;
+    ADMUX &= 0B11110000;
     
     // Set MUX3..0 in ADMUX (0x7C) to read from the IR Photodiode
     // Do not set above 15! You will overrun other parts of ADMUX. A full
@@ -82,23 +75,23 @@ void startFreeRunningADC()
     
     // Set ADEN in ADCSRA (0x7A) to enable the ADC.
     // Note, this instruction takes 12 ADC clocks to execute
-    ADCSRA |= B10000000;
+    ADCSRA |= 0B10000000;
     
     // Set ADATE in ADCSRA (0x7A) to enable auto-triggering.
-    ADCSRA |= B00100000;
+    ADCSRA |= 0B00100000;
     
     // Clear ADTS2..0 in ADCSRB (0x7B) to set trigger mode to free running.
     // This means that as soon as an ADC has finished, the next will be
     // immediately started.
-    ADCSRB &= B11111000;
+    ADCSRB &= 0B11111000;
     
     // Set the Prescaler to 128 (10000KHz/128 = 78.125KHz)
     // Above 200KHz 10-bit results are not reliable.
-    ADCSRA |= B00000111;
+    ADCSRA |= 0B00000111;
     
     // Set ADIE in ADCSRA (0x7A) to enable the ADC interrupt.
     // Without this, the internal interrupt will not trigger.
-    ADCSRA |= B00001000;
+    ADCSRA |= 0B00001000;
     
     // Enable global interrupts
     // AVR macro included in <avr/interrupts.h>, which the Arduino IDE
@@ -106,7 +99,7 @@ void startFreeRunningADC()
     sei();
     
     // Set ADSC in ADCSRA (0x7A) to start the ADC conversion
-    ADCSRA |=B01000000;
+    ADCSRA |= 0B01000000;
 }
 
 void restartFreeRunningADC()
@@ -114,7 +107,7 @@ void restartFreeRunningADC()
     done = 0;
     // Set ADEN in ADCSRA (0x7A) to enable the ADC.
     // Note, this instruction takes 12 ADC clocks to execute
-    ADCSRA |= B10000000;
+    ADCSRA |= 0B10000000;
     
     // Enable global interrupts
     // AVR macro included in <avr/interrupts.h>, which the Arduino IDE
@@ -122,7 +115,7 @@ void restartFreeRunningADC()
     sei();
         
     // Set ADSC in ADCSRA (0x7A) to start the ADC conversion
-    ADCSRA |=B01000000;
+    ADCSRA |= 0B01000000;
 }
 
 int main(void)
@@ -134,7 +127,6 @@ int main(void)
     initIR();
 	initUARTs();
     initTWI();
-    initFreeRunningADC();
 
     // Initializes communication with the BMP sensor
     error = initBMP180();
@@ -184,7 +176,6 @@ int main(void)
             }
             
             restartFreeRunningADC();
-            // startFreeRunningADC();
         }
 
         // Sends binary packet data
@@ -219,10 +210,10 @@ ISR(ADC_vect){
             timer = 0;
 
             //Stop the ADC by clearing ADEN
-            ADCSRA &= ~B10000000;
+            ADCSRA &= ~0B10000000;
 
             //Clear ADC start bit
-            ADCSRA &= ~B01000000;
+            ADCSRA &= ~0B01000000;
 
             //set done
             done = 1;
