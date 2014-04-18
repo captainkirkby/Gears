@@ -43,10 +43,18 @@ uint16_t circularbuffer[CIRCULAR_BUFFER_LENGTH];
 uint16_t currentElementIndex;
 
 //High when the buffer is ready to be dumped
-volatile int done;
+volatile uint8_t adcStatus;
 
 //Declare timer
 volatile uint16_t timer;
+
+uint16_t thermistorReading;
+uint16_t humidityReading;
+// uint16_t irReading;
+
+uint8_t currentSensorIndex;
+
+volatile uint8_t currentMuxChannel;
 
 int main(void)
 {
@@ -66,15 +74,19 @@ int main(void)
         bootPacket.bmpSensorStatus = bmpError;
     }
 
-    adcError = (testADC() < THRESHOLD);
+    adcError = (testADC(currentMuxChannel) > THRESHOLD);
     if(adcError){
         flashNumber(100+adcError);
         // Add boot packet adc error
     } else {
-        //Setup circular buffer and timer
+        // Setup circular buffer and timer
         currentElementIndex = 0;
         timer = 0;
-        startFreeRunningADC();
+        // Set ADC state and choose ADC channel
+        adcStatus = ADC_STATUS_CONTINUOUS;
+        currentSensorIndex = 0;
+        // currentMuxChannel = analogSensors[currentSensorIndex];
+        startFreeRunningADC(analogSensors[currentSensorIndex]);
     }
 
     // Copies our serial number from EEPROM address 0x10 into the boot packet
@@ -95,16 +107,16 @@ int main(void)
 
 
     while(1) {
-        rippleUp();
-        rippleDown();
+        // rippleUp();
+        // rippleDown();
         // Updates our sequence number for the next packet
         dataPacket.sequenceNumber++;
         // Reads the BMP180 sensor values and saves the results in the data packet
         bmpError = readBMP180Sensors(&dataPacket.temperature,&dataPacket.pressure);
         if(bmpError) flashNumber(200+bmpError);
 
-        // Store ADC run and kick off new conversion
-        if(done && !adcError){
+        // Store ADC run and transmit data
+        if(adcStatus == ADC_STATUS_DONE && !adcError){
             // Circular buffer has 800 2 byte entries
             uint16_t rawFill = 0;
             for(uint16_t i=currentElementIndex+1;i<CIRCULAR_BUFFER_LENGTH;++i){
@@ -113,20 +125,26 @@ int main(void)
             for(uint16_t i=0;i<currentElementIndex+1;++i){
                 dataPacket.raw[rawFill++] = circularbuffer[i];
             }
-            
-            done = 0;
-            restartFreeRunningADC();
-        }
 
-        // Sends binary packet data
-        serialWriteUSB((const uint8_t*)&dataPacket,sizeof(dataPacket));
+            dataPacket.thermistor = thermistorReading;
+            dataPacket.humidity = humidityReading;
+            
+            currentSensorIndex = 0;
+            adcStatus = ADC_STATUS_CONTINUOUS;
+            
+            // Sends binary packet data synchronously
+            serialWriteUSB((const uint8_t*)&dataPacket,sizeof(dataPacket));
+        }
     }
     return 0; // never actually reached
 }
 
-
 // Interrupt service routine for the ADC completion
+// Note: When this is called, the next ADC conversion is already underway
 ISR(ADC_vect){
+    // Update counter
+    // ++counter;
+
     // Must read low first
     adcValue = ADCL | (ADCH << 8);
 
@@ -136,44 +154,81 @@ ISR(ADC_vect){
     //     digitalWrite(PULSE_TEST_POINT, HIGH);
     // }
 
-    if(timer > 0){
-        //if we are still filling buffer before dump
-        ++timer;
+    if(adcStatus == ADC_STATUS_CONTINUOUS){
+        // Take IR ADC data
 
-        //Time padding
-        // digitalWrite(TRIGGER_TEST_POINT, LOW);
-
-        //check if we are done filling the buffer
-        if(timer == END_TIMER){
-            LED_TOGGLE(YELLOW);
-            //uncomment this for mutiple buffers.
-            timer = 0;
-
-            //Stop the ADC by clearing ADEN
-            ADCSRA &= ~0B10000000;
-
-            //Clear ADC start bit
-            ADCSRA &= ~0B01000000;
-
-            //set done
-            done = 1;
-        }
-    } else {
-        // if above THRESHOLD, allow buffer to fill n number of times, dump on the serial port, then continue
-        // in either case, fill buffer once and increment pointer
+        if(timer > 0){
+            // if we are still filling buffer before dump
+            ++timer;
     
-        if(adcValue <= THRESHOLD){
-            //start timer
-            timer = 1;
-            // digitalWrite(TRIGGER_TEST_POINT, HIGH);
+            // check if we are finished filling the buffer
+            if(timer == END_TIMER){
+                LED_TOGGLE(YELLOW);
+                //uncomment this for mutiple buffers.
+                timer = 0;
+    
+                // //Stop the ADC by clearing ADEN
+                // ADCSRA &= ~0B10000000;
+    
+                // //Clear ADC start bit
+                // ADCSRA &= ~0B01000000;
+    
+                // Change ADC channel
+                // Next reading is unstable, one after that is good data
+                // currentMuxChannel = analogSensors[0];
+                switchADCMuxChannel(analogSensors[currentSensorIndex++]);
+
+                // set adcStatus to unstable
+                adcStatus = ADC_STATUS_UNSTABLE;
+            }
         } else {
-            //make sure timer is stopped
-            timer = 0;
-            // digitalWrite(TRIGGER_TEST_POINT, LOW);
+            // if above THRESHOLD, allow buffer to fill n number of times, dump on the serial port, then continue
+            // in either case, fill buffer once and increment pointer
+        
+            if(adcValue <= THRESHOLD){
+                // start timer
+                timer = 1;
+                LED_ON(RED);
+                // digitalWrite(TRIGGER_TEST_POINT, HIGH);
+            } else {
+                //make sure timer is stopped
+                timer = 0;
+                // digitalWrite(TRIGGER_TEST_POINT, LOW);
+            }
+        }
+    
+        //Add value to buffer
+        currentElementIndex = (currentElementIndex + 1) % CIRCULAR_BUFFER_LENGTH;
+        circularbuffer[currentElementIndex] = adcValue;             // Fill actual data field instead ?
+    } else { 
+        // Reading out "one shot" analog sensors
+        if(adcStatus == ADC_STATUS_UNSTABLE){
+            // Current reading is unstable, but next one will be stable
+            adcStatus = ADC_STATUS_ONE_SHOT;
+        } else {
+
+            // One shot mode with stable readings.
+            // Store ACD conversion
+            if(analogSensors[currentSensorIndex] == ADC_THERMISTOR){
+                thermistorReading = adcValue;
+            } else if(analogSensors[currentSensorIndex] == ADC_HUMIDITY){
+                humidityReading = adcValue;
+            }
+
+            // Change ADC channel
+            // Next reading is unstable, one after that is good data
+            // currentMuxChannel = analogSensors[0];
+            if(currentSensorIndex + 1 < NUM_SENSORS){
+                // Next is done (reading is still unstable though)
+                adcStatus = ADC_STATUS_DONE;
+            } else {
+                // Next is another one shot, change channel
+                switchADCMuxChannel(analogSensors[currentSensorIndex++]);
+
+                // set adcStatus to unstable
+                adcStatus = ADC_STATUS_UNSTABLE;
+            }
+            LED_ON(GREEN);
         }
     }
-
-    //Add value to buffer
-    currentElementIndex = (currentElementIndex + 1) % CIRCULAR_BUFFER_LENGTH;
-    circularbuffer[currentElementIndex] = adcValue;
 }

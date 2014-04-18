@@ -1,8 +1,24 @@
 #ifndef ADC_H
 #define ADC_H
 
-// ADC input pin number
-#define ADC_IR_IN      4
+// ADC status constants
+#define ADC_STATUS_ERROR 0
+#define ADC_STATUS_CONTINUOUS 1
+#define ADC_STATUS_UNSTABLE 2
+#define ADC_STATUS_ONE_SHOT 3
+#define ADC_STATUS_DONE 4
+
+// ADC inputs
+// These are ADC channel numbers, not Arduino pin numbers.
+#define ADC_HUMIDITY    1           // TP2 on schematic
+#define ADC_THERMISTOR  3
+#define ADC_IR_IN       4
+
+#define NUM_SENSORS 3
+uint8_t analogSensors[NUM_SENSORS] = {ADC_IR_IN, ADC_THERMISTOR, ADC_HUMIDITY};
+
+// ADC oversampling
+#define ADC_ONE_SHOT_OVERSAMPLING 64
 
 // Buffer Length
 #define CIRCULAR_BUFFER_LENGTH 800
@@ -14,7 +30,7 @@
 // Percent of a CIRCULAR_BUFFER_LENGTH sample that comes after the trigger
 #define END_TIMER 500
 
-uint16_t testADC()
+uint16_t testADC(uint8_t channel)
 {	
 	// AREF = AVcc
     ADMUX = (1<<REFS0);
@@ -24,7 +40,7 @@ uint16_t testADC()
     ADCSRA = (1<<ADEN)|(1<<ADPS2)|(1<<ADPS1)|(1<<ADPS0);
 
 	// select the corresponding channel 0~7
-	ADMUX = (ADMUX & 0xF8)|ADC_IR_IN; // clears the bottom 3 bits before ORing
+	ADMUX = (ADMUX & 0xF8)|channel; // clears the bottom 3 bits before ORing
 	
 	// start single convertion
 	// write ’1′ to ADSC
@@ -38,7 +54,19 @@ uint16_t testADC()
 	return (ADC);
 }
 
-void startFreeRunningADC()
+void switchADCMuxChannel(uint8_t channel)
+{
+    // Clear MUX3..0 in ADMUX (0x7C) in preparation for setting the analog
+    // input
+    ADMUX &= 0B11110000;
+    
+    // Set MUX3..0 in ADMUX (0x7C) to read from a given channel
+    // Do not set above 15! You will overrun other parts of ADMUX. A full
+    // list of possible inputs is available in the datasheet
+    ADMUX |= channel;
+}
+
+void startFreeRunningADC(uint8_t channel)
 {    
     // clear ADLAR in ADMUX (0x7C) to right-adjust the result
     // ADCL will contain lower 8 bits, ADCH upper 2 (in last two bits)
@@ -55,7 +83,7 @@ void startFreeRunningADC()
     // Set MUX3..0 in ADMUX (0x7C) to read from the IR Photodiode
     // Do not set above 15! You will overrun other parts of ADMUX. A full
     // list of possible inputs is available in the datasheet
-    ADMUX |= ADC_IR_IN;
+    ADMUX |= channel;
     
     // Set ADEN in ADCSRA (0x7A) to enable the ADC.
     // Note, this instruction takes 12 ADC clocks to execute
