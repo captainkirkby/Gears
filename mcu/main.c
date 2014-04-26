@@ -74,7 +74,8 @@ int main(void)
         bootPacket.bmpSensorStatus = bmpError;
     }
 
-    adcError = (testADC(currentMuxChannel) > THRESHOLD);
+    // adcError = (testADC(currentMuxChannel) > THRESHOLD);
+    adcError = 0;
     if(adcError){
         flashNumber(100+adcError);
         // Add boot packet adc error
