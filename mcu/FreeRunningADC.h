@@ -2,11 +2,12 @@
 #define ADC_H
 
 // ADC status constants
-#define ADC_STATUS_ERROR 0
 #define ADC_STATUS_CONTINUOUS 1
 #define ADC_STATUS_UNSTABLE 2
 #define ADC_STATUS_ONE_SHOT 3
 #define ADC_STATUS_DONE 4
+#define ADC_STATUS_TESTING 5
+#define ADC_STATUS_ERROR 255    // This number determines how many tries the ADC gets to not be covered (255-5=250)
 
 // ADC inputs
 // These are ADC channel numbers, not Arduino pin numbers.
@@ -32,15 +33,31 @@ uint8_t analogSensors[NUM_SENSORS] = {ADC_IR_IN, ADC_THERMISTOR, ADC_HUMIDITY};
 
 uint16_t testADC(uint8_t channel)
 {	
-	// AREF = AVcc
-    ADMUX = (1<<REFS0);
- 
-    // ADC Enable and prescaler of 128
-    // 16000000/128 = 125000
-    ADCSRA = (1<<ADEN)|(1<<ADPS2)|(1<<ADPS1)|(1<<ADPS0);
+    // clear ADLAR in ADMUX (0x7C) to right-adjust the result
+    // ADCL will contain lower 8 bits, ADCH upper 2 (in last two bits)
+    ADMUX &= 0B11011111;
+    
+    // Set REFS1..0 in ADMUX (0x7C) to change reference voltage to the
+    // proper source (01)
+    ADMUX |= 0B01000000;
+    
+    // Clear MUX3..0 in ADMUX (0x7C) in preparation for setting the analog
+    // input
+    ADMUX &= 0B11110000;
+    
+    // Set MUX3..0 in ADMUX (0x7C) to read from the IR Photodiode
+    // Do not set above 15! You will overrun other parts of ADMUX. A full
+    // list of possible inputs is available in the datasheet
+    ADMUX |= channel;
 
-	// select the corresponding channel 0~7
-	ADMUX = (ADMUX & 0xF8)|channel; // clears the bottom 3 bits before ORing
+    // Set ADEN in ADCSRA (0x7A) to enable the ADC.
+    // Note, this instruction takes 12 ADC clocks to execute
+    ADCSRA |= 0B10000000;
+
+    // Set the Prescaler to 128 (10000KHz/128 = 78.125KHz)
+    // Above 200KHz 10-bit results are not reliable.
+    ADCSRA |= 0B00000111;
+
 	
 	// start single convertion
 	// write ’1′ to ADSC
@@ -51,7 +68,7 @@ uint16_t testADC(uint8_t channel)
 	// till then, run loop continuously
 	while(ADCSRA & (1<<ADSC));
 	
-	return (ADC);
+	return (ADCL | (ADCH << 8));
 }
 
 void switchADCMuxChannel(uint8_t channel)

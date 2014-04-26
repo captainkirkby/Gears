@@ -38,11 +38,11 @@ DataPacket dataPacket;
 // Value to store analog result
 volatile uint16_t adcValue = 0;
 
-//Create buffer
+// Create buffer
 uint16_t circularbuffer[CIRCULAR_BUFFER_LENGTH];
 uint16_t currentElementIndex;
 
-//High when the buffer is ready to be dumped
+// Stores state of the ADC
 volatile uint8_t adcStatus;
 
 //Declare timer
@@ -59,6 +59,7 @@ volatile uint8_t currentMuxChannel;
 int main(void)
 {
     uint8_t bmpError, adcError;
+    uint16_t adcTestReading;
 
     // Initializes low-level hardware
 	initLEDs();
@@ -74,21 +75,36 @@ int main(void)
         bootPacket.bmpSensorStatus = bmpError;
     }
 
-    // adcError = (testADC(currentMuxChannel) > THRESHOLD);
-    adcError = 0;
-    if(adcError){
-        flashNumber(100+adcError);
-        // Add boot packet adc error
-    } else {
-        // Setup circular buffer and timer
-        currentElementIndex = 0;
-        timer = 0;
-        // Set ADC state and choose ADC channel
-        adcStatus = ADC_STATUS_CONTINUOUS;
-        currentSensorIndex = 0;
-        // currentMuxChannel = analogSensors[currentSensorIndex];
-        startFreeRunningADC(analogSensors[currentSensorIndex]);
-    }
+    // Setup circular buffer and timer
+    currentElementIndex = 0;
+    timer = 0;
+    // Set ADC state and choose ADC channel
+    adcStatus = ADC_STATUS_TESTING;
+    currentSensorIndex = 0;
+    // currentMuxChannel = analogSensors[currentSensorIndex];
+    startFreeRunningADC(analogSensors[currentSensorIndex]);
+
+    // Wait for test to finish
+    // At the end, the ADC will either be running in Free Running Mode or
+    // be disabled.
+    while(adcStatus == ADC_STATUS_TESTING);
+
+    // adcTestReading = testADC(currentMuxChannel);
+    // adcError = (adcTestReading < THRESHOLD);
+    // //adcError = 0;
+    // if(adcError){
+    //     flashNumber(adcTestReading);
+    //     // Add boot packet adc error
+    // } else {
+    //     // Setup circular buffer and timer
+    //     currentElementIndex = 0;
+    //     timer = 0;
+    //     // Set ADC state and choose ADC channel
+    //     adcStatus = ADC_STATUS_CONTINUOUS;
+    //     currentSensorIndex = 0;
+    //     // currentMuxChannel = analogSensors[currentSensorIndex];
+    //     startFreeRunningADC(analogSensors[currentSensorIndex]);
+    // }
 
     // Copies our serial number from EEPROM address 0x10 into the boot packet
     bootPacket.serialNumber = eeprom_read_dword((uint32_t*)0x10);
@@ -157,7 +173,20 @@ ISR(ADC_vect){
     //     digitalWrite(PULSE_TEST_POINT, HIGH);
     // }
 
-    if(adcStatus == ADC_STATUS_CONTINUOUS){
+    if(adcStatus >= ADC_STATUS_TESTING && adcStatus < ADC_STATUS_ERROR){
+        if(adcValue > THRESHOLD){
+            // Not covered, leave testing mode
+            adcStatus = ADC_STATUS_CONTINUOUS;
+        } else {
+            // Keep incrementing the ADC Status until we hit ADC_STATUS_ERROR
+            ++adcStatus;
+        }
+    } else if(adcStatus == ADC_STATUS_ERROR){
+        // Stop ADC
+        // Clear ADEN in ADCSRA (0x7A) to disable the ADC.
+        // Note, this instruction takes 12 ADC clocks to execute
+        ADCSRA &= ~0B10000000;
+    } else if(adcStatus == ADC_STATUS_CONTINUOUS){
         // Take IR ADC data
 
         if(timer > 0){
