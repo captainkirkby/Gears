@@ -110,14 +110,16 @@ int main(void)
     while(1) {
         // rippleUp();
         // rippleDown();
-        // Updates our sequence number for the next packet
-        dataPacket.sequenceNumber++;
-        // Reads the BMP180 sensor values and saves the results in the data packet
-        bmpError = readBMP180Sensors(&dataPacket.temperature,&dataPacket.pressure);
-        if(bmpError) flashNumber(200+bmpError);
 
         // Store ADC run and transmit data
         if(adcStatus == ADC_STATUS_DONE && !adcError){
+            // Updates our sequence number for the next packet
+            dataPacket.sequenceNumber++;
+
+            // Reads the BMP180 sensor values and saves the results in the data packet
+            bmpError = readBMP180Sensors(&dataPacket.temperature,&dataPacket.pressure);
+            
+            if(bmpError) flashNumber(200+bmpError);
             // Circular buffer has 800 2 byte entries
             uint16_t rawFill = 0;
             for(uint16_t i=currentElementIndex+1;i<CIRCULAR_BUFFER_LENGTH;++i){
