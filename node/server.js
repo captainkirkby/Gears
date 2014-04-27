@@ -89,7 +89,7 @@ async.parallel({
 				serialNumber: String,
 				bmpSensorOk: Boolean,
 				gpsSerialOk: Boolean,
-				sensorBlockOK: Boolean,
+				sensorBlockOK: Number,
 				commitTimestamp: Date,
 				commitHash: String,
 				commitStatus: Number
