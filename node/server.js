@@ -89,6 +89,7 @@ async.parallel({
 				serialNumber: String,
 				bmpSensorOk: Boolean,
 				gpsSerialOk: Boolean,
+				sensorBlockOK: Boolean,
 				commitTimestamp: Date,
 				commitHash: String,
 				commitStatus: Number
@@ -126,7 +127,7 @@ async.parallel({
 			console.log('starting data logger with',config);
 			// Initializes our binary packet assembler to initially only accept a boot packet.
 			// NB: the maximum and boot packet sizes are hardcoded here!
-			var assembler = new packet.Assembler(0xFE,3,1632,{0x00:31},0);
+			var assembler = new packet.Assembler(0xFE,3,1632,{0x00:32},0);
 			// Handles incoming chunks of binary data from the device.
 			config.port.on('data',function(data) {
 				receive(data,assembler,config.db.bootPacketModel,config.db.dataPacketModel);
@@ -159,15 +160,16 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			// Prepares boot packet for storing to the database.
 			// NB: the boot packet layout is hardcoded here!
 			hash = '';
-			for(var offset = 6; offset < 26; offset++) hash += sprintf("%02x",buf.readUInt8(offset));
+			for(var offset = 11; offset < 31; offset++) hash += sprintf("%02x",buf.readUInt8(offset));
 			p = new bootPacketModel({
 				'timestamp': new Date(),
 				'serialNumber': sprintf("%08x",buf.readUInt32LE(0)),
 				'bmpSensorOk': buf.readUInt8(4),
 				'gpsSerialOk': buf.readUInt8(5),
-				'commitTimestamp': new Date(buf.readUInt32LE(6)*1000),
+				'sensorBlockOK': buf.readUInt8(6),
+				'commitTimestamp': new Date(buf.readUInt32LE(7)*1000),
 				'commitHash': hash,
-				'commitStatus': buf.readUInt8(30)
+				'commitStatus': buf.readUInt8(31)
 			});
 			// After seeing a boot packet, we accept data packets.
 			// NB: the data packet size is hardcoded here!

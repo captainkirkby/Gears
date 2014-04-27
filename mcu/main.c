@@ -24,7 +24,7 @@
 BootPacket bootPacket = {
     { START_BYTE, START_BYTE, START_BYTE },
     BOOT_PACKET,
-    0,0,0,
+    0,0,0,0,
 #ifdef COMMIT_INFO
     COMMIT_INFO
 #else
@@ -93,22 +93,8 @@ int main(void)
     // be disabled.
     while(adcStatus == ADC_STATUS_TESTING);
 
-    // adcTestReading = testADC(currentMuxChannel);
-    // adcError = (adcTestReading < THRESHOLD);
-    // //adcError = 0;
-    // if(adcError){
-    //     flashNumber(adcTestReading);
-    //     // Add boot packet adc error
-    // } else {
-    //     // Setup circular buffer and timer
-    //     currentElementIndex = 0;
-    //     timer = 0;
-    //     // Set ADC state and choose ADC channel
-    //     adcStatus = ADC_STATUS_CONTINUOUS;
-    //     currentSensorIndex = 0;
-    //     // currentMuxChannel = analogSensors[currentSensorIndex];
-    //     startFreeRunningADC(analogSensors[currentSensorIndex]);
-    // }
+    // Non-zero if sensor block is OK
+    bootPacket.sensorBlockOK = (adcStatus != ADC_STATUS_ERROR);
 
     // Copies our serial number from EEPROM address 0x10 into the boot packet
     bootPacket.serialNumber = eeprom_read_dword((uint32_t*)0x10);

@@ -19,6 +19,8 @@ typedef struct {
 	uint8_t bmpSensorStatus;
 	// Non-zero if our GPS serial communication was successfully initialized
 	uint8_t gpsSerialOk;
+	// Non-zero if our IR Sensor block is plugged in and working
+	uint8_t sensorBlockOK;
 	// Git info about the code we are running.
     uint32_t commitTimestamp;
     uint8_t commitID[20];
