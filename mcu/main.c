@@ -45,6 +45,9 @@ uint16_t currentElementIndex;
 // Stores state of the ADC
 volatile uint8_t adcStatus;
 
+// Stores number of tries we've had in the ADC to get an unobstructed reading
+uint8_t adcTestTries;
+
 //Declare timer
 volatile uint16_t timer;
 
@@ -58,8 +61,7 @@ volatile uint8_t currentMuxChannel;
 
 int main(void)
 {
-    uint8_t bmpError, adcError;
-    uint16_t adcTestReading;
+    uint8_t bmpError;
 
     // Initializes low-level hardware
 	initLEDs();
@@ -81,6 +83,8 @@ int main(void)
     // Set ADC state and choose ADC channel
     adcStatus = ADC_STATUS_TESTING;
     currentSensorIndex = 0;
+    // Set the number of tries for sensor to be unobstructed
+    adcTestTries = 0;
     // currentMuxChannel = analogSensors[currentSensorIndex];
     startFreeRunningADC(analogSensors[currentSensorIndex]);
 
@@ -110,10 +114,10 @@ int main(void)
     bootPacket.serialNumber = eeprom_read_dword((uint32_t*)0x10);
 
     // Sends our boot packet
-    LED_ON(RED);
+    LED_ON(GREEN);
     serialWriteUSB((const uint8_t*)&bootPacket,sizeof(bootPacket));
     _delay_ms(500);
-    LED_OFF(RED);
+    LED_OFF(GREEN);
 
     // Initializes the constant header of our data packet
     dataPacket.start[0] = START_BYTE;
@@ -128,7 +132,7 @@ int main(void)
         // rippleDown();
 
         // Store ADC run and transmit data
-        if(adcStatus == ADC_STATUS_DONE && !adcError){
+        if(adcStatus == ADC_STATUS_DONE){
             // Updates our sequence number for the next packet
             dataPacket.sequenceNumber++;
 
@@ -173,19 +177,23 @@ ISR(ADC_vect){
     //     digitalWrite(PULSE_TEST_POINT, HIGH);
     // }
 
-    if(adcStatus >= ADC_STATUS_TESTING && adcStatus < ADC_STATUS_ERROR){
+    if(adcStatus >= ADC_STATUS_TESTING){
         if(adcValue > THRESHOLD){
             // Not covered, leave testing mode
             adcStatus = ADC_STATUS_CONTINUOUS;
         } else {
-            // Keep incrementing the ADC Status until we hit ADC_STATUS_ERROR
-            ++adcStatus;
+            if(adcTestTries < ADC_MAX_TEST_TRIES){
+                // Keep incrementing the ADC Status until we hit ADC_STATUS_ERROR
+                ++adcTestTries;
+            } else {
+                // Stop ADC (indicate this in the boot packet?)
+                // Clear ADEN in ADCSRA (0x7A) to disable the ADC.
+                // Note, this instruction takes 12 ADC clocks to execute
+                ADCSRA &= ~0B10000000;
+                adcStatus = ADC_STATUS_ERROR;
+                LED_ON(RED);
+            }
         }
-    } else if(adcStatus == ADC_STATUS_ERROR){
-        // Stop ADC
-        // Clear ADEN in ADCSRA (0x7A) to disable the ADC.
-        // Note, this instruction takes 12 ADC clocks to execute
-        ADCSRA &= ~0B10000000;
     } else if(adcStatus == ADC_STATUS_CONTINUOUS){
         // Take IR ADC data
 
@@ -220,7 +228,6 @@ ISR(ADC_vect){
             if(adcValue <= THRESHOLD){
                 // start timer
                 timer = 1;
-                LED_ON(RED);
                 // digitalWrite(TRIGGER_TEST_POINT, HIGH);
             } else {
                 //make sure timer is stopped
@@ -260,7 +267,6 @@ ISR(ADC_vect){
                 // set adcStatus to unstable
                 adcStatus = ADC_STATUS_UNSTABLE;
             }
-            LED_ON(GREEN);
         }
     }
 }
