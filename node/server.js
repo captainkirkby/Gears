@@ -98,6 +98,7 @@ async.parallel({
 			// Defines the schema and model for our serial data packets
 			var dataPacketSchema = mongoose.Schema({
 				timestamp: { type: Date, index: true },
+				timeBetweenReadings: Number,
 				sequenceNumber: Number,
 				temperature: Number,
 				pressure: Number,
@@ -127,7 +128,7 @@ async.parallel({
 			console.log('starting data logger with',config);
 			// Initializes our binary packet assembler to initially only accept a boot packet.
 			// NB: the maximum and boot packet sizes are hardcoded here!
-			var assembler = new packet.Assembler(0xFE,3,1632,{0x00:32},0);
+			var assembler = new packet.Assembler(0xFE,3,1634,{0x00:32},0);
 			// Handles incoming chunks of binary data from the device.
 			config.port.on('data',function(data) {
 				receive(data,assembler,config.db.bootPacketModel,config.db.dataPacketModel);
@@ -173,7 +174,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			});
 			// After seeing a boot packet, we accept data packets.
 			// NB: the data packet size is hardcoded here!
-			assembler.addPacketType(0x01,1632);
+			assembler.addPacketType(0x01,1634);
 			// Resets the last seen sequence number.
 			lastDataSequenceNumber = 0;
 		}
@@ -181,14 +182,16 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			console.log("Got Data!");
 			// Gets the raw data from the packet.raw field
 			var raw = [];
-			var initialReadOffset = 32;
-			for(var readOffset = initialReadOffset; readOffset < 1632; readOffset=readOffset+2) {
+			var initialReadOffset = 34;
+			for(var readOffset = initialReadOffset; readOffset < 1634; readOffset=readOffset+2) {
 				raw[(readOffset-initialReadOffset)/2] = buf.readUInt16LE(readOffset);
 				fs.appendFileSync('runningData.dat', (raw[(readOffset-initialReadOffset)/2]).toString() + '\n');
 			}
 
+			// Calculates the time since the last reading assuming 10MHz clock with prescaler set to 128.
+			var timeSince = buf.readUInt16LE(16)*128*13/10000000;
 			// Calculates the thermistor resistance in ohms assuming 100uA current source.
-			var rtherm = buf.readUInt16LE(24)/65536.0*5.0/100e-6;
+			var rtherm = buf.readUInt16LE(26)/65536.0*5.0/100e-6;
 			// Calculates the corresponding temperature in degC using a Steinhart-Hart model.
 			var logr = Math.log(rtherm);
 			var ttherm = 1.0/(0.000878844 + 0.000231913*logr + 7.70349e-8*logr*logr*logr) - 273.15;
@@ -196,14 +199,15 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			// NB: the data packet layout is hardcoded here!
 			p = new dataPacketModel({
 				'timestamp': new Date(),
+				'timeBetweenReadings': timeSince,
 				'sequenceNumber': buf.readInt32LE(0),
-				'temperature': buf.readInt32LE(16)/160.0,
-				'pressure': buf.readInt32LE(20),
+				'temperature': buf.readInt32LE(18)/160.0,
+				'pressure': buf.readInt32LE(22),
 				'thermistor': ttherm,
 				// use nominal 1st order fit from sensor datasheet to calculate RH in %
-				'humidity': (buf.readUInt16LE(26)/65536.0 - 0.1515)/0.00636,
+				'humidity': (buf.readUInt16LE(28)/65536.0 - 0.1515)/0.00636,
 				// convert IR level to volts
-				'irLevel': buf.readUInt16LE(28)/65536.0*5.0,
+				'irLevel': buf.readUInt16LE(30)/65536.0*5.0,
 				'raw': raw
 			});
 			//console.log(raw);

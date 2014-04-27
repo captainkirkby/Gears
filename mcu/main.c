@@ -48,8 +48,13 @@ volatile uint8_t adcStatus;
 // Stores number of tries we've had in the ADC to get an unobstructed reading
 uint8_t adcTestTries;
 
-//Declare timer
-volatile uint16_t timer;
+//Declare timer used for filling up the buffer
+/*volatile*/ uint16_t timer;
+
+//Declare counter used to keep track of timing
+uint16_t timingCounter = 0;
+volatile uint16_t lastCount;
+
 
 uint16_t thermistorReading;
 uint16_t humidityReading;
@@ -122,6 +127,8 @@ int main(void)
             // Updates our sequence number for the next packet
             dataPacket.sequenceNumber++;
 
+            dataPacket.timeSinceLastReading = lastCount;
+
             // Reads the BMP180 sensor values and saves the results in the data packet
             bmpError = readBMP180Sensors(&dataPacket.temperature,&dataPacket.pressure);
             
@@ -151,8 +158,8 @@ int main(void)
 // Interrupt service routine for the ADC completion
 // Note: When this is called, the next ADC conversion is already underway
 ISR(ADC_vect){
-    // Update counter
-    // ++counter;
+    // Update counter that keeps track of the timing
+     ++timingCounter;
 
     // Must read low first
     adcValue = ADCL | (ADCH << 8);
@@ -212,6 +219,9 @@ ISR(ADC_vect){
             // in either case, fill buffer once and increment pointer
         
             if(adcValue <= THRESHOLD){
+                // Store time since last threshold (max 10.9s for a 16 bit counter)
+                lastCount = timingCounter;
+                timingCounter = 0;
                 // start timer
                 timer = 1;
                 // digitalWrite(TRIGGER_TEST_POINT, HIGH);

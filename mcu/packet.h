@@ -40,6 +40,8 @@ typedef struct {
 	int16_t utcOffset;
 	uint16_t weekNumber;
 	uint32_t timeOfWeek;
+	// Relative timing info
+	uint16_t timeSinceLastReading;	// in ADC conversions (128*13/10MHz = 1.664e-4 s)
 	// BMP180 sensor measurements
 	int32_t temperature;	// divide by 160 to get degrees C
 	int32_t pressure;		// in Pascals
