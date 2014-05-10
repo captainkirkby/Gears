@@ -58,7 +58,6 @@ volatile uint16_t lastCount;
 
 uint16_t thermistorReading;
 uint16_t humidityReading;
-// uint16_t irReading;
 
 uint8_t currentSensorIndex;
 
@@ -119,9 +118,6 @@ int main(void)
 
 
     while(1) {
-        // rippleUp();
-        // rippleDown();
-
         // Store ADC run and transmit data
         if(adcStatus == ADC_STATUS_DONE){
             // Updates our sequence number for the next packet
@@ -159,16 +155,10 @@ int main(void)
 // Note: When this is called, the next ADC conversion is already underway
 ISR(ADC_vect){
     // Update counter that keeps track of the timing
-     ++timingCounter;
+    ++timingCounter;
 
     // Must read low first
     adcValue = ADCL | (ADCH << 8);
-
-    // if(digitalRead(PULSE_TEST_POINT)){
-    //     digitalWrite(PULSE_TEST_POINT, LOW);
-    // } else {
-    //     digitalWrite(PULSE_TEST_POINT, HIGH);
-    // }
 
     if(adcStatus >= ADC_STATUS_TESTING){
         if(adcValue > THRESHOLD){
@@ -199,13 +189,7 @@ ISR(ADC_vect){
                 LED_TOGGLE(YELLOW);
                 //uncomment this for mutiple buffers.
                 timer = 0;
-    
-                // //Stop the ADC by clearing ADEN
-                // ADCSRA &= ~0B10000000;
-    
-                // //Clear ADC start bit
-                // ADCSRA &= ~0B01000000;
-    
+
                 // Change ADC channel
                 // Next reading is unstable, one after that is good data
                 // currentMuxChannel = analogSensors[0];
