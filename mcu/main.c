@@ -129,14 +129,25 @@ int main(void)
             bmpError = readBMP180Sensors(&dataPacket.temperature,&dataPacket.pressure);
             
             if(bmpError) flashNumber(200+bmpError);
+
+            dataPacket.rawPhase = currentElementIndex+1;
+
+            dataPacket.raw[dataPacket.rawPhase] = 1;
+
             // Circular buffer has 800 2 byte entries
-            uint16_t rawFill = 0;
-            for(uint16_t i=currentElementIndex+1;i<CIRCULAR_BUFFER_LENGTH;++i){
-                dataPacket.raw[rawFill++] = circularbuffer[i];
-            }
-            for(uint16_t i=0;i<currentElementIndex+1;++i){
-                dataPacket.raw[rawFill++] = circularbuffer[i];
-            }
+            // uint16_t rawFill = 0;
+            // for(uint16_t i=currentElementIndex+1;i<CIRCULAR_BUFFER_LENGTH;++i){
+            //     dataPacket.raw[rawFill++] = circularbuffer[i];
+            // }
+            // for(uint16_t i=0;i<currentElementIndex+1;++i){
+            //     dataPacket.raw[rawFill++] = circularbuffer[i];
+            // }
+
+            //Circular buffer has 800 2 byte entries
+            // uint16_t rawFill = 0;
+            // for(uint16_t i=0;i<CIRCULAR_BUFFER_LENGTH;++i){
+            //     dataPacket.raw[rawFill++] = circularbuffer[i];
+            // }
 
             dataPacket.thermistor = thermistorReading;
             dataPacket.humidity = humidityReading;
