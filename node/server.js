@@ -15,6 +15,9 @@ sprintf = require('sprintf').sprintf;
 // Tracks the last seen data packet sequence number to enable sequencing errors to be detected.
 var lastDataSequenceNumber = 0;
 
+// Maximum packet size : change this when you want to modify the number of samples
+var MAXIMUM_PACKET_SIZE = 2082;
+
 // Parses command-line arguments.
 var noSerial = false;
 var noDatabase = false;
@@ -128,7 +131,6 @@ async.parallel({
 			console.log('starting data logger with',config);
 			// Initializes our binary packet assembler to initially only accept a boot packet.
 			// NB: the maximum and boot packet sizes are hardcoded here!
-			var MAXIMUM_PACKET_SIZE = 2082;
 			var assembler = new packet.Assembler(0xFE,3,MAXIMUM_PACKET_SIZE,{0x00:32},0);
 			// Handles incoming chunks of binary data from the device.
 			config.port.on('data',function(data) {
