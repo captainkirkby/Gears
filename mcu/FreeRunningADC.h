@@ -33,7 +33,7 @@ uint8_t analogSensors[NUM_SENSORS] = {ADC_IR_IN, ADC_THERMISTOR, ADC_HUMIDITY};
 // How much further after the trigger we go
 // CIRCULAR_BUFFER_LENGTH - END_TIMER = time before trigger
 // Percent of a CIRCULAR_BUFFER_LENGTH sample that comes after the trigger
-#define END_TIMER 650
+#define END_TIMER 874
 
 uint16_t testADC(uint8_t channel)
 {	

@@ -39,7 +39,7 @@ DataPacket dataPacket;
 volatile uint16_t adcValue = 0;
 
 // Create buffer
-uint16_t circularbuffer[CIRCULAR_BUFFER_LENGTH];
+// uint16_t circularbuffer[CIRCULAR_BUFFER_LENGTH];
 uint16_t currentElementIndex;
 
 // Stores state of the ADC
@@ -129,14 +129,14 @@ int main(void)
             bmpError = readBMP180Sensors(&dataPacket.temperature,&dataPacket.pressure);
             
             if(bmpError) flashNumber(200+bmpError);
-            // Circular buffer has 800 2 byte entries
-            uint16_t rawFill = 0;
-            for(uint16_t i=currentElementIndex+1;i<CIRCULAR_BUFFER_LENGTH;++i){
-                dataPacket.raw[rawFill++] = circularbuffer[i];
-            }
-            for(uint16_t i=0;i<currentElementIndex+1;++i){
-                dataPacket.raw[rawFill++] = circularbuffer[i];
-            }
+            // // Circular buffer has 800 2 byte entries
+            // uint16_t rawFill = 0;
+            // for(uint16_t i=currentElementIndex+1;i<CIRCULAR_BUFFER_LENGTH;++i){
+            //     dataPacket.raw[rawFill++] = circularbuffer[i];
+            // }
+            // for(uint16_t i=0;i<currentElementIndex+1;++i){
+            //     dataPacket.raw[rawFill++] = circularbuffer[i];
+            // }
 
             dataPacket.thermistor = thermistorReading;
             dataPacket.humidity = humidityReading;
@@ -218,7 +218,8 @@ ISR(ADC_vect){
     
         //Add value to buffer
         currentElementIndex = (currentElementIndex + 1) % CIRCULAR_BUFFER_LENGTH;
-        circularbuffer[currentElementIndex] = adcValue;             // Fill actual data field instead ?
+        dataPacket.raw[currentElementIndex] = adcValue;             // Fill actual data field instead ?
+        // EDIT: switched to filling actual data field.  Keeping 2 copies of the raw data runs the mcu out of memory
     } else { 
         // Reading out "one shot" analog sensors
         if(adcStatus == ADC_STATUS_UNSTABLE){
