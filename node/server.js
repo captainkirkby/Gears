@@ -128,7 +128,8 @@ async.parallel({
 			console.log('starting data logger with',config);
 			// Initializes our binary packet assembler to initially only accept a boot packet.
 			// NB: the maximum and boot packet sizes are hardcoded here!
-			var assembler = new packet.Assembler(0xFE,3,1634,{0x00:32},0);
+			var MAXIMUM_PACKET_SIZE = 2082;
+			var assembler = new packet.Assembler(0xFE,3,MAXIMUM_PACKET_SIZE,{0x00:32},0);
 			// Handles incoming chunks of binary data from the device.
 			config.port.on('data',function(data) {
 				receive(data,assembler,config.db.bootPacketModel,config.db.dataPacketModel);
@@ -174,7 +175,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			});
 			// After seeing a boot packet, we accept data packets.
 			// NB: the data packet size is hardcoded here!
-			assembler.addPacketType(0x01,1634);
+			assembler.addPacketType(0x01,MAXIMUM_PACKET_SIZE);
 			// Resets the last seen sequence number.
 			lastDataSequenceNumber = 0;
 		}
@@ -183,7 +184,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			// Gets the raw data from the packet.raw field
 			var raw = [];
 			var initialReadOffset = 34;
-			for(var readOffset = initialReadOffset; readOffset < 1634; readOffset=readOffset+2) {
+			for(var readOffset = initialReadOffset; readOffset < MAXIMUM_PACKET_SIZE; readOffset=readOffset+2) {
 				raw[(readOffset-initialReadOffset)/2] = buf.readUInt16LE(readOffset);
 				fs.appendFileSync('runningData.dat', (raw[(readOffset-initialReadOffset)/2]).toString() + '\n');
 			}
