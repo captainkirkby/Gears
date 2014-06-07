@@ -229,7 +229,7 @@ ISR(ADC_vect){
     
         //Add value to buffer
         currentElementIndex = (currentElementIndex + 1) % CIRCULAR_BUFFER_LENGTH;
-        circularbuffer[currentElementIndex] = adcValue;             // Fill actual data field instead ?
+        dataPacket.raw[currentElementIndex] = adcValue;             // Fill actual data field instead ?
     } else { 
         // Reading out "one shot" analog sensors
         if(adcStatus == ADC_STATUS_UNSTABLE){
