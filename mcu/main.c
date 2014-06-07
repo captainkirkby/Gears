@@ -152,11 +152,11 @@ int main(void)
             dataPacket.thermistor = thermistorReading;
             dataPacket.humidity = humidityReading;
             
-            currentSensorIndex = 0;
-            adcStatus = ADC_STATUS_CONTINUOUS;
-            
             // Sends binary packet data synchronously
             serialWriteUSB((const uint8_t*)&dataPacket,sizeof(dataPacket));
+
+            currentSensorIndex = 0;
+            adcStatus = ADC_STATUS_CONTINUOUS;
         }
     }
     return 0; // never actually reached
