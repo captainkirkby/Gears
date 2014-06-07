@@ -6,7 +6,7 @@
 #define START_BYTE 0xFE
 #define BOOT_PACKET 0x00
 #define DATA_PACKET 0x01
-#define NUM_RAW_BYTES 1600
+#define NUM_RAW_BYTES 2048		// 1024 samples * 2 bytes per sample
 
 // Defines the boot packet structure
 typedef struct {
