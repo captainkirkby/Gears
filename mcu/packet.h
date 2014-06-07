@@ -32,28 +32,28 @@ typedef struct {
 	// Header
 	uint8_t start[3];
 	uint8_t type;
-	// Packet sequence number
-	uint32_t sequenceNumber;
+	// Packet sequence number		// Read offset:
+	uint32_t sequenceNumber;		// (0)
 	// GPS timing info
-	uint16_t gpsAlarms;
-	uint16_t gpsStatus;
-	int16_t utcOffset;
-	uint16_t weekNumber;
-	uint32_t timeOfWeek;
-	// Relative timing info
-	uint16_t timeSinceLastReading;	// in ADC conversions (128*13/10MHz = 1.664e-4 s)
+	uint16_t gpsAlarms;				// (4)
+	uint16_t gpsStatus;				// (6)
+	int16_t utcOffset;				// (8)
+	uint16_t weekNumber;			// (10)
+	uint32_t timeOfWeek;			// (12)
+	// Relative timing info (in ADC conversions (128*13/10MHz = 1.664e-4 s)
+	uint16_t timeSinceLastReading;	// (16) 
 	// BMP180 sensor measurements
-	int32_t temperature;	// divide by 160 to get degrees C
-	int32_t pressure;		// in Pascals
+	int32_t temperature;			// (18) divide by 160 to get degrees C
+	int32_t pressure;				// (22) in Pascals
 	// block thermistor reading
-	uint16_t thermistor;	// in ADC counts
+	uint16_t thermistor;			// (26)
 	// relative humidity reading
-	uint16_t humidity;		// in ADC counts
+	uint16_t humidity;				// (28)
 	// PIN diode IR light level
-	uint16_t irLevel;
+	uint16_t irLevel;				// (30)
 	// IR sensor raw ADC readings
-	uint16_t rawPhase;
-	uint16_t raw[NUM_RAW_BYTES/2];
+	uint16_t rawPhase;				// (32)
+	uint16_t raw[NUM_RAW_BYTES/2];	// (34)
 } DataPacket;
 
 #endif
