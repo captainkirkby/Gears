@@ -180,13 +180,46 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 		}
 		else if(ptype == 0x01) {
 			console.log("Got Data!");
+
+
+			// for(var i=0;i<1634;i=i+1){
+			// 	console.log(buf.readUInt8(i));
+			// }
+
 			// Gets the raw data from the packet.raw field
 			var raw = [];
+			var rawFill = 0;
+			var rawPhase = buf.readUInt16LE(32);
+			console.log(rawPhase);
 			var initialReadOffset = 34;
-			for(var readOffset = initialReadOffset; readOffset < 1634; readOffset=readOffset+2) {
-				raw[(readOffset-initialReadOffset)/2] = buf.readUInt16LE(readOffset);
-				fs.appendFileSync('runningData.dat', (raw[(readOffset-initialReadOffset)/2]).toString() + '\n');
+			var initialReadOffsetWithPhase = initialReadOffset+(rawPhase*2);		// *2 beacuse raw phase is in 16 bit word offset
+
+
+			// for(var readOffsetA = initialReadOffset; readOffsetA < 1634; readOffsetA=readOffsetA+2) {
+			// 	raw[rawFill] = buf.readUInt16LE(readOffsetA);
+			// 	fs.appendFileSync('runningData.dat', (raw[rawFill]).toString() + '\n');
+			// 	rawFill = rawFill + 1;
+			// }
+
+			for(var readOffsetA = initialReadOffsetWithPhase; readOffsetA < 1634; readOffsetA=readOffsetA+2) {
+				raw[rawFill] = buf.readUInt16LE(readOffsetA);
+				fs.appendFileSync('runningData.dat', (raw[rawFill]).toString() + '\n');
+				rawFill = rawFill + 1;
 			}
+
+			for(var readOffsetB = initialReadOffset; readOffsetB < initialReadOffsetWithPhase; readOffsetB=readOffsetB+2) {
+				raw[rawFill] = buf.readUInt16LE(readOffsetB);
+				fs.appendFileSync('runningData.dat', (raw[rawFill]).toString() + '\n');
+				rawFill = rawFill + 1;
+			}
+
+            // for(var readOffsetA = initialReadOffset;i<CIRCULAR_BUFFER_LENGTH;++i){
+            //     dataPacket.raw[rawFill++] = circularbuffer[i];
+            // }
+            // for(uint16_t i=0;i<currentElementIndex+1;++i){
+            //     dataPacket.raw[rawFill++] = circularbuffer[i];
+            // }
+
 
 			// Calculates the time since the last reading assuming 10MHz clock with prescaler set to 128.
 			var timeSince = buf.readUInt16LE(16)*128*13/10000000;
