@@ -132,7 +132,7 @@ int main(void)
 
             dataPacket.rawPhase = currentElementIndex+1;
 
-            dataPacket.raw[dataPacket.rawPhase] = 1;
+            // dataPacket.raw[dataPacket.rawPhase] = 1;
 
             // Circular buffer has 800 2 byte entries
             // uint16_t rawFill = 0;
