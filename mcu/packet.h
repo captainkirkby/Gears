@@ -6,7 +6,7 @@
 #define START_BYTE 0xFE
 #define BOOT_PACKET 0x00
 #define DATA_PACKET 0x01
-#define NUM_RAW_BYTES 1600
+#define PACKET_LENGTH 1024
 
 // Defines the boot packet structure
 typedef struct {
@@ -53,7 +53,7 @@ typedef struct {
 	uint16_t irLevel;				// (30)
 	// IR sensor raw ADC readings
 	uint16_t rawPhase;				// (32)
-	volatile uint16_t raw[NUM_RAW_BYTES/2];	// (34)
+	volatile uint16_t raw[PACKET_LENGTH];	// (34)
 } DataPacket;
 
 #endif
