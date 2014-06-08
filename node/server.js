@@ -38,7 +38,7 @@ async.parallel({
 					// Looks for the first port with 'FTDI' as the manufacturer
 					async.detectSeries(ports,function(port,ttyCallback) {
 						console.log('scanning port',port);
-						ttyCallback(port.manufacturer == 'FTDI');
+						ttyCallback(port.manufacturer == 'FTDI' || port.pnpId.indexOf('FTDI') > -1);
 					},
 					// Forwards the corresponding tty device name.
 					function(firstFtdiPort) {
@@ -188,20 +188,29 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			var raw = [];
 			var rawFill = 0;
 			var rawPhase = buf.readUInt16LE(32);
+			console.log(rawPhase);
 			var initialReadOffset = 34;
 			var initialReadOffsetWithPhase = initialReadOffset+(rawPhase*2);		// *2 beacuse raw phase is in 16 bit word offset
 
 			for(var readOffsetA = initialReadOffsetWithPhase; readOffsetA < MAX_PACKET_SIZE; readOffsetA=readOffsetA+2) {
 				raw[rawFill] = buf.readUInt16LE(readOffsetA);
-				fs.appendFileSync('runningData.dat', (raw[rawFill]).toString() + '\n');
+				//fs.appendFileSync('runningData.dat', (raw[rawFill]).toString() + '\n');
 				rawFill = rawFill + 1;
 			}
 
 			for(var readOffsetB = initialReadOffset; readOffsetB < initialReadOffsetWithPhase; readOffsetB=readOffsetB+2) {
 				raw[rawFill] = buf.readUInt16LE(readOffsetB);
-				fs.appendFileSync('runningData.dat', (raw[rawFill]).toString() + '\n');
+				//fs.appendFileSync('runningData.dat', (raw[rawFill]).toString() + '\n');
 				rawFill = rawFill + 1;
 			}
+
+            // for(var readOffsetA = initialReadOffset;i<CIRCULAR_BUFFER_LENGTH;++i){
+            //     dataPacket.raw[rawFill++] = circularbuffer[i];
+            // }
+            // for(uint16_t i=0;i<currentElementIndex+1;++i){
+            //     dataPacket.raw[rawFill++] = circularbuffer[i];
+            // }
+
 
 			// Calculates the time since the last reading assuming 10MHz clock with prescaler set to 128.
 			var timeSince = buf.readUInt16LE(16)*128*13/10000000;
