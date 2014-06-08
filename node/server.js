@@ -188,7 +188,6 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			var raw = [];
 			var rawFill = 0;
 			var rawPhase = buf.readUInt16LE(32);
-			console.log(rawPhase);
 			var initialReadOffset = 34;
 			var initialReadOffsetWithPhase = initialReadOffset+(rawPhase*2);		// *2 beacuse raw phase is in 16 bit word offset
 
