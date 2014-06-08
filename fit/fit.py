@@ -73,9 +73,15 @@ def fit(frame,tabs,args):
     LGuess = 1020.
     dthetaGuess = 4.66
 
+    # initialize model prediction
+    global prediction
+    prediction = numpy.zeros_like(frame)
+
     # define chi-square function to use
     def chiSquare(t0,direction,lo,hi,D,L,dtheta):
-        residuals = frame - model(t0,direction,lo,hi,tabs,D,L,dtheta,nsamples=args.frame_size)
+        global prediction
+        prediction = model(t0,direction,lo,hi,tabs,D,L,dtheta,nsamples=args.frame_size)
+        residuals = frame - prediction
         return numpy.dot(residuals,residuals)
 
     # pick direction based on smallest chisq with initial parameter guesses
@@ -91,16 +97,21 @@ def fit(frame,tabs,args):
         t0=t0Guess,error_t0=1.,
         lo=loGuess,error_lo=1.,
         hi=hiGuess,error_hi=1.,
-        D=DGuess,error_D=0.1,fix_D=True,
+        D=DGuess,error_D=0.1,fix_D=False,
         L=LGuess,error_L=10.,fix_L=True,
-        dtheta=dthetaGuess,error_dtheta=0.5,fix_dtheta=True)
+        dtheta=dthetaGuess,error_dtheta=0.5,fix_dtheta=False)
+    engine.tol = 10.
 
     # do the fit
     minimum = engine.migrad()
     if not minimum[0]['has_valid_parameters']:
         raise RuntimeError('Fit failed!')
-    print engine.args
-    return engine.args
+
+    # calculate the best fit model
+    chiSquare(*engine.args)
+
+    # return best-fit parameter values and best-fit model prediction
+    return engine.args,prediction
 
 def main():
 
@@ -137,12 +148,15 @@ def main():
     frames = data[:nframe*args.frame_size].reshape((nframe,args.frame_size))
     for frame in frames:
         plt.cla()
-        plt.plot(xvec,frame,'+')
-        pred = model(t0=495.,direction=direction,lo=0.,hi=927.,L=1020.,dtheta=4.66,D=1.7,tabs=tabs)
-        direction *= -1
-        plt.plot(xvec,pred,'-')
+        plt.plot(xvec,frame,'g+')
+        #pred = model(t0=495.,direction=direction,lo=0.,hi=927.,L=1020.,dtheta=4.66,D=1.7,tabs=tabs)
+        #direction *= -1
+        #plt.plot(xvec,pred,'r-')
+        #plt.draw()
+        params,bestFit = fit(frame,tabs,args)
+        print params
+        plt.plot(xvec,bestFit,'b-')
         plt.draw()
-        params = fit(frame,tabs,args)
         q = raw_input('hit ENTER...')
         if q == 'q':
             break
