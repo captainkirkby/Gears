@@ -16,7 +16,7 @@ sprintf = require('sprintf').sprintf;
 var lastDataSequenceNumber = 0;
 
 // Maximum packet size : change this when you want to modify the number of samples
-var MAXIMUM_PACKET_SIZE = 2082;
+var MAX_PACKET_SIZE = 2082;
 
 // Parses command-line arguments.
 var noSerial = false;
@@ -131,7 +131,7 @@ async.parallel({
 			console.log('starting data logger with',config);
 			// Initializes our binary packet assembler to initially only accept a boot packet.
 			// NB: the maximum and boot packet sizes are hardcoded here!
-			var assembler = new packet.Assembler(0xFE,3,MAXIMUM_PACKET_SIZE,{0x00:32},0);
+			var assembler = new packet.Assembler(0xFE,3,MAX_PACKET_SIZE,{0x00:32},0);
 			// Handles incoming chunks of binary data from the device.
 			config.port.on('data',function(data) {
 				receive(data,assembler,config.db.bootPacketModel,config.db.dataPacketModel);
@@ -177,18 +177,31 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			});
 			// After seeing a boot packet, we accept data packets.
 			// NB: the data packet size is hardcoded here!
-			assembler.addPacketType(0x01,MAXIMUM_PACKET_SIZE);
+			assembler.addPacketType(0x01,MAX_PACKET_SIZE);
 			// Resets the last seen sequence number.
 			lastDataSequenceNumber = 0;
 		}
 		else if(ptype == 0x01) {
 			console.log("Got Data!");
+
 			// Gets the raw data from the packet.raw field
 			var raw = [];
+			var rawFill = 0;
+			var rawPhase = buf.readUInt16LE(32);
+			console.log(rawPhase);
 			var initialReadOffset = 34;
-			for(var readOffset = initialReadOffset; readOffset < MAXIMUM_PACKET_SIZE; readOffset=readOffset+2) {
-				raw[(readOffset-initialReadOffset)/2] = buf.readUInt16LE(readOffset);
-				fs.appendFileSync('runningData.dat', (raw[(readOffset-initialReadOffset)/2]).toString() + '\n');
+			var initialReadOffsetWithPhase = initialReadOffset+(rawPhase*2);		// *2 beacuse raw phase is in 16 bit word offset
+
+			for(var readOffsetA = initialReadOffsetWithPhase; readOffsetA < MAX_PACKET_SIZE; readOffsetA=readOffsetA+2) {
+				raw[rawFill] = buf.readUInt16LE(readOffsetA);
+				fs.appendFileSync('runningData.dat', (raw[rawFill]).toString() + '\n');
+				rawFill = rawFill + 1;
+			}
+
+			for(var readOffsetB = initialReadOffset; readOffsetB < initialReadOffsetWithPhase; readOffsetB=readOffsetB+2) {
+				raw[rawFill] = buf.readUInt16LE(readOffsetB);
+				fs.appendFileSync('runningData.dat', (raw[rawFill]).toString() + '\n');
+				rawFill = rawFill + 1;
 			}
 
 			// Calculates the time since the last reading assuming 10MHz clock with prescaler set to 128.

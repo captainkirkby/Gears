@@ -129,23 +129,16 @@ int main(void)
             bmpError = readBMP180Sensors(&dataPacket.temperature,&dataPacket.pressure);
             
             if(bmpError) flashNumber(200+bmpError);
-            // // Circular buffer has 800 2 byte entries
-            // uint16_t rawFill = 0;
-            // for(uint16_t i=currentElementIndex+1;i<CIRCULAR_BUFFER_LENGTH;++i){
-            //     dataPacket.raw[rawFill++] = circularbuffer[i];
-            // }
-            // for(uint16_t i=0;i<currentElementIndex+1;++i){
-            //     dataPacket.raw[rawFill++] = circularbuffer[i];
-            // }
 
+            dataPacket.rawPhase = currentElementIndex+1;
             dataPacket.thermistor = thermistorReading;
             dataPacket.humidity = humidityReading;
             
-            currentSensorIndex = 0;
-            adcStatus = ADC_STATUS_CONTINUOUS;
-            
             // Sends binary packet data synchronously
             serialWriteUSB((const uint8_t*)&dataPacket,sizeof(dataPacket));
+
+            currentSensorIndex = 0;
+            adcStatus = ADC_STATUS_CONTINUOUS;
         }
     }
     return 0; // never actually reached
@@ -219,7 +212,6 @@ ISR(ADC_vect){
         //Add value to buffer
         currentElementIndex = (currentElementIndex + 1) % CIRCULAR_BUFFER_LENGTH;
         dataPacket.raw[currentElementIndex] = adcValue;             // Fill actual data field instead ?
-        // EDIT: switched to filling actual data field.  Keeping 2 copies of the raw data runs the mcu out of memory
     } else { 
         // Reading out "one shot" analog sensors
         if(adcStatus == ADC_STATUS_UNSTABLE){
