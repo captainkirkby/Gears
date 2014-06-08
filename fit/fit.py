@@ -4,6 +4,7 @@ import math
 import numpy
 import scipy.interpolate
 import matplotlib.pyplot as plt
+from iminuit import Minuit
 import argparse
 
 def edgeTransmission(x,D):
@@ -47,23 +48,59 @@ def motion(dt,L,dtheta,T):
     # reduced.  Second, the angular speed decreases as the pendulum moves away from dead center.
     return L*numpy.sin(thdot/omega*numpy.sin(omega*dt))
 
-def model(t0,ambient,gain,tabs,D=2.,L=1108.,dtheta=4.66,T=2.0,nsamples=1024,adcTick=1664e-7):
+def model(t0,direction,lo,hi,tabs,D=2.,L=1108.,dtheta=4.66,T=2.0,nsamples=1024,adcTick=1664e-7):
     """
     t0 = offset of dead center relative to first sample (ADC samples)
     """
     # initialize an array of times (secs) relative to the assumed dead center
-    dt = adcTick*(numpy.arange(nsamples) - t0)
-    print dt
+    dt = direction*adcTick*(numpy.arange(nsamples) - t0)
     # convert to transverse positions (mm) relative to the tabs
     dx = motion(dt,L,dtheta,T)
     # calculate expected tranmission fraction (0-1) at each transverse position
     trans = tabsTransmission(dx,tabs,D)
-    print trans
     # scale to ADC units
-    return gain*(trans + ambient)
+    return lo + (hi-lo)*trans
 
-def fit(frame):
-    return 0
+def fit(frame,tabs,args):
+
+    # use absolute min/max to initialize lo/hi parameters
+    loGuess = numpy.min(frame)
+    hiGuess = numpy.max(frame)
+
+    # hard code initial parameter guesses for now
+    t0Guess = 495.
+    DGuess = 1.7
+    LGuess = 1020.
+    dthetaGuess = 4.66
+
+    # define chi-square function to use
+    def chiSquare(t0,direction,lo,hi,D,L,dtheta):
+        residuals = frame - model(t0,direction,lo,hi,tabs,D,L,dtheta,nsamples=args.frame_size)
+        return numpy.dot(residuals,residuals)
+
+    # pick direction based on smallest chisq with initial parameter guesses
+    chiSqP = chiSquare(t0Guess,+1,loGuess,hiGuess,DGuess,LGuess,dthetaGuess)
+    chiSqM = chiSquare(t0Guess,-1,loGuess,hiGuess,DGuess,LGuess,dthetaGuess)
+    print 'chisq +/-',chiSqP,chiSqM
+    direction = +1. if chiSqP < chiSqM else -1.
+
+    # initialize fitter
+    print_level = 1 if args.verbose else 0
+    engine = Minuit(chiSquare,errordef=1.0,print_level=print_level,
+        direction=direction,fix_direction=True,
+        t0=t0Guess,error_t0=1.,
+        lo=loGuess,error_lo=1.,
+        hi=hiGuess,error_hi=1.,
+        D=DGuess,error_D=0.1,fix_D=True,
+        L=LGuess,error_L=10.,fix_L=True,
+        dtheta=dthetaGuess,error_dtheta=0.5,fix_dtheta=True)
+
+    # do the fit
+    minimum = engine.migrad()
+    if not minimum[0]['has_valid_parameters']:
+        raise RuntimeError('Fit failed!')
+    print engine.args
+    return engine.args
 
 def main():
 
@@ -73,6 +110,8 @@ def main():
         help = 'name of input data file to analyze')
     parser.add_argument('--frame-size', type=int, default=1024,
         help = 'number of samples per frame')
+    parser.add_argument('--verbose', action = 'store_true',
+        help = 'generate verbose output')
     args = parser.parse_args()
 
     # load the input data file
@@ -88,6 +127,7 @@ def main():
 
     # define tab geometry
     tabs = numpy.array([[-15.,-5.],[0.,5.],[10.,15.]])
+    direction = -1
 
     # loop over data frames
     xvec = numpy.arange(args.frame_size)
@@ -98,11 +138,11 @@ def main():
     for frame in frames:
         plt.cla()
         plt.plot(xvec,frame,'+')
-        pred = model(t0=495.,ambient=0.,gain=927.,L=1020.,dtheta=4.66,D=1.7,tabs=tabs)
-        print pred
+        pred = model(t0=495.,direction=direction,lo=0.,hi=927.,L=1020.,dtheta=4.66,D=1.7,tabs=tabs)
+        direction *= -1
         plt.plot(xvec,pred,'-')
         plt.draw()
-        params = fit(frame)
+        params = fit(frame,tabs,args)
         q = raw_input('hit ENTER...')
         if q == 'q':
             break
