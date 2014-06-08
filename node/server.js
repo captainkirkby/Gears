@@ -15,6 +15,9 @@ sprintf = require('sprintf').sprintf;
 // Tracks the last seen data packet sequence number to enable sequencing errors to be detected.
 var lastDataSequenceNumber = 0;
 
+// Maximum packet size
+var MAX_PACKET_SIZE = 2082;
+
 // Parses command-line arguments.
 var noSerial = false;
 var noDatabase = false;
@@ -128,7 +131,7 @@ async.parallel({
 			console.log('starting data logger with',config);
 			// Initializes our binary packet assembler to initially only accept a boot packet.
 			// NB: the maximum and boot packet sizes are hardcoded here!
-			var assembler = new packet.Assembler(0xFE,3,1634,{0x00:32},0);
+			var assembler = new packet.Assembler(0xFE,3,MAX_PACKET_SIZE,{0x00:32},0);
 			// Handles incoming chunks of binary data from the device.
 			config.port.on('data',function(data) {
 				receive(data,assembler,config.db.bootPacketModel,config.db.dataPacketModel);
@@ -174,7 +177,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			});
 			// After seeing a boot packet, we accept data packets.
 			// NB: the data packet size is hardcoded here!
-			assembler.addPacketType(0x01,1634);
+			assembler.addPacketType(0x01,MAX_PACKET_SIZE);
 			// Resets the last seen sequence number.
 			lastDataSequenceNumber = 0;
 		}
@@ -182,7 +185,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			console.log("Got Data!");
 
 
-			// for(var i=0;i<1634;i=i+1){
+			// for(var i=0;i<MAX_PACKET_SIZE;i=i+1){
 			// 	console.log(buf.readUInt8(i));
 			// }
 
@@ -195,13 +198,13 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			var initialReadOffsetWithPhase = initialReadOffset+(rawPhase*2);		// *2 beacuse raw phase is in 16 bit word offset
 
 
-			// for(var readOffsetA = initialReadOffset; readOffsetA < 1634; readOffsetA=readOffsetA+2) {
+			// for(var readOffsetA = initialReadOffset; readOffsetA < MAX_PACKET_SIZE; readOffsetA=readOffsetA+2) {
 			// 	raw[rawFill] = buf.readUInt16LE(readOffsetA);
 			// 	fs.appendFileSync('runningData.dat', (raw[rawFill]).toString() + '\n');
 			// 	rawFill = rawFill + 1;
 			// }
 
-			for(var readOffsetA = initialReadOffsetWithPhase; readOffsetA < 1634; readOffsetA=readOffsetA+2) {
+			for(var readOffsetA = initialReadOffsetWithPhase; readOffsetA < MAX_PACKET_SIZE; readOffsetA=readOffsetA+2) {
 				raw[rawFill] = buf.readUInt16LE(readOffsetA);
 				fs.appendFileSync('runningData.dat', (raw[rawFill]).toString() + '\n');
 				rawFill = rawFill + 1;
