@@ -39,7 +39,7 @@ DataPacket dataPacket;
 volatile uint16_t adcValue = 0;
 
 // Create buffer
-uint16_t circularbuffer[CIRCULAR_BUFFER_LENGTH];
+// uint16_t circularbuffer[CIRCULAR_BUFFER_LENGTH];
 uint16_t currentElementIndex;
 
 // Stores state of the ADC
