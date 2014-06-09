@@ -79,7 +79,8 @@ def fit(frame,tabs,args):
     # define chi-square function to use
     def chiSquare(t0,direction,lo,hi,D,L,dtheta):
         global prediction
-        prediction = model(t0,direction,lo,hi,tabs,D,L,dtheta,nsamples=args.nsamples)
+        prediction = model(t0,direction,lo,hi,tabs,D,L,dtheta,
+            nsamples=args.nsamples,adcTick=args.adc_tick)
         residuals = frame - prediction
         return numpy.dot(residuals,residuals)
 
@@ -116,6 +117,9 @@ class FrameProcessor(object):
         self.tabs = tabs
         self.args = args
         self.lastDirection = None
+        self.nextLastOffset = None
+        self.lastOffset = None
+        self.lastElapsed = None
         # initialize plot display if requested
         if args.show_plots:
             fig = plt.figure(figsize=(12,12))
@@ -127,10 +131,12 @@ class FrameProcessor(object):
         """
         Processes the next frame of raw IR ADC samples. The parameter elapsed gives the number
         of ADC samples elapsed between the first sample of this frame and the first sample of
-        the previous frame, or zero if this information is not available.
+        the previous frame, or zero if this information is not available. Returns the estimated
+        period in seconds (nominally 2 secs) or raises a RuntimeError.
         """
         if len(samples) != self.args.nsamples:
-            raise RuntimeError('Got frame size %d but expected %d' % (len(frame),self.frameSize))
+            # Something is seriously wrong.
+            return -2
         # do the fit
         fitParams,bestFit = fit(samples,self.tabs,self.args)
         print 'FIT:',fitParams
@@ -141,10 +147,24 @@ class FrameProcessor(object):
             plt.plot(self.plotx,samples,'g+')
             plt.plot(self.plotx,bestFit,'r-')
             plt.draw()
-        # check that this frame reverses the direction of the previous frame
-        if direction == self.lastDirection:
-            raise RuntimeError('Got two frames in the same direction')
+        # calculate the elapsed time since the last dead-center crossing in the same direction
+        # which is nominally 2 seconds
+        if direction != self.lastDirection:
+            if self.lastElapsed and self.lastOffset:
+                period = (self.lastElapsed - self.lastOffset + elapsed + offset)*self.args.adc_tick
+            else:
+                # We must have processed at least two frames before we can calculate a period.
+                period = 0
+        else:
+            # We require alternating directions, so something went wrong but we will try to recover.
+            period = -1
+        # update our saved info
         self.lastDirection = direction
+        self.lastOffset = self.nextLastOffset
+        self.nextLastOffset = offset
+        self.lastElapsed = elapsed
+        # return the estimated period in seconds
+        return period
 
 def main():
 
@@ -154,6 +174,8 @@ def main():
         help = 'name of input data file to replay')
     parser.add_argument('--nsamples', type=int, default=1024,
         help = 'number of IR ADC samples per frame')
+    parser.add_argument('--adc-tick', type = float, default = 1664e-7,
+        help = 'ADC sampling period in seconds')
     parser.add_argument('--show-plots', action = 'store_true',
         help = 'display analysis plots')
     parser.add_argument('--verbose', action = 'store_true',
@@ -182,7 +204,11 @@ def main():
         frames = data[:nframe*(1+args.nsamples)].reshape((nframe,1+args.nsamples))
         for frame in frames:
             elapsed,samples = frame[0],frame[1:]
-            processor.process(elapsed,samples)
+            try:
+                period = processor.process(elapsed,samples)
+                print 'Period = %f secs' % period
+            except RuntimeError,e:
+                print str(e)
             q = raw_input('Hit ENTER for next frame or q ENTER to quit...')
             if q == 'q':
                 break
