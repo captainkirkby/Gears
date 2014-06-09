@@ -2,8 +2,6 @@
 
 import math
 import numpy
-import scipy.interpolate
-import matplotlib.pyplot as plt
 from iminuit import Minuit
 import argparse
 
@@ -87,7 +85,6 @@ def fit(frame,tabs,args):
     # pick direction based on smallest chisq with initial parameter guesses
     chiSqP = chiSquare(t0Guess,+1,loGuess,hiGuess,DGuess,LGuess,dthetaGuess)
     chiSqM = chiSquare(t0Guess,-1,loGuess,hiGuess,DGuess,LGuess,dthetaGuess)
-    print 'chisq +/-',chiSqP,chiSqM
     direction = +1. if chiSqP < chiSqM else -1.
 
     # initialize fitter
@@ -144,15 +141,19 @@ def main():
         help = 'name of input data file to replay')
     parser.add_argument('--frame-size', type=int, default=1024,
         help = 'number of samples per frame')
+    parser.add_argument('--show-plots', action = 'store_true',
+        help = 'display analysis plots')
     parser.add_argument('--verbose', action = 'store_true',
         help = 'generate verbose output')
     args = parser.parse_args()
 
-    # initialize plot display
-    fig = plt.figure(figsize=(12,12))
-    plt.ion()
-    plt.show()
-    xvec = numpy.arange(args.frame_size)
+    # initialize plot display if requested
+    if args.show_plots:
+        import matplotlib.pyplot as plt
+        fig = plt.figure(figsize=(12,12))
+        plt.ion()
+        plt.show()
+        plotx = numpy.arange(args.frame_size)
 
     # define tab geometry
     tabs = numpy.array([[-15.,-5.],[0.,5.],[10.,15.]])
@@ -174,11 +175,12 @@ def main():
         for frame in frames:
             elapsed,samples = frame[0],frame[1:]
             print 'Elapsed samples since last frame =',elapsed
-            plt.cla()
-            plt.plot(xvec,samples,'g+')
             params,bestFit = fit(samples,tabs,args)
-            plt.plot(xvec,bestFit,'b-')
-            plt.draw()
+            if args.show_plots:
+                plt.cla()
+                plt.plot(plotx,samples,'g+')
+                plt.plot(plotx,bestFit,'b-')
+                plt.draw()
             q = raw_input('Hit ENTER for next frame or q ENTER to quit...')
             if q == 'q':
                 break
