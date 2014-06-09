@@ -68,9 +68,9 @@ int main(void)
     uint8_t bmpError;
 
     // Initializes low-level hardware
-	initLEDs();
+    initLEDs();
     initIR();
-	initUARTs();
+    initUARTs();
     initTWI();
 
     // Initializes communication with the BMP sensor
@@ -188,6 +188,10 @@ ISR(ADC_vect){
                 // currentMuxChannel = analogSensors[0];
                 switchADCMuxChannel(analogSensors[currentSensorIndex++]);
 
+                // Reset fields for analog readings
+                thermistorReading = 0;
+                humidityReading = 0;
+
                 // set adcStatus to unstable
                 adcStatus = ADC_STATUS_UNSTABLE;
             }
@@ -222,23 +226,26 @@ ISR(ADC_vect){
             // One shot mode with stable readings.
             // Store ACD conversion
             if(analogSensors[currentSensorIndex] == ADC_THERMISTOR){
-                thermistorReading = adcValue;
+                thermistorReading += adcValue;
             } else if(analogSensors[currentSensorIndex] == ADC_HUMIDITY){
-                humidityReading = adcValue;
+                humidityReading += adcValue;
             }
 
-            // Change ADC channel
-            // Next reading is unstable, one after that is good data
-            // currentMuxChannel = analogSensors[0];
-            if(currentSensorIndex + 1 < NUM_SENSORS){
-                // Next is done (reading is still unstable though)
-                adcStatus = ADC_STATUS_DONE;
-            } else {
-                // Next is another one shot, change channel
-                switchADCMuxChannel(analogSensors[currentSensorIndex++]);
-
-                // set adcStatus to unstable
-                adcStatus = ADC_STATUS_UNSTABLE;
+            // Only change the channel if we are done oversampling
+            if(count >= ADC_ONE_SHOT_OVERSAMPLING){
+                // Change ADC channel
+                // Next reading is unstable, one after that is good data
+                // currentMuxChannel = analogSensors[0];
+                if(currentSensorIndex + 1 < NUM_SENSORS){
+                    // Next is done (reading is still unstable though)
+                    adcStatus = ADC_STATUS_DONE;
+                } else {
+                    // Next is another one shot, change channel
+                    switchADCMuxChannel(analogSensors[currentSensorIndex++]);
+    
+                    // set adcStatus to unstable
+                    adcStatus = ADC_STATUS_UNSTABLE;
+                }
             }
         }
     }
