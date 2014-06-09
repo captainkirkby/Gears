@@ -213,7 +213,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			}
 
 			// Calculates the thermistor resistance in ohms assuming 100uA current source.
-			var rtherm = buf.readUInt16LE(28)/65536.0*5.0/100e-6;
+			var rtherm = buf.readUInt16LE(26)/65536.0*5.0/100e-6;
 			// Calculates the corresponding temperature in degC using a Steinhart-Hart model.
 			var logr = Math.log(rtherm);
 			var ttherm = 1.0/(0.000878844 + 0.000231913*logr + 7.70349e-8*logr*logr*logr) - 273.15;
@@ -227,7 +227,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 				'pressure': buf.readInt32LE(22),
 				'thermistor': ttherm,
 				// use nominal 1st order fit from sensor datasheet to calculate RH in %
-				'humidity': (buf.readUInt16LE(26)/65536.0 - 0.1515)/0.00636,
+				'humidity': (buf.readUInt16LE(28)/65536.0 - 0.1515)/0.00636,
 				// convert IR level to volts
 				'irLevel': buf.readUInt16LE(30)/65536.0*5.0,
 				'raw': raw
