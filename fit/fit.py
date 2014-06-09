@@ -120,6 +120,7 @@ class FrameProcessor(object):
         self.nextLastOffset = None
         self.lastOffset = None
         self.lastElapsed = None
+        self.periods = numpy.array([],dtype=numpy.float64)
         # initialize plot display if requested
         if args.show_plots:
             fig = plt.figure(figsize=(12,12))
@@ -143,7 +144,8 @@ class FrameProcessor(object):
         offset,direction = fitParams[:2]
         # update our plots, if requested
         if self.args.show_plots:
-            plt.cla()
+            plt.clf()
+            plt.subplot(2,1,1)
             plt.plot(self.plotx,samples,'g+')
             plt.plot(self.plotx,bestFit,'r-')
             plt.draw()
@@ -163,6 +165,12 @@ class FrameProcessor(object):
         self.lastOffset = self.nextLastOffset
         self.nextLastOffset = offset
         self.lastElapsed = elapsed
+        # remember this result
+        if abs(period - 2) < 0.1:
+            self.periods = numpy.append(self.periods,period)
+            if self.args.show_plots:
+                plt.subplot(2,1,2)
+                plt.plot(1e6*(self.periods-2.0),'x')
         # return the estimated period in seconds
         return period
 
