@@ -53,7 +53,7 @@ uint8_t adcTestTries;
 
 //Declare counter used to keep track of timing
 uint16_t timingCounter = 0;
-volatile uint16_t lastCount;
+volatile uint16_t lastCount = 0;
 
 // Oversampling Counter
 uint8_t oversampleCount = 0;
