@@ -53,7 +53,7 @@ uint8_t adcTestTries;
 
 //Declare counter used to keep track of timing
 uint16_t timingCounter = 0;
-volatile uint16_t lastCount;
+volatile uint16_t lastCount = 0;
 
 // Oversampling Counter
 uint8_t oversampleCount = 0;
@@ -139,7 +139,6 @@ int main(void)
             // Sends binary packet data synchronously
             serialWriteUSB((const uint8_t*)&dataPacket,sizeof(dataPacket));
 
-            currentSensorIndex = 0;
             adcStatus = ADC_STATUS_CONTINUOUS;
         }
     }
@@ -219,41 +218,40 @@ ISR(ADC_vect){
         //Add value to buffer
         currentElementIndex = (currentElementIndex + 1) % CIRCULAR_BUFFER_LENGTH;
         dataPacket.raw[currentElementIndex] = adcValue;             // Fill actual data field instead ?
-    } else { 
-        // Reading out "one shot" analog sensors
-        if(adcStatus == ADC_STATUS_UNSTABLE){
-            // Current reading is unstable, but next one will be stable
-            adcStatus = ADC_STATUS_ONE_SHOT;
-        } else {
+    } else if(adcStatus == ADC_STATUS_UNSTABLE){
+        // Current reading is unstable, but next one will be stable
+        adcStatus = ADC_STATUS_ONE_SHOT;
 
-            // One shot mode with stable readings.
-            // Store ACD conversion
-            if(analogSensors[currentSensorIndex] == ADC_THERMISTOR){
-                thermistorReading += adcValue;
-            } else if(analogSensors[currentSensorIndex] == ADC_HUMIDITY){
-                humidityReading += adcValue;
+    } else if(adcStatus == ADC_STATUS_ONE_SHOT){
+        // One shot mode with stable readings.
+        // Store ACD conversion
+        if(analogSensors[currentSensorIndex] == ADC_THERMISTOR){
+            thermistorReading += adcValue;
+        } else if(analogSensors[currentSensorIndex] == ADC_HUMIDITY){
+            humidityReading += adcValue;
+        }
+
+        ++oversampleCount;
+
+        // Only change the channel if we are done oversampling
+        if(oversampleCount >= ADC_ONE_SHOT_OVERSAMPLING){
+            oversampleCount = 0;
+            // Change ADC channel
+            // Next reading is unstable, one after that is good data
+            currentSensorIndex++;
+
+            if(currentSensorIndex == NUM_SENSORS){
+                // Next is done (reading is still unstable though)
+                adcStatus = ADC_STATUS_DONE;
+                currentSensorIndex = 0;
+
+            } else {
+                // Next is another one shot
+                // set adcStatus to unstable
+                adcStatus = ADC_STATUS_UNSTABLE;
             }
-
-            ++oversampleCount;
-
-            // Only change the channel if we are done oversampling
-            if(oversampleCount >= ADC_ONE_SHOT_OVERSAMPLING){
-                oversampleCount = 0;
-                // Change ADC channel
-                // Next reading is unstable, one after that is good data
-                currentSensorIndex++;
-
-                if(currentSensorIndex == NUM_SENSORS){
-                    // Next is done (reading is still unstable though)
-                    adcStatus = ADC_STATUS_DONE;
-                } else {
-                    // Next is another one shot, change channel
-                    switchADCMuxChannel(analogSensors[currentSensorIndex]);
-    
-                    // set adcStatus to unstable
-                    adcStatus = ADC_STATUS_UNSTABLE;
-                }
-            }
+            // Set ADC channel
+            switchADCMuxChannel(analogSensors[currentSensorIndex]);
         }
     }
 }

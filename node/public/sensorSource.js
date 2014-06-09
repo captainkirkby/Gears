@@ -1,7 +1,7 @@
 $(function() {
 
 	// Reverse Order
-	var seriesToPlot = ["temperature", "pressure", "irLevel", "thermistor", "humidity"];
+	var seriesToPlot = ["temperature", "pressure", "crudePeriod", "thermistor", "humidity"];
 
 	// Drawing Constants
 	var NORMAL = 2;
@@ -18,7 +18,7 @@ $(function() {
 	var dataToPlot = {
 		"temperature" : { "visible" : true, "width" : NORMAL, "color" : 0},
 		"pressure" : { "visible" : true, "width" : NORMAL, "color" : 1},
-		"irLevel" : { "visible" : true, "width" : NORMAL, "color" : 2},
+		"crudePeriod" : { "visible" : true, "width" : NORMAL, "color" : 2},
 		"thermistor" : { "visible" : true, "width" : NORMAL, "color" : 3},
 		"humidity" : { "visible" : true, "width" : NORMAL, "color" : 4}
 	};
@@ -33,6 +33,7 @@ $(function() {
 	var NUM_IRLEVEL_SAMPLES = 55;
 	var NUM_THERMISTOR_SAMPLES = 55;
 	var NUM_HUMIDITY_SAMPLES = 55;
+	var NUM_CRUDE_PERIOD_SAMPLES = 0;
 
 	// Real time parameters
 	var TIMEOUT_VALUE = 333;
@@ -45,7 +46,7 @@ $(function() {
 		var lookUpTable = {
 			"temperature" : NUM_TEMPERATURE_SAMPLES,
 			"pressure" : NUM_PRESSURE_SAMPLES,
-			"irLevel" : NUM_IRLEVEL_SAMPLES,
+			"crudePeriod" : NUM_CRUDE_PERIOD_SAMPLES,
 			"thermistor" : NUM_THERMISTOR_SAMPLES,
 			"humidity" : NUM_HUMIDITY_SAMPLES
 		};
@@ -75,9 +76,9 @@ $(function() {
 	function generateLabel(name){
 		var lookUpTable = { "temperature"	: "Temperature (°C)",
 							"pressure"		: "Pressure (Pa)",
-							"irLevel"		: "IR Level (V)",
+							"crudePeriod"	: "Period (samples)",
 							"thermistor"	: "Thermistor (°C)",
-							"humidity"		: "Humidity (%)" };
+							"humidity"		: "Humidity (%)"};
 		
 		var result = lookUpTable[name];
 		if(!result) {

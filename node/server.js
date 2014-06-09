@@ -103,7 +103,7 @@ async.parallel({
 			// Defines the schema and model for our serial data packets
 			var dataPacketSchema = mongoose.Schema({
 				timestamp: { type: Date, index: true },
-				timeBetweenReadings: Number,
+				crudePeriod: Number,
 				sequenceNumber: Number,
 				temperature: Number,
 				pressure: Number,
@@ -187,10 +187,11 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			if(debug) console.log("Got Data!");
 
 			// Calculates the time since the last reading assuming 10MHz clock with prescaler set to 128.
-			var timeSince = buf.readUInt16LE(16)*128*13/10000000;
+			var samplesSince = buf.readUInt16LE(16);
+			var timeSince = samplesSince*128*13/10000000;
 
 			// Write to first entry in file
-			fs.appendFileSync('runningData.dat', timeSince + '\n');
+			fs.appendFileSync('runningData.dat', samplesSince + '\n');
 
 			// Gets the raw data from the packet.raw field
 			var raw = [];
@@ -221,7 +222,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			// NB: the data packet layout is hardcoded here!
 			p = new dataPacketModel({
 				'timestamp': new Date(),
-				'timeBetweenReadings': timeSince,
+				'crudePeriod': buf.readUInt16LE(16),
 				'sequenceNumber': buf.readInt32LE(0),
 				'temperature': buf.readInt32LE(18)/160.0,
 				'pressure': buf.readInt32LE(22),
