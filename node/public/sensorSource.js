@@ -1,7 +1,7 @@
 $(function() {
 
 	// Reverse Order
-	var seriesToPlot = ["temperature", "pressure", "irLevel", "thermistor", "humidity"];
+	var seriesToPlot = ["temperature", "pressure", "irLevel", "thermistor", "humidity","crudePeriod"];
 
 	// Drawing Constants
 	var NORMAL = 2;
