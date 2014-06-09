@@ -188,7 +188,8 @@ ISR(ADC_vect){
                 // Change ADC channel
                 // Next reading is unstable, one after that is good data
                 // currentMuxChannel = analogSensors[0];
-                switchADCMuxChannel(analogSensors[currentSensorIndex++]);
+                currentSensorIndex = 1;
+                switchADCMuxChannel(analogSensors[currentSensorIndex]);
 
                 // Reset fields for analog readings
                 thermistorReading = 0;
@@ -240,13 +241,14 @@ ISR(ADC_vect){
                 oversampleCount = 0;
                 // Change ADC channel
                 // Next reading is unstable, one after that is good data
-                // currentMuxChannel = analogSensors[0];
-                if(currentSensorIndex + 1 < NUM_SENSORS){
+                currentSensorIndex++;
+
+                if(currentSensorIndex == NUM_SENSORS){
                     // Next is done (reading is still unstable though)
                     adcStatus = ADC_STATUS_DONE;
                 } else {
                     // Next is another one shot, change channel
-                    switchADCMuxChannel(analogSensors[currentSensorIndex++]);
+                    switchADCMuxChannel(analogSensors[currentSensorIndex]);
     
                     // set adcStatus to unstable
                     adcStatus = ADC_STATUS_UNSTABLE;
