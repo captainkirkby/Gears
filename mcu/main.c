@@ -219,12 +219,10 @@ ISR(ADC_vect){
         //Add value to buffer
         currentElementIndex = (currentElementIndex + 1) % CIRCULAR_BUFFER_LENGTH;
         dataPacket.raw[currentElementIndex] = adcValue;             // Fill actual data field instead ?
-    } else { 
-        // Reading out "one shot" analog sensors
-        if(adcStatus == ADC_STATUS_UNSTABLE){
-            // Current reading is unstable, but next one will be stable
-            adcStatus = ADC_STATUS_ONE_SHOT;
-        } else {
+    } else if(adcStatus == ADC_STATUS_UNSTABLE){
+        // Current reading is unstable, but next one will be stable
+        adcStatus = ADC_STATUS_ONE_SHOT;
+    } else if(adcStatus == ADC_STATUS_ONE_SHOT){
 
             // One shot mode with stable readings.
             // Store ACD conversion
