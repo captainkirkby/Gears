@@ -55,6 +55,8 @@ uint8_t adcTestTries;
 uint16_t timingCounter = 0;
 volatile uint16_t lastCount;
 
+// Oversampling Counter
+uint8_t oversampleCount = 0;
 
 uint16_t thermistorReading;
 uint16_t humidityReading;
@@ -231,8 +233,11 @@ ISR(ADC_vect){
                 humidityReading += adcValue;
             }
 
+            ++oversampleCount;
+
             // Only change the channel if we are done oversampling
-            if(count >= ADC_ONE_SHOT_OVERSAMPLING){
+            if(oversampleCount >= ADC_ONE_SHOT_OVERSAMPLING){
+                oversampleCount = 0;
                 // Change ADC channel
                 // Next reading is unstable, one after that is good data
                 // currentMuxChannel = analogSensors[0];
