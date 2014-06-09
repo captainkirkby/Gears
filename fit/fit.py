@@ -113,53 +113,75 @@ def fit(frame,tabs,args):
     # return best-fit parameter values and best-fit model prediction
     return engine.args,prediction
 
+class FrameProcessor(object):
+    def __init__(self,tabs,args):
+        self.tabs = tabs
+        self.args = args
+        self.frameSize = args.frame_size
+        self.lastDirection = None
+    def process(elapsed,frame):
+        """
+        Processes the next frame of raw IR ADC samples. The parameter elapsed gives the number
+        of ADC samples elapsed between the first sample of this frame and the first sample of
+        the previous frame, or zero if this information is not available.
+        """
+        if len(frame) != self.frameSize:
+            raise RuntimeError('Got frame size %d but expected %d' % (len(frame),self.frameSize))
+        # do the fit
+        fitParams,bestFit = fit(frame,self.tabs,self.args)
+        print 'FIT:',fitParams
+        offset,direction = fitParams[0:1]
+        # check that this frame reverses the direction of the previous frame
+        if direction == self.lastDirection:
+            raise RuntimeError('Got two frames in the same direction')
+        self.lastDirection = direction
+
 def main():
 
     # parse command-line args
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('-i','--input', type=str, default='',
-        help = 'name of input data file to analyze')
+    parser.add_argument('--replay', type=str, default='',
+        help = 'name of input data file to replay')
     parser.add_argument('--frame-size', type=int, default=1024,
         help = 'number of samples per frame')
     parser.add_argument('--verbose', action = 'store_true',
         help = 'generate verbose output')
     args = parser.parse_args()
 
-    # load the input data file
-    data = numpy.loadtxt(args.input)
-    if len(data.shape) != 1:
-        print 'Data has unexpected shape',data.shape
-        return -1
-
     # initialize plot display
     fig = plt.figure(figsize=(12,12))
     plt.ion()
     plt.show()
+    xvec = numpy.arange(args.frame_size)
 
     # define tab geometry
     tabs = numpy.array([[-15.,-5.],[0.,5.],[10.,15.]])
-    direction = -1
 
-    # loop over data frames
-    xvec = numpy.arange(args.frame_size)
-    nframe = len(data)/args.frame_size
-    if len(data) % args.frame_size:
-        print 'WARNING: Ignoring extra data beyond last frame'
-    frames = data[:nframe*args.frame_size].reshape((nframe,args.frame_size))
-    for frame in frames:
-        plt.cla()
-        plt.plot(xvec,frame,'g+')
-        #pred = model(t0=495.,direction=direction,lo=0.,hi=927.,L=1020.,dtheta=4.66,D=1.7,tabs=tabs)
-        #direction *= -1
-        #plt.plot(xvec,pred,'r-')
-        #plt.draw()
-        params,bestFit = fit(frame,tabs,args)
-        print params
-        plt.plot(xvec,bestFit,'b-')
-        plt.draw()
-        q = raw_input('hit ENTER...')
-        if q == 'q':
-            break
+    # replay a pre-recorded data file if requested
+    if args.replay:
+        # load the input data file
+        data = numpy.loadtxt(args.replay)
+        if len(data.shape) != 1:
+            print 'Data has unexpected shape',data.shape
+            return -1
+        if args.verbose:
+            print 'Read %d bytes from %s' % (len(data),args.replay)
+        # loop over data frames
+        nframe = len(data)/(1+args.frame_size)
+        if len(data) % 1+args.frame_size:
+            print 'WARNING: Ignoring extra data beyond last frame'
+        frames = data[:nframe*(1+args.frame_size)].reshape((nframe,1+args.frame_size))
+        for frame in frames:
+            elapsed,samples = frame[0],frame[1:]
+            print 'Elapsed samples since last frame =',elapsed
+            plt.cla()
+            plt.plot(xvec,samples,'g+')
+            params,bestFit = fit(samples,tabs,args)
+            plt.plot(xvec,bestFit,'b-')
+            plt.draw()
+            q = raw_input('Hit ENTER for next frame or q ENTER to quit...')
+            if q == 'q':
+                break
 
 if __name__ == "__main__":
     main()
