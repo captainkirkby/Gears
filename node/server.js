@@ -221,7 +221,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			// NB: the data packet layout is hardcoded here!
 			p = new dataPacketModel({
 				'timestamp': new Date(),
-				'timeBetweenReadings': timeSince,
+				'crudePeriod': buf.readUInt16LE(16),
 				'sequenceNumber': buf.readInt32LE(0),
 				'temperature': buf.readInt32LE(18)/160.0,
 				'pressure': buf.readInt32LE(22),
