@@ -187,10 +187,11 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			if(debug) console.log("Got Data!");
 
 			// Calculates the time since the last reading assuming 10MHz clock with prescaler set to 128.
-			var timeSince = buf.readUInt16LE(16)*128*13/10000000;
+			var samplesSince = buf.readUInt16LE(16);
+			var timeSince = samplesSince*128*13/10000000;
 
 			// Write to first entry in file
-			fs.appendFileSync('runningData.dat', timeSince + '\n');
+			fs.appendFileSync('runningData.dat', samplesSince + '\n');
 
 			// Gets the raw data from the packet.raw field
 			var raw = [];
