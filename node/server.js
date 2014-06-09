@@ -103,7 +103,7 @@ async.parallel({
 			// Defines the schema and model for our serial data packets
 			var dataPacketSchema = mongoose.Schema({
 				timestamp: { type: Date, index: true },
-				timeBetweenReadings: Number,
+				crudePeriod: Number,
 				sequenceNumber: Number,
 				temperature: Number,
 				pressure: Number,
