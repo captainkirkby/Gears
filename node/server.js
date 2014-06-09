@@ -21,9 +21,11 @@ var MAX_PACKET_SIZE = 2082;
 // Parses command-line arguments.
 var noSerial = false;
 var noDatabase = false;
+var debug = false;
 process.argv.forEach(function(val,index,array) {
 	if(val == '--no-serial') noSerial = true;
 	else if(val == '--no-database') noDatabase = true;
+	else if(val == '--debug') debug = true;
 });
 
 async.parallel({
@@ -182,7 +184,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			lastDataSequenceNumber = 0;
 		}
 		else if(ptype == 0x01) {
-			console.log("Got Data!");
+			if(debug) console.log("Got Data!");
 
 			// Calculates the time since the last reading assuming 10MHz clock with prescaler set to 128.
 			var timeSince = buf.readUInt16LE(16)*128*13/10000000;
@@ -300,7 +302,7 @@ function fetch(req,res,dataPacketModel) {
 			from = new Date(to.getTime() - 120000);
 		}
 	}
-	console.log('query',from,to);
+	if(debug) console.log('query',from,to);
 	dataPacketModel.find()
 		.where('timestamp').gt(from).lte(to)
 		.limit(1000).sort([['timestamp', -1]])
