@@ -2,6 +2,7 @@
 
 import math
 import numpy
+import matplotlib.pyplot as plt
 from iminuit import Minuit
 import argparse
 
@@ -78,7 +79,7 @@ def fit(frame,tabs,args):
     # define chi-square function to use
     def chiSquare(t0,direction,lo,hi,D,L,dtheta):
         global prediction
-        prediction = model(t0,direction,lo,hi,tabs,D,L,dtheta,nsamples=args.frame_size)
+        prediction = model(t0,direction,lo,hi,tabs,D,L,dtheta,nsamples=args.nsamples)
         residuals = frame - prediction
         return numpy.dot(residuals,residuals)
 
@@ -114,20 +115,32 @@ class FrameProcessor(object):
     def __init__(self,tabs,args):
         self.tabs = tabs
         self.args = args
-        self.frameSize = args.frame_size
         self.lastDirection = None
-    def process(elapsed,frame):
+        # initialize plot display if requested
+        if args.show_plots:
+            fig = plt.figure(figsize=(12,12))
+            plt.ion()
+            plt.show()
+            self.plotx = numpy.arange(args.nsamples)
+
+    def process(self,elapsed,samples):
         """
         Processes the next frame of raw IR ADC samples. The parameter elapsed gives the number
         of ADC samples elapsed between the first sample of this frame and the first sample of
         the previous frame, or zero if this information is not available.
         """
-        if len(frame) != self.frameSize:
+        if len(samples) != self.args.nsamples:
             raise RuntimeError('Got frame size %d but expected %d' % (len(frame),self.frameSize))
         # do the fit
-        fitParams,bestFit = fit(frame,self.tabs,self.args)
+        fitParams,bestFit = fit(samples,self.tabs,self.args)
         print 'FIT:',fitParams
-        offset,direction = fitParams[0:1]
+        offset,direction = fitParams[:2]
+        # update our plots, if requested
+        if self.args.show_plots:
+            plt.cla()
+            plt.plot(self.plotx,samples,'g+')
+            plt.plot(self.plotx,bestFit,'r-')
+            plt.draw()
         # check that this frame reverses the direction of the previous frame
         if direction == self.lastDirection:
             raise RuntimeError('Got two frames in the same direction')
@@ -139,24 +152,19 @@ def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--replay', type=str, default='',
         help = 'name of input data file to replay')
-    parser.add_argument('--frame-size', type=int, default=1024,
-        help = 'number of samples per frame')
+    parser.add_argument('--nsamples', type=int, default=1024,
+        help = 'number of IR ADC samples per frame')
     parser.add_argument('--show-plots', action = 'store_true',
         help = 'display analysis plots')
     parser.add_argument('--verbose', action = 'store_true',
         help = 'generate verbose output')
     args = parser.parse_args()
 
-    # initialize plot display if requested
-    if args.show_plots:
-        import matplotlib.pyplot as plt
-        fig = plt.figure(figsize=(12,12))
-        plt.ion()
-        plt.show()
-        plotx = numpy.arange(args.frame_size)
-
     # define tab geometry
     tabs = numpy.array([[-15.,-5.],[0.,5.],[10.,15.]])
+
+    # initialize our frame processor
+    processor = FrameProcessor(tabs,args)
 
     # replay a pre-recorded data file if requested
     if args.replay:
@@ -168,19 +176,13 @@ def main():
         if args.verbose:
             print 'Read %d bytes from %s' % (len(data),args.replay)
         # loop over data frames
-        nframe = len(data)/(1+args.frame_size)
-        if len(data) % 1+args.frame_size:
+        nframe = len(data)/(1+args.nsamples)
+        if len(data) % 1+args.nsamples:
             print 'WARNING: Ignoring extra data beyond last frame'
-        frames = data[:nframe*(1+args.frame_size)].reshape((nframe,1+args.frame_size))
+        frames = data[:nframe*(1+args.nsamples)].reshape((nframe,1+args.nsamples))
         for frame in frames:
             elapsed,samples = frame[0],frame[1:]
-            print 'Elapsed samples since last frame =',elapsed
-            params,bestFit = fit(samples,tabs,args)
-            if args.show_plots:
-                plt.cla()
-                plt.plot(plotx,samples,'g+')
-                plt.plot(plotx,bestFit,'b-')
-                plt.draw()
+            processor.process(elapsed,samples)
             q = raw_input('Hit ENTER for next frame or q ENTER to quit...')
             if q == 'q':
                 break
