@@ -139,7 +139,6 @@ int main(void)
             // Sends binary packet data synchronously
             serialWriteUSB((const uint8_t*)&dataPacket,sizeof(dataPacket));
 
-            currentSensorIndex = 0;
             adcStatus = ADC_STATUS_CONTINUOUS;
         }
     }
@@ -244,13 +243,15 @@ ISR(ADC_vect){
             if(currentSensorIndex == NUM_SENSORS){
                 // Next is done (reading is still unstable though)
                 adcStatus = ADC_STATUS_DONE;
+                currentSensorIndex = 0;
+
             } else {
-                // Next is another one shot, change channel
-                switchADCMuxChannel(analogSensors[currentSensorIndex]);
-    
+                // Next is another one shot
                 // set adcStatus to unstable
                 adcStatus = ADC_STATUS_UNSTABLE;
             }
+            // Set ADC channel
+            switchADCMuxChannel(analogSensors[currentSensorIndex]);
         }
     }
 }
