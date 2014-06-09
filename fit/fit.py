@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import sys
 import math
 import numpy
 import matplotlib.pyplot as plt
@@ -123,7 +124,7 @@ class FrameProcessor(object):
         self.periods = numpy.array([],dtype=numpy.float64)
         # initialize plot display if requested
         if args.show_plots:
-            fig = plt.figure(figsize=(12,12))
+            self.fig = plt.figure(figsize=(12,12))
             plt.ion()
             plt.show()
             self.plotx = numpy.arange(args.nsamples)
@@ -140,7 +141,6 @@ class FrameProcessor(object):
             return -2
         # do the fit
         fitParams,bestFit = fit(samples,self.tabs,self.args)
-        print 'FIT:',fitParams
         offset,direction = fitParams[:2]
         # update our plots, if requested
         if self.args.show_plots:
@@ -174,12 +174,18 @@ class FrameProcessor(object):
         # return the estimated period in seconds
         return period
 
+    def finish(self):
+        if self.args.show_plots:
+            self.fig.savefig('fit.png')
+
 def main():
 
     # parse command-line args
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--replay', type=str, default='',
         help = 'name of input data file to replay')
+    parser.add_argument('--batch-replay', action = 'store_true',
+        help = 'no interactive prompting for each frame during replay')
     parser.add_argument('--nsamples', type=int, default=1024,
         help = 'number of IR ADC samples per frame')
     parser.add_argument('--adc-tick', type = float, default = 1664e-7,
@@ -217,9 +223,31 @@ def main():
                 print 'Period = %f secs' % period
             except RuntimeError,e:
                 print str(e)
-            q = raw_input('Hit ENTER for next frame or q ENTER to quit...')
-            if q == 'q':
-                break
+            if not args.batch_replay:
+                response = raw_input('Hit ENTER for next frame, q to quit, b to enter batch mode: ')
+                if response == 'q':
+                    break
+                elif response == 'b':
+                    args.batch_replay = True
+    else:
+        remaining = 0
+        samples = numpy.zeros(args.nsamples)
+        # read from STDIN to accumulate frames
+        for line in sys.stdin:
+            value = int(line)
+            if remaining == 0:
+                elapsed = value
+                remaining = args.nsamples
+            elif remaining > 0:
+                samples[args.nsamples - remaining] = value
+                remaining -= 1
+                if remaining == 0:
+                    period = processor.process(elapsed,samples)
+                    # send the calculated period to our STDOUT
+                    print period
+
+    # clean up
+    processor.finish()
 
 if __name__ == "__main__":
     main()
