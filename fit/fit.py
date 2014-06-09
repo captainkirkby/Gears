@@ -233,18 +233,23 @@ def main():
         remaining = 0
         samples = numpy.zeros(args.nsamples)
         # read from STDIN to accumulate frames
-        for line in sys.stdin:
-            value = int(line)
-            if remaining == 0:
-                elapsed = value
-                remaining = args.nsamples
-            elif remaining > 0:
-                samples[args.nsamples - remaining] = value
-                remaining -= 1
+        while True:
+            try:
+                line = sys.stdin.readline()
+                value = int(line)
                 if remaining == 0:
-                    period = processor.process(elapsed,samples)
-                    # send the calculated period to our STDOUT
-                    print period
+                    elapsed = value
+                    remaining = args.nsamples
+                elif remaining > 0:
+                    samples[args.nsamples - remaining] = value
+                    remaining -= 1
+                    if remaining == 0:
+                        period = processor.process(elapsed,samples)
+                        # send the calculated period to our STDOUT
+                        print period
+            except Exception,e:
+                # Try to keep going silently after any error
+                pass
 
     # clean up
     processor.finish()
