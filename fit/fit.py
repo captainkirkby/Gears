@@ -143,7 +143,7 @@ class FrameProcessor(object):
         fitParams,bestFit = fit(samples,self.tabs,self.args)
         offset,direction = fitParams[:2]
         # update our plots, if requested
-        if self.args.show_plots:
+        if self.args.show_plots and not self.args.batch_replay:
             plt.clf()
             plt.subplot(2,1,1)
             plt.plot(self.plotx,samples,'g+')
@@ -168,15 +168,21 @@ class FrameProcessor(object):
         # remember this result
         if abs(period - 2) < 0.1:
             self.periods = numpy.append(self.periods,period)
-            if self.args.show_plots:
+            if self.args.show_plots and not self.args.batch_replay:
                 plt.subplot(2,1,2)
                 plt.plot(1e6*(self.periods-2.0),'x')
+                plt.draw()
         # return the estimated period in seconds
         return period
 
     def finish(self):
         if self.args.show_plots:
+            if self.args.batch_replay:
+                plt.clf()
+                plt.subplot(1,1,1)
+                plt.plot(1e6*(self.periods-2.0),'x')
             self.fig.savefig('fit.png')
+        numpy.savetxt('fit.dat',self.periods)
 
 def main():
 
@@ -216,11 +222,11 @@ def main():
         if len(data) % 1+args.nsamples:
             print 'WARNING: Ignoring extra data beyond last frame'
         frames = data[:nframe*(1+args.nsamples)].reshape((nframe,1+args.nsamples))
-        for frame in frames:
+        for i,frame in enumerate(frames):
             elapsed,samples = frame[0],frame[1:]
             try:
                 period = processor.process(elapsed,samples)
-                print 'Period = %f secs' % period
+                print 'Period = %f secs (%d/%d)' % (period,i,nframe)
             except RuntimeError,e:
                 print str(e)
             if not args.batch_replay:
