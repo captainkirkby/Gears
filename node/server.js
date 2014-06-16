@@ -231,7 +231,11 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 
 			// Synchronously insert refined period into database
 			while(!fit.stdout.readable);
-			var refinedPeriod = fit.stdout.read().readDoubleLE(0);
+			var refinedPeriodBuffer = fit.stdout.read();
+			var refinedPeriod = 0;
+			if(refinedPeriodBuffer){
+				refinedPeriod = refinedPeriodBuffer.readDoubleLE(0);
+			}
 			console.log(refinedPeriod);
 
 			// Asynchronously insert refined period into database (need handle on dataPacketModel)
