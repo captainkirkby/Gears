@@ -303,7 +303,7 @@ function storeRefinedPeriod(period) {
 	var update		= { refinedPeriod : period };
 	var options		= { multi : false };
 
-	dataPacketModel.update(conditions, update, options, callback);
+	dataPacketModel.update(conditions, update, options);
 }
 
 // Responds to a request for our about page.
