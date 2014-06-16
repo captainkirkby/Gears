@@ -253,7 +253,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			p = new dataPacketModel({
 				'timestamp': date,
 				'crudePeriod': buf.readUInt16LE(16),
-				'refinedPeriod': refinedPeriod,
+				'refinedPeriod': null,
 				'sequenceNumber': buf.readInt32LE(0),
 				'temperature': buf.readInt32LE(18)/160.0,
 				'pressure': buf.readInt32LE(22),
