@@ -300,9 +300,9 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 function storeRefinedPeriod(period) {
 	period = Number(period.toString());
 	var storeDate	= datesBeingProcessed.pop();
-	console.log(period);
-	console.log(storeDate);
-	console.log(dataPacketModel);
+	// console.log(period);
+	// console.log(storeDate);
+	// console.log(dataPacketModel);
 
 	var conditions	= { timestamp : storeDate };
 	var update		= { $set : { refinedPeriod : period }};
@@ -310,7 +310,7 @@ function storeRefinedPeriod(period) {
 
 	dataPacketModel.update(conditions, update, options, function(err, numberAffected){
 		if(err) throw err;
-		console.log("Update of " + numberAffected + " Documents Successful!")
+		// console.log("Update of " + numberAffected + " Documents Successful!")
 	});
 }
 
