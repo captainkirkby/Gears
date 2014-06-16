@@ -10,7 +10,9 @@ var mongoose = require('mongoose');
 
 var packet = require('./packet');
 
-sprintf = require('sprintf').sprintf;
+var sprintf = require('sprintf').sprintf;
+var spawn = require('child_process').spawn;
+
 
 // Tracks the last seen data packet sequence number to enable sequencing errors to be detected.
 var lastDataSequenceNumber = 0;
@@ -27,6 +29,12 @@ process.argv.forEach(function(val,index,array) {
 	else if(val == '--no-database') noDatabase = true;
 	else if(val == '--debug') debug = true;
 });
+
+// Start process with data pipes
+var fit = spawn('../fit/fit.py', [], { stdout : ['pipe', 'pipe', 'pipe']});
+// Send all output to node stdout (readable.pipe(writable))
+fit.stdout.pipe(process.stdout);
+
 
 async.parallel({
 	// Opens a serial port connection to the TickTock device.
@@ -191,7 +199,10 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			var timeSince = samplesSince*128*13/10000000;
 
 			// Write to first entry in file
-			fs.appendFileSync('runningData.dat', samplesSince + '\n');
+			// fs.appendFileSync('runningData.dat', samplesSince + '\n');
+
+			// Write crude period to pipe
+			fit.stdin.write(samplesSince + '\n');		// Newline too?
 
 			// Gets the raw data from the packet.raw field
 			var raw = [];
@@ -203,13 +214,17 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 
 			for(var readOffsetA = initialReadOffsetWithPhase; readOffsetA < MAX_PACKET_SIZE; readOffsetA=readOffsetA+2) {
 				raw[rawFill] = buf.readUInt16LE(readOffsetA);
-				fs.appendFileSync('runningData.dat', (raw[rawFill]).toString() + '\n');
+				// Write data to pipe
+				fit.stdin.write(raw[rawFill] + '\n');
+				//fs.appendFileSync('runningData.dat', (raw[rawFill]).toString() + '\n');
 				rawFill = rawFill + 1;
 			}
 
 			for(var readOffsetB = initialReadOffset; readOffsetB < initialReadOffsetWithPhase; readOffsetB=readOffsetB+2) {
 				raw[rawFill] = buf.readUInt16LE(readOffsetB);
-				fs.appendFileSync('runningData.dat', (raw[rawFill]).toString() + '\n');
+				// Write data to pipe
+				fit.stdin.write(raw[rawFill] + '\n');
+				// fs.appendFileSync('runningData.dat', (raw[rawFill]).toString() + '\n');
 				rawFill = rawFill + 1;
 			}
 
