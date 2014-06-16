@@ -35,6 +35,11 @@ var fit = spawn('../fit/fit.py', [], { stdout : ['pipe', 'pipe', 'pipe']});
 // Send all output to node stdout (readable.pipe(writable))
 fit.stdout.pipe(process.stdout);
 
+// Make sure to kill the fit process when node is about to exit
+process.on('exit', function(){
+	fit.kill();
+});
+
 
 async.parallel({
 	// Opens a serial port connection to the TickTock device.
@@ -242,7 +247,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			// fit.stdout.on('readable', function(){
 			// 	var refinedPeriodBuffer  = fit.stdout.read();
 			// 	if(refinedPeriodBuffer !== null){
-					
+
 			// 	}
 			// });
 
