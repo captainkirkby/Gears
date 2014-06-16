@@ -23,6 +23,9 @@ var MAX_PACKET_SIZE = 2082;
 // FIFO : unshift on, then pop off
 var datesBeingProcessed = [];
 
+// Global pointer to data packet model
+var dataPacketModel = null;
+
 // Parses command-line arguments.
 var noSerial = false;
 var noDatabase = false;
@@ -165,6 +168,7 @@ async.parallel({
 		// Serves a dynamically generated information page.
 		app.get('/about', function(req, res) { return about(req,res,config); });
 		if(config.db) {
+			dataPacketModel = config.db.dataPacketModel;
 			// Serves boot packet info.
 			app.get('/boot', function(req,res) { return boot(req,res,config.db.bootPacketModel); });
 			// Serves data dynamically via AJAX.
