@@ -13,12 +13,15 @@ var packet = require('./packet');
 var sprintf = require('sprintf').sprintf;
 var spawn = require('child_process').spawn;
 
-
 // Tracks the last seen data packet sequence number to enable sequencing errors to be detected.
 var lastDataSequenceNumber = 0;
 
 // Maximum packet size : change this when you want to modify the number of samples
 var MAX_PACKET_SIZE = 2082;
+
+// Keep track of the dates we are waiting on a fit to process
+// FIFO : unshift on, then pop off
+var datesBeingProcessed = [];
 
 // Parses command-line arguments.
 var noSerial = false;
@@ -33,7 +36,7 @@ process.argv.forEach(function(val,index,array) {
 // Start process with data pipes
 var fit = spawn('../fit/fit.py', [], { stdout : ['pipe', 'pipe', 'pipe']});
 // Send all output to node stdout (readable.pipe(writable))
-fit.stdout.pipe(process.stdout);
+// fit.stdout.pipe(process.stdout);
 
 // Make sure to kill the fit process when node is about to exit
 process.on('exit', function(){
@@ -152,6 +155,8 @@ async.parallel({
 			config.port.on('data',function(data) {
 				receive(data,assembler,config.db.bootPacketModel,config.db.dataPacketModel);
 			});
+
+			fit.stdout.on('data', storeRefinedPeriod);
 		}
 		// Defines our webapp routes.
 		var app = express();
@@ -210,6 +215,10 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			// Write crude period to pipe
 			fit.stdin.write(samplesSince + '\n');		// Newline too?
 
+			// Prepare to recieve data
+			var date = new Date();
+			datesBeingProcessed.unshift(date);
+
 			// Gets the raw data from the packet.raw field
 			var raw = [];
 			var rawFill = 0;
@@ -234,23 +243,6 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 				rawFill = rawFill + 1;
 			}
 
-			// Synchronously insert refined period into database if its non null
-			// while(!fit.stdout.readable);
-			// var refinedPeriodBuffer = fit.stdout.read();
-			// var refinedPeriod = 0;
-			// if(refinedPeriodBuffer !== null){
-			// 	refinedPeriod = Number(refinedPeriodBuffer.toString());
-			// }
-			// console.log(refinedPeriod);
-
-			//Asynchronously insert refined period into database (need handle on dataPacketModel)
-			// fit.stdout.on('readable', function(){
-			// 	var refinedPeriodBuffer  = fit.stdout.read();
-			// 	if(refinedPeriodBuffer !== null){
-
-			// 	}
-			// });
-
 			// Calculates the thermistor resistance in ohms assuming 100uA current source.
 			var rtherm = buf.readUInt16LE(26)/65536.0*5.0/100e-6;
 			// Calculates the corresponding temperature in degC using a Steinhart-Hart model.
@@ -259,9 +251,9 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			// Prepares data packet for storing to the database.
 			// NB: the data packet layout is hardcoded here!
 			p = new dataPacketModel({
-				'timestamp': new Date(),
+				'timestamp': date,
 				'crudePeriod': buf.readUInt16LE(16),
-				'refinedPeriod': null,
+				'refinedPeriod': refindedPeriod,
 				'sequenceNumber': buf.readInt32LE(0),
 				'temperature': buf.readInt32LE(18)/160.0,
 				'pressure': buf.readInt32LE(22),
@@ -298,6 +290,16 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			console.log('Packet not saved to db.');
 		}
 	});
+}
+
+// Write refined period to database
+function storeRefinedPeriod(period) {
+	var storeDate	= datesBeingProcessed.pop();
+	var conditions	= { timestamp : storeDate };
+	var update		= { refinedPeriod : period };
+	var options		= { multi : false };
+
+	dataPacketModel.update(conditions, update, options, callback);
 }
 
 // Responds to a request for our about page.
