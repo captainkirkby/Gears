@@ -299,14 +299,19 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 // Write refined period to database
 function storeRefinedPeriod(period) {
 	period = Number(period.toString());
-	console.log(period);
-
 	var storeDate	= datesBeingProcessed.pop();
+	console.log(period);
+	console.log(storeDate);
+	console.log(dataPacketModel);
+
 	var conditions	= { timestamp : storeDate };
-	var update		= { refinedPeriod : period };
+	var update		= { $set : { refinedPeriod : period }};
 	var options		= { multi : false };
 
-	dataPacketModel.update(conditions, update, options);
+	dataPacketModel.update(conditions, update, options, function(err, numberAffected){
+		if(err) throw err;
+		console.log("Update of " + numberAffected + " Documents Successful!")
+	});
 }
 
 // Responds to a request for our about page.
