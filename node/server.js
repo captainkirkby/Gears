@@ -33,7 +33,7 @@ process.argv.forEach(function(val,index,array) {
 // Start process with data pipes
 var fit = spawn('../fit/fit.py', [], { stdout : ['pipe', 'pipe', 'pipe']});
 // Send all output to node stdout (readable.pipe(writable))
-fit.stdout.pipe(process.stdout);
+// fit.stdout.pipe(process.stdout);
 
 
 async.parallel({
@@ -112,6 +112,7 @@ async.parallel({
 			var dataPacketSchema = mongoose.Schema({
 				timestamp: { type: Date, index: true },
 				crudePeriod: Number,
+				refinedPeriod: Number,
 				sequenceNumber: Number,
 				temperature: Number,
 				pressure: Number,
@@ -228,6 +229,16 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 				rawFill = rawFill + 1;
 			}
 
+			// Synchronously insert refined period into database
+			while(!fit.stdout.readable);
+			var refinedPeriod = fit.stdout.read();
+			console.log(refinedPeriod);
+
+			// Asynchronously insert refined period into database (need handle on dataPacketModel)
+			// fit.stdout.on('readable', function(){
+			// 	//Read
+			// });
+
 			// Calculates the thermistor resistance in ohms assuming 100uA current source.
 			var rtherm = buf.readUInt16LE(26)/65536.0*5.0/100e-6;
 			// Calculates the corresponding temperature in degC using a Steinhart-Hart model.
@@ -238,6 +249,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			p = new dataPacketModel({
 				'timestamp': new Date(),
 				'crudePeriod': buf.readUInt16LE(16),
+				'refinedPeriod': refinedPeriod,
 				'sequenceNumber': buf.readInt32LE(0),
 				'temperature': buf.readInt32LE(18)/160.0,
 				'pressure': buf.readInt32LE(22),
