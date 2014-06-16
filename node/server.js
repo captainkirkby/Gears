@@ -33,7 +33,7 @@ process.argv.forEach(function(val,index,array) {
 // Start process with data pipes
 var fit = spawn('../fit/fit.py', [], { stdout : ['pipe', 'pipe', 'pipe']});
 // Send all output to node stdout (readable.pipe(writable))
-// fit.stdout.pipe(process.stdout);
+fit.stdout.pipe(process.stdout);
 
 
 async.parallel({
@@ -230,17 +230,20 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			}
 
 			// Synchronously insert refined period into database if its non null
-			while(!fit.stdout.readable);
-			var refinedPeriodBuffer = fit.stdout.read();
-			var refinedPeriod = 0;
-			if(refinedPeriodBuffer !== null){
-				refinedPeriod = Number(refinedPeriodBuffer.toString());
-			}
-			console.log(refinedPeriod);
+			// while(!fit.stdout.readable);
+			// var refinedPeriodBuffer = fit.stdout.read();
+			// var refinedPeriod = 0;
+			// if(refinedPeriodBuffer !== null){
+			// 	refinedPeriod = Number(refinedPeriodBuffer.toString());
+			// }
+			// console.log(refinedPeriod);
 
-			// Asynchronously insert refined period into database (need handle on dataPacketModel)
+			//Asynchronously insert refined period into database (need handle on dataPacketModel)
 			// fit.stdout.on('readable', function(){
-			// 	//Read
+			// 	var refinedPeriodBuffer  = fit.stdout.read();
+			// 	if(refinedPeriodBuffer !== null){
+					
+			// 	}
 			// });
 
 			// Calculates the thermistor resistance in ohms assuming 100uA current source.
@@ -253,7 +256,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			p = new dataPacketModel({
 				'timestamp': new Date(),
 				'crudePeriod': buf.readUInt16LE(16),
-				'refinedPeriod': refinedPeriod,
+				// 'refinedPeriod': null,
 				'sequenceNumber': buf.readInt32LE(0),
 				'temperature': buf.readInt32LE(18)/160.0,
 				'pressure': buf.readInt32LE(22),
