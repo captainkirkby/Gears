@@ -298,6 +298,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 
 // Write refined period to database
 function storeRefinedPeriod(period) {
+	period = Number(period.toString());
 	console.log(period);
 
 	var storeDate	= datesBeingProcessed.pop();
