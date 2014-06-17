@@ -299,7 +299,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 // Write refined period to database
 function storeRefinedPeriod(period) {
 	period = Number(period.toString());
-	if(period === 0) period = null;
+	if(period === 0) return;
 	var storeDate = datesBeingProcessed.pop();
 	if(debug) console.log(period);
 	// console.log(storeDate);
