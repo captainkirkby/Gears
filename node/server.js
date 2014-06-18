@@ -36,6 +36,14 @@ process.argv.forEach(function(val,index,array) {
 	else if(val == '--debug') debug = true;
 });
 
+// Log to file
+var access = fs.createWriteStream(dir + 'node.access.log', { flags: 'a' });
+var error = fs.createWriteStream(dir + 'node.error.log', { flags: 'a' });
+
+// redirect stdout and stderr
+proc.stdout.pipe(access);
+proc.stderr.pipe(error);
+
 // Start process with data pipes
 var fit = spawn('../fit/fit.py', [], { stdout : ['pipe', 'pipe', 'pipe']});
 // Send all output to node stdout (readable.pipe(writable))
