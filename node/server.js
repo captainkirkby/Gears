@@ -37,8 +37,8 @@ process.argv.forEach(function(val,index,array) {
 });
 
 // Log to file
-var access = fs.createWriteStream(dir + 'node.access.log', { flags: 'a' });
-var error = fs.createWriteStream(dir + 'node.error.log', { flags: 'a' });
+var access = fs.createWriteStream('node.access.log', { flags: 'a' });
+var error = fs.createWriteStream('node.error.log', { flags: 'a' });
 
 // redirect stdout and stderr
 proc.stdout.pipe(access);
