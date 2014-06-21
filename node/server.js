@@ -41,8 +41,8 @@ var access = fs.createWriteStream('node.access.log', { flags: 'a' });
 var error = fs.createWriteStream('node.error.log', { flags: 'a' });
 
 // redirect stdout and stderr
-proc.stdout.pipe(access);
-proc.stderr.pipe(error);
+process.stdout.pipe(access);
+process.stderr.pipe(error);
 
 // Start process with data pipes
 var fit = spawn('../fit/fit.py', [], { stdout : ['pipe', 'pipe', 'pipe']});
