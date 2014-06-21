@@ -366,17 +366,20 @@ function fetch(req,res,dataPacketModel) {
 		}
 	}
 	if(debug) console.log('query',from,to);
+
+	dataPacketModel.find()
+		.where('timestamp').gt(from).lte(to)
+		.limit(1000).sort([['timestamp', -1]])
+		.select(('series' in req.query) ? 'timestamp ' + getVisibleSets(req).join(" ") : '')
+		.exec(function(err,results) { res.send(results); });
+}
+
+function getVisibleSets(req) {
 	var visibleSets = [];
 	for(var k in req.query.series) {
-		console.log(req.query.series[k]);
 		if(req.query.series[k].visible == 'true'){
 			visibleSets.push(k);
 		}
 	}
-	console.log(visibleSets);
-	dataPacketModel.find()
-		.where('timestamp').gt(from).lte(to)
-		.limit(1000).sort([['timestamp', -1]])
-		.select(('series' in req.query) ? 'timestamp ' + visibleSets.join(" ") : '')
-		.exec(function(err,results) { res.send(results); });
+	return visibleSets;
 }
