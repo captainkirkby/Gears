@@ -10,13 +10,21 @@ var mongoose = require('mongoose');
 
 var packet = require('./packet');
 
-sprintf = require('sprintf').sprintf;
+var sprintf = require('sprintf').sprintf;
+var spawn = require('child_process').spawn;
 
 // Tracks the last seen data packet sequence number to enable sequencing errors to be detected.
 var lastDataSequenceNumber = 0;
 
 // Maximum packet size : change this when you want to modify the number of samples
 var MAX_PACKET_SIZE = 2082;
+
+// Keep track of the dates we are waiting on a fit to process
+// FIFO : unshift on, then pop off
+var datesBeingProcessed = [];
+
+// Global pointer to data packet model
+var dataPacketModel = null;
 
 // Parses command-line arguments.
 var noSerial = false;
@@ -27,6 +35,25 @@ process.argv.forEach(function(val,index,array) {
 	else if(val == '--no-database') noDatabase = true;
 	else if(val == '--debug') debug = true;
 });
+
+// Log to file
+var access = fs.createWriteStream('node.access.log', { flags: 'a' });
+var error = fs.createWriteStream('node.error.log', { flags: 'a' });
+
+// redirect stdout and stderr
+process.stdout.pipe(access);
+process.stderr.pipe(error);
+
+// Start process with data pipes
+var fit = spawn('../fit/fit.py', [], { stdout : ['pipe', 'pipe', 'pipe']});
+// Send all output to node stdout (readable.pipe(writable))
+// fit.stdout.pipe(process.stdout);
+
+// Make sure to kill the fit process when node is about to exit
+process.on('exit', function(){
+	fit.kill();
+});
+
 
 async.parallel({
 	// Opens a serial port connection to the TickTock device.
@@ -104,6 +131,7 @@ async.parallel({
 			var dataPacketSchema = mongoose.Schema({
 				timestamp: { type: Date, index: true },
 				crudePeriod: Number,
+				refinedPeriod: Number,
 				sequenceNumber: Number,
 				temperature: Number,
 				pressure: Number,
@@ -138,6 +166,8 @@ async.parallel({
 			config.port.on('data',function(data) {
 				receive(data,assembler,config.db.bootPacketModel,config.db.dataPacketModel);
 			});
+
+			fit.stdout.on('data', storeRefinedPeriod);
 		}
 		// Defines our webapp routes.
 		var app = express();
@@ -146,6 +176,7 @@ async.parallel({
 		// Serves a dynamically generated information page.
 		app.get('/about', function(req, res) { return about(req,res,config); });
 		if(config.db) {
+			dataPacketModel = config.db.dataPacketModel;
 			// Serves boot packet info.
 			app.get('/boot', function(req,res) { return boot(req,res,config.db.bootPacketModel); });
 			// Serves data dynamically via AJAX.
@@ -191,7 +222,14 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			var timeSince = samplesSince*128*13/10000000;
 
 			// Write to first entry in file
-			fs.appendFileSync('runningData.dat', samplesSince + '\n');
+			// fs.appendFileSync('runningData.dat', samplesSince + '\n');
+
+			// Write crude period to pipe
+			fit.stdin.write(samplesSince + '\n');		// Newline too?
+
+			// Prepare to recieve data
+			var date = new Date();
+			datesBeingProcessed.unshift(date);
 
 			// Gets the raw data from the packet.raw field
 			var raw = [];
@@ -203,13 +241,17 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 
 			for(var readOffsetA = initialReadOffsetWithPhase; readOffsetA < MAX_PACKET_SIZE; readOffsetA=readOffsetA+2) {
 				raw[rawFill] = buf.readUInt16LE(readOffsetA);
-				fs.appendFileSync('runningData.dat', (raw[rawFill]).toString() + '\n');
+				// Write data to pipe
+				fit.stdin.write(raw[rawFill] + '\n');
+				//fs.appendFileSync('runningData.dat', (raw[rawFill]).toString() + '\n');
 				rawFill = rawFill + 1;
 			}
 
 			for(var readOffsetB = initialReadOffset; readOffsetB < initialReadOffsetWithPhase; readOffsetB=readOffsetB+2) {
 				raw[rawFill] = buf.readUInt16LE(readOffsetB);
-				fs.appendFileSync('runningData.dat', (raw[rawFill]).toString() + '\n');
+				// Write data to pipe
+				fit.stdin.write(raw[rawFill] + '\n');
+				// fs.appendFileSync('runningData.dat', (raw[rawFill]).toString() + '\n');
 				rawFill = rawFill + 1;
 			}
 
@@ -221,8 +263,9 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			// Prepares data packet for storing to the database.
 			// NB: the data packet layout is hardcoded here!
 			p = new dataPacketModel({
-				'timestamp': new Date(),
+				'timestamp': date,
 				'crudePeriod': buf.readUInt16LE(16),
+				'refinedPeriod': null,
 				'sequenceNumber': buf.readInt32LE(0),
 				'temperature': buf.readInt32LE(18)/160.0,
 				'pressure': buf.readInt32LE(22),
@@ -258,6 +301,25 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 		else {
 			console.log('Packet not saved to db.');
 		}
+	});
+}
+
+// Write refined period to database
+function storeRefinedPeriod(period) {
+	period = Number(period.toString());
+	if(period === 0) return;
+	var storeDate = datesBeingProcessed.pop();
+	if(debug) console.log(period);
+	// console.log(storeDate);
+	// console.log(dataPacketModel);
+
+	var conditions	= { timestamp : storeDate };
+	var update		= { $set : { refinedPeriod : period }};
+	var options		= { multi : false };
+
+	dataPacketModel.update(conditions, update, options, function(err, numberAffected){
+		if(err) throw err;
+		// console.log("Update of " + numberAffected + " Documents Successful!")
 	});
 }
 

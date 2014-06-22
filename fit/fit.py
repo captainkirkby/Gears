@@ -252,8 +252,9 @@ def main():
                     remaining -= 1
                     if remaining == 0:
                         period = processor.process(elapsed,samples)
-                        # send the calculated period to our STDOUT
+                        # send the calculated period to our STDOUT and flush the buffer!
                         print period
+                        sys.stdout.flush()
             except Exception,e:
                 # Try to keep going silently after any error
                 pass
