@@ -114,6 +114,104 @@ def fitPhysicalModel(frame,tabs,args):
     # return best-fit parameter values and best-fit model prediction
     return engine.args,prediction
 
+def runningAvg(data,wlen=31):
+    # returns a running-average smoothing of data
+    assert data.size > wlen and wlen % 2 == 1
+    whalf = (wlen-1)/2
+    # pad the input data by repeating the first and last elements
+    padded = numpy.r_[[data[0]]*whalf,data,[data[-1]]*whalf]
+    kernel = numpy.ones(wlen,'d')/wlen
+    smooth = numpy.convolve(kernel,padded,mode='same')
+    # remove the padding so the returned array has the same size and alignment as the input data
+    return smooth[whalf:-whalf]
+
+def quickFit(frame):
+    # perform a running-average smoothing of the frame's raw sample data
+    smooth = runningAvg(frame)
+    # find the range of the smoothed data
+    lo = numpy.min(smooth)
+    hi = numpy.max(smooth)
+    # find edges as points where the smoothed data crosses the midpoints between lo,hi
+    midpt = 0.5*(lo+hi)
+    rising = numpy.logical_and(smooth[:-1] < midpt,smooth[1:] > midpt)
+    return smooth
+
+def fitSplineModel(frames,nknots,smax,args):
+    # initialize a vector of frame sample offsets
+    nFrames,frameSize = frames.shape
+    assert frameSize == args.nsamples
+    tsample = args.adc_tick*numpy.arange(frameSize)
+    # use absolute min/max of frame samples to initialize range of transmission function
+    lo = numpy.min(frames.flat)
+    hi = numpy.max(frames.flat)
+    # prepare vector of positions where the transmission function is tabulated for interpolation
+    knots = numpy.linspace(-tmax,+tmax,nknots)
+    # initialize parameters for each tabulated tranmission function value
+    plist = [ ]
+    pdict = { }
+    for i,t in enumerate(knots):
+        s = 3*t/(0.9*tmax)
+        if s < -3:
+            pinit = lo
+        elif s < -1:
+            pinit = hi
+        elif s < 0:
+            pinit = lo
+        elif s < 1:
+            pinit = hi
+        elif s < 2:
+            pinit = lo
+        elif s < 3:
+            pinit = hi
+        else:
+            pinit = lo
+        pname = 'T%d' % i
+        pdict[pname] = pinit
+        plist.append(pname)
+
+    # initialize parameters for each frame's offset and relative speed
+    for i in range(len(frames)):
+        pname = 't%d' % i
+        pdict[pname] = 0.
+        plist.append(pname)
+        pname = 'v%d' % i
+        pdict[pname] = 1.
+        plist.append(pname)
+
+    # define chi-square function to use
+    def chiSquare(*params):
+        chisq = 0.
+        # initialize an interpolator of the transmission function using the specified knot values
+        transf = scipy.interpolate.UnivariateSpline(knots,params[:nknots])
+        # loop over frames
+        for i,frame in frames:
+            # lookup this frame's offset and relative speed parameter values
+            t0,v = params[nknots+2*i:nknots+2*i+2]
+            # transform the sample times to transmission function times
+            ttrans = (tsample - t0)/v
+            # evaluate the predicted transmission function for each sample
+            pred = transf(ttrans)
+            # update the chisq value
+            residuals = pred - frame
+            chisq += numpy.dot(residuals,residuals)
+        return chisq
+
+    # initialize fitter
+    print_level = 1 if args.verbose else 0
+    engine = Minuit(chiSquare,errordef=1.0,print_level=print_level,
+        forced_parameters=plist,**pdict)
+    engine.tol = 10.
+    # do the fit
+    minimum = engine.migrad()
+    if not minimum[0]['has_valid_parameters']:
+        raise RuntimeError('Fit failed!')
+
+    # calculate the best fit model
+    chiSquare(*engine.args)
+
+    # return best-fit parameter values and best-fit model prediction
+    return engine.args,prediction
+
 class FrameProcessor(object):
     def __init__(self,tabs,args):
         self.tabs = tabs
@@ -149,6 +247,8 @@ class FrameProcessor(object):
             plt.subplot(2,1,1)
             plt.plot(self.plotx,samples,'g+')
             plt.plot(self.plotx,bestFit,'r-')
+            qf = quickFit(samples)
+            plt.plot(self.plotx,qf,'b--')
             plt.draw()
         # calculate the elapsed time since the last dead-center crossing in the same direction
         # which is nominally 2 seconds
