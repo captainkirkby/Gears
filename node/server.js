@@ -54,6 +54,7 @@ var fit = spawn('../fit/fit.py', [], { stdout : ['pipe', 'pipe', 'pipe']});
 
 // Make sure to kill the fit process when node is about to exit
 process.on('exit', function(){
+	console.log("Stopping Python");
 	fit.kill();
 });
 
