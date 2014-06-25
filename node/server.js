@@ -57,7 +57,6 @@ process.on('exit', function(){
 	fit.kill();
 });
 
-
 async.parallel({
 	// Opens a serial port connection to the TickTock device.
 	port: function(callback) {
@@ -401,13 +400,15 @@ function fetch(req,res,dataPacketModel) {
 						averageCount[dataSetToPreFill] = 0;
 					});
 
+					var averageData = function (dataSetToAverage, index, arr){
+						average[dataSetToAverage] += results[count][dataSetToAverage];
+						averageCount[dataSetToAverage]++;
+					};
+
 					// Average boxes out
 					while(count < results.length && results[count].timestamp < upperLimit){
-						visibleSets.forEach(function (dataSetToAverage, index, arr){
-							average[dataSetToAverage] += results[count][dataSetToAverage];
-							averageCount[dataSetToAverage]++;
-							count++;
-						});
+						visibleSets.forEach(averageData);
+						count++;
 					}
 
 					// Don't divide by zero!  (if its zero, average will be zero as well so we want no value so flot doesnt autoscale with the zero)
