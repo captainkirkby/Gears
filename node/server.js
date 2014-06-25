@@ -386,10 +386,12 @@ function fetch(req,res,dataPacketModel) {
 			var numBins = (to-from)/binSize;
 
 			// console.log(req.query);
-			console.log(results);
+			// console.log(results);
 
-			console.log("Bin size " + binSize);
-			console.log("Number of Bins " + numBins);
+			// console.log("Bin size " + binSize);
+			// console.log("Number of Bins " + numBins);
+
+			
 
 
 			if(binSize && numBins && binSize>0 && numBins>0){
@@ -412,7 +414,7 @@ function fetch(req,res,dataPacketModel) {
 					else newResults[i]['temperature'] = (average/averageCount).toFixed(4);
 				}
 
-				console.log(newResults);
+				// console.log(newResults);
 
 				res.send(newResults);
 			} else {
@@ -434,14 +436,14 @@ function getVisibleSets(req) {
 // Find the smallest standard bin size that, when we break up the time period we're given, will result in under 1000 bins
 // Inputs delta time in miliseconds, returns standard bin size in miliseconds
 function getBins(dt){
-	console.log(dt);
+	// console.log(dt);
 	if(dt/1000.0 <= MAX_QUERY_RESULTS) return null;
 	var standardBinSizes = [1,5,10,15,30,60,300,600,1800,3600,9000]; // in seconds
 	var smallestBinSize = standardBinSizes[standardBinSizes.length-1];
 
 	for(var i = 0; i < standardBinSizes.length; i++){
 		var numBins = (dt/1000)/standardBinSizes[i];		// dt ms -> s
-		console.log("Trying bin size " + standardBinSizes[i] + ".  Results in this many bins: " + numBins);
+		// console.log("Trying bin size " + standardBinSizes[i] + ".  Results in this many bins: " + numBins);
 		if(numBins <= MAX_QUERY_RESULTS && standardBinSizes[i] < smallestBinSize){
 			// get largest bin size
 			smallestBinSize = standardBinSizes[i];
