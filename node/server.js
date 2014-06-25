@@ -39,18 +39,18 @@ process.argv.forEach(function(val,index,array) {
 	else if(val == '--debug') debug = true;
 });
 
-// // Log to file
-// var access = fs.createWriteStream('node.access.log', { flags: 'a' });
-// var error = fs.createWriteStream('node.error.log', { flags: 'a' });
+// Log to file
+var access = fs.createWriteStream('node.access.log', { flags: 'a' });
+var error = fs.createWriteStream('node.error.log', { flags: 'a' });
 
-// // redirect stdout and stderr
-// process.stdout.pipe(access);
-// process.stderr.pipe(error);
+// redirect stdout and stderr
+process.stdout.pipe(access);
+process.stderr.pipe(error);
 
 // Start process with data pipes
 var fit = spawn('../fit/fit.py', [], { stdout : ['pipe', 'pipe', 'pipe']});
 // Send all output to node stdout (readable.pipe(writable))
-fit.stdout.pipe(process.stdout);
+// fit.stdout.pipe(process.stdout);
 
 // Make sure to kill the fit process when node is about to exit
 process.on('exit', function(){
