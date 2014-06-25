@@ -372,24 +372,17 @@ function fetch(req,res,dataPacketModel) {
 
 	// TODO: expand fetch to natural borders
 
+	var visibleSets = getVisibleSets(req);
+
 	dataPacketModel.find()
 		.where('timestamp').gt(from).lte(to)
 		.limit(MAX_QUERY_RESULTS*1000).sort([['timestamp', 1]])
-		.select(('series' in req.query) ? 'timestamp ' + getVisibleSets(req).join(" ") : '')
+		.select(('series' in req.query) ? 'timestamp ' + visibleSets.join(" ") : '')
 		.exec(function(err,results) {
 			if(err) throw err;
 
-			// console.log(to);
-			// console.log(from);
-
 			var binSize = getBins(to-from);		//in ms
 			var numBins = (to-from)/binSize;
-
-			// console.log(req.query);
-			// console.log(results);
-
-			// console.log("Bin size " + binSize);
-			// console.log("Number of Bins " + numBins);
 
 			if(binSize && numBins && binSize>0 && numBins>0){
 
@@ -403,38 +396,28 @@ function fetch(req,res,dataPacketModel) {
 					var averageCount = {};
 
 					// Prepopulate with fields
-					getVisibleSets(req).forEach(function (val, index, arr){
-						average[val] = 0;
-						averageCount[val] = 0;
+					visibleSets.forEach(function (dataSetToPreFill, index, arr){
+						average[dataSetToPreFill] = 0;
+						averageCount[dataSetToPreFill] = 0;
 					});
 
 					// Average boxes out
 					while(count < results.length && results[count].timestamp < upperLimit){
-						for (var j = 0; j < getVisibleSets(req).length; j++) {
-							var dataSet = getVisibleSets(req)[j];
-							average[dataSet] += results[count][dataSet];
-							averageCount[dataSet]++;
-
-							// average[dataSet] = 40;
-							// averageCount[dataSet] = 2;
+						visibleSets.forEach(function (dataSetToAverage, index, arr){
+							average[dataSetToAverage] += results[count][dataSetToAverage];
+							averageCount[dataSetToAverage]++;
 							count++;
-						}
+						});
 					}
-					// console.log(results[0][dataSet]);
 
-
-					// console.log(average);
-					// console.log(averageCount);
-					// console.log(averageCount);
 					// Don't divide by zero!  (if its zero, average will be zero as well so we want no value so flot doesnt autoscale with the zero)
-					for (var k = 0; k < getVisibleSets(req).length; k++) {
-						var dataSetToFill = getVisibleSets(req)[k];
+					visibleSets.forEach(function (dataSetToFill, index, arr){
 						if(averageCount[dataSetToFill] === 0) newResults[i][dataSetToFill] = null;
 						else newResults[i][dataSetToFill] = (average[dataSetToFill]/averageCount[dataSetToFill]).toFixed(4);
-					}
+					});
 				}
 
-				console.log(newResults[0]);
+				// console.log(newResults[0]);
 				res.send(newResults);
 			} else {
 				res.send(results);
