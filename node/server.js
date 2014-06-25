@@ -19,6 +19,9 @@ var lastDataSequenceNumber = 0;
 // Maximum packet size : change this when you want to modify the number of samples
 var MAX_PACKET_SIZE = 2082;
 
+// Maximum number of results to return from a query (don't exceed number of pixels on graph!)
+var MAX_QUERY_RESULTS = 1000;
+
 // Keep track of the dates we are waiting on a fit to process
 // FIFO : unshift on, then pop off
 var datesBeingProcessed = [];
@@ -367,11 +370,55 @@ function fetch(req,res,dataPacketModel) {
 	}
 	if(debug) console.log('query',from,to);
 
+	// TODO: expand fetch to natural borders
+
 	dataPacketModel.find()
 		.where('timestamp').gt(from).lte(to)
-		.limit(1000).sort([['timestamp', -1]])
+		.limit(MAX_QUERY_RESULTS*1000).sort([['timestamp', 1]])
 		.select(('series' in req.query) ? 'timestamp ' + getVisibleSets(req).join(" ") : '')
-		.exec(function(err,results) { res.send(results); });
+		.exec(function(err,results) {
+			if(err) throw err;
+
+			// console.log(to);
+			// console.log(from);
+
+			var binSize = getBins(to-from);		//in ms
+			var numBins = (to-from)/binSize;
+
+			// console.log(req.query);
+			console.log(results);
+
+			console.log("Bin size " + binSize);
+			console.log("Number of Bins " + numBins);
+
+
+			if(binSize && numBins && binSize>0 && numBins>0){
+				var newResults = [];
+				var count = 0;
+
+				for (var i = 0; i < numBins; i++) {
+					var upperLimit = new Date(Date.parse(from) + binSize*(i+1));
+					newResults[i] = {'timestamp' : upperLimit};
+					var average = 0;
+					var averageCount = 0;
+					while(count < results.length && results[count].timestamp < upperLimit){
+						average += results[count]['temperature'];
+						count++;
+						averageCount++;
+					}
+					// console.log(averageCount);
+					// Don't divide by zero!  (if its zero, average will be zero as well so we want no value so flot doesnt autoscale with the zero)
+					if(averageCount === 0) newResults[i]['temperature'] = null;
+					else newResults[i]['temperature'] = (average/averageCount).toFixed(4);
+				}
+
+				console.log(newResults);
+
+				res.send(newResults);
+			} else {
+				res.send(results);
+			}
+		});
 }
 
 function getVisibleSets(req) {
@@ -382,4 +429,24 @@ function getVisibleSets(req) {
 		}
 	}
 	return visibleSets;
+}
+
+// Find the smallest standard bin size that, when we break up the time period we're given, will result in under 1000 bins
+// Inputs delta time in miliseconds, returns standard bin size in miliseconds
+function getBins(dt){
+	console.log(dt);
+	if(dt/1000.0 <= MAX_QUERY_RESULTS) return null;
+	var standardBinSizes = [1,5,10,15,30,60,300,600,1800,3600,9000]; // in seconds
+	var smallestBinSize = standardBinSizes[standardBinSizes.length-1];
+
+	for(var i = 0; i < standardBinSizes.length; i++){
+		var numBins = (dt/1000)/standardBinSizes[i];		// dt ms -> s
+		console.log("Trying bin size " + standardBinSizes[i] + ".  Results in this many bins: " + numBins);
+		if(numBins <= MAX_QUERY_RESULTS && standardBinSizes[i] < smallestBinSize){
+			// get largest bin size
+			smallestBinSize = standardBinSizes[i];
+		}
+	}
+
+	return smallestBinSize*1000;
 }
