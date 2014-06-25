@@ -3,7 +3,6 @@
 import sys
 import math
 import numpy
-import scipy.interpolate
 import matplotlib.pyplot as plt
 from iminuit import Minuit
 import argparse
@@ -49,7 +48,7 @@ def motion(dt,L,dtheta,T):
     # reduced.  Second, the angular speed decreases as the pendulum moves away from dead center.
     return L*numpy.sin(thdot/omega*numpy.sin(omega*dt))
 
-def physicalModel(t0,direction,lo,hi,tabs,D=2.,L=1108.,dtheta=4.66,T=2.0,nsamples=1024,adcTick=1664e-7):
+def model(t0,direction,lo,hi,tabs,D=2.,L=1108.,dtheta=4.66,T=2.0,nsamples=1024,adcTick=1664e-7):
     """
     t0 = offset of dead center relative to first sample (ADC samples)
     """
@@ -62,7 +61,7 @@ def physicalModel(t0,direction,lo,hi,tabs,D=2.,L=1108.,dtheta=4.66,T=2.0,nsample
     # scale to ADC units
     return lo + (hi-lo)*trans
 
-def fitPhysicalModel(frame,tabs,args):
+def fit(frame,tabs,args):
 
     # use absolute min/max to initialize lo/hi parameters
     loGuess = numpy.min(frame)
@@ -81,7 +80,7 @@ def fitPhysicalModel(frame,tabs,args):
     # define chi-square function to use
     def chiSquare(t0,direction,lo,hi,D,L,dtheta):
         global prediction
-        prediction = physicalModel(t0,direction,lo,hi,tabs,D,L,dtheta,
+        prediction = model(t0,direction,lo,hi,tabs,D,L,dtheta,
             nsamples=args.nsamples,adcTick=args.adc_tick)
         residuals = frame - prediction
         return numpy.dot(residuals,residuals)
@@ -141,7 +140,7 @@ class FrameProcessor(object):
             # Something is seriously wrong.
             return -2
         # do the fit
-        fitParams,bestFit = fitPhysicalModel(samples,self.tabs,self.args)
+        fitParams,bestFit = fit(samples,self.tabs,self.args)
         offset,direction = fitParams[:2]
         # update our plots, if requested
         if self.args.show_plots and not self.args.batch_replay:
