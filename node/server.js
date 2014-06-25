@@ -413,7 +413,7 @@ function fetch(req,res,dataPacketModel) {
 					// Don't divide by zero!  (if its zero, average will be zero as well so we want no value so flot doesnt autoscale with the zero)
 					visibleSets.forEach(function (dataSetToFill, index, arr){
 						if(averageCount[dataSetToFill] === 0) newResults[i][dataSetToFill] = null;
-						else newResults[i][dataSetToFill] = (average[dataSetToFill]/averageCount[dataSetToFill]).toFixed(4);
+						else newResults[i][dataSetToFill] = (average[dataSetToFill]/averageCount[dataSetToFill]);
 					});
 				}
 
