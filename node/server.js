@@ -74,7 +74,7 @@ async.parallel({
 					},
 					// Forwards the corresponding tty device name.
 					function(firstFtdiPort) {
-						if(firstFtdiPort == undefined) {
+						if(firstFtdiPort === undefined) {
 							// No suitable tty found
 							portCallback(new Error('No FTDI tty port found'));
 						}
@@ -196,7 +196,7 @@ async.parallel({
 function receive(data,assembler,bootPacketModel,dataPacketModel) {
 	assembler.ingest(data,function(ptype,buf) {
 		var saveMe = true;
-		if(ptype == 0x00) {
+		if(ptype === 0x00) {
 			// Prepares boot packet for storing to the database.
 			// NB: the boot packet layout is hardcoded here!
 			hash = '';
@@ -355,7 +355,7 @@ function fetch(req,res,dataPacketModel) {
 	to = new Date(Date.parse(to));
 	if(to == 'Invalid Date') to = new Date();
 	// Converts begin date into a javascript Date object.
-	var relativeSeconds = parseInt(from);
+	var relativeSeconds = parseInt(from, 10);
 	if(relativeSeconds < 0) {
 		// Interprets from as number of seconds to fetch before end date.
 		from = new Date(to.getTime() + 1000*relativeSeconds);
