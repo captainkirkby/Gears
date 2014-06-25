@@ -391,31 +391,50 @@ function fetch(req,res,dataPacketModel) {
 			// console.log("Bin size " + binSize);
 			// console.log("Number of Bins " + numBins);
 
-			
-
-
 			if(binSize && numBins && binSize>0 && numBins>0){
+
 				var newResults = [];
 				var count = 0;
-
+	
 				for (var i = 0; i < numBins; i++) {
 					var upperLimit = new Date(Date.parse(from) + binSize*(i+1));
 					newResults[i] = {'timestamp' : upperLimit};
-					var average = 0;
-					var averageCount = 0;
+					var average = {};
+					var averageCount = {};
+
+					// Prepopulate with fields
+					getVisibleSets(req).forEach(function (val, index, arr){
+						average[val] = 0;
+						averageCount[val] = 0;
+					});
+
+					// Average boxes out
 					while(count < results.length && results[count].timestamp < upperLimit){
-						average += results[count]['temperature'];
-						count++;
-						averageCount++;
+						for (var j = 0; j < getVisibleSets(req).length; j++) {
+							var dataSet = getVisibleSets(req)[j];
+							average[dataSet] += results[count][dataSet];
+							averageCount[dataSet]++;
+
+							// average[dataSet] = 40;
+							// averageCount[dataSet] = 2;
+							count++;
+						}
 					}
+					// console.log(results[0][dataSet]);
+
+
+					// console.log(average);
+					// console.log(averageCount);
 					// console.log(averageCount);
 					// Don't divide by zero!  (if its zero, average will be zero as well so we want no value so flot doesnt autoscale with the zero)
-					if(averageCount === 0) newResults[i]['temperature'] = null;
-					else newResults[i]['temperature'] = (average/averageCount).toFixed(4);
+					for (var k = 0; k < getVisibleSets(req).length; k++) {
+						var dataSetToFill = getVisibleSets(req)[k];
+						if(averageCount[dataSetToFill] === 0) newResults[i][dataSetToFill] = null;
+						else newResults[i][dataSetToFill] = (average[dataSetToFill]/averageCount[dataSetToFill]).toFixed(4);
+					}
 				}
 
-				// console.log(newResults);
-
+				console.log(newResults[0]);
 				res.send(newResults);
 			} else {
 				res.send(results);
