@@ -217,7 +217,7 @@ ISR(ADC_vect){
     
         //Add value to buffer
         currentElementIndex = (currentElementIndex + 1) % CIRCULAR_BUFFER_LENGTH;
-        dataPacket.raw[currentElementIndex] = adcValue;             // Fill actual data field instead ?
+        dataPacket.raw[currentElementIndex] = (adcValue & 0xFF);             // Lower byte 
     } else if(adcStatus == ADC_STATUS_UNSTABLE){
         // Current reading is unstable, but next one will be stable
         adcStatus = ADC_STATUS_ONE_SHOT;

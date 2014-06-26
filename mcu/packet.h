@@ -53,7 +53,7 @@ typedef struct {
 	uint16_t irLevel;				// (30)
 	// IR sensor raw ADC readings
 	uint16_t rawPhase;				// (32)
-	volatile uint16_t raw[PACKET_LENGTH];	// (34)
+	volatile uint8_t raw[PACKET_LENGTH];	// (34)
 } DataPacket;
 
 #endif
