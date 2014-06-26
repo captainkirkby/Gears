@@ -17,7 +17,7 @@ var spawn = require('child_process').spawn;
 var lastDataSequenceNumber = 0;
 
 // Maximum packet size : change this when you want to modify the number of samples
-var MAX_PACKET_SIZE = 2082;
+var MAX_PACKET_SIZE = 1058;
 
 // Maximum number of results to return from a query (don't exceed number of pixels on graph!)
 var MAX_QUERY_RESULTS = 1000;
@@ -240,22 +240,23 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			var rawPhase = buf.readUInt16LE(32);
 			// console.log(rawPhase);
 			var initialReadOffset = 34;
-			var initialReadOffsetWithPhase = initialReadOffset+(rawPhase*2);		// *2 beacuse raw phase is in 16 bit word offset
+			var initialReadOffsetWithPhase = initialReadOffset+(rawPhase);
 
-			for(var readOffsetA = initialReadOffsetWithPhase; readOffsetA < MAX_PACKET_SIZE; readOffsetA=readOffsetA+2) {
-				raw[rawFill] = buf.readUInt16LE(readOffsetA);
-				// Write data to pipe
-				fit.stdin.write(raw[rawFill] + '\n');
+			for(var readOffsetA = initialReadOffsetWithPhase; readOffsetA < MAX_PACKET_SIZE; readOffsetA++) {
+				raw[rawFill] = buf.readUInt8(readOffsetA);
 				//fs.appendFileSync('runningData.dat', (raw[rawFill]).toString() + '\n');
 				rawFill = rawFill + 1;
 			}
 
-			for(var readOffsetB = initialReadOffset; readOffsetB < initialReadOffsetWithPhase; readOffsetB=readOffsetB+2) {
-				raw[rawFill] = buf.readUInt16LE(readOffsetB);
-				// Write data to pipe
-				fit.stdin.write(raw[rawFill] + '\n');
+			for(var readOffsetB = initialReadOffset; readOffsetB < initialReadOffsetWithPhase; readOffsetB++) {
+				raw[rawFill] = buf.readUInt8(readOffsetB);
 				// fs.appendFileSync('runningData.dat', (raw[rawFill]).toString() + '\n');
 				rawFill = rawFill + 1;
+			}
+
+			// Iterate through samples writing them to the fit pipe
+			for(var i = 0; i < rawFill; i++){
+				fit.stdin.write(raw[rawFill] + '\n');
 			}
 
 			// Calculates the thermistor resistance in ohms assuming 100uA current source.
