@@ -14,6 +14,9 @@ $(function() {
 	// Tick significant figures
 	var TICK_SIG_FIGS = 6;
 
+	// Whether or not to show the dots on a smoothed curve
+	var showDots = true;
+
 	// Plot Settings
 	var dataToPlot = {
 		"temperature" : { "visible" : true, "width" : NORMAL, "color" : 0},
@@ -167,7 +170,7 @@ $(function() {
 								yaxis: (count + 1),
 								color : dataToPlot[name].color});
 
-				if(smoothing){
+				if(smoothing && showDots){
 					dataSet.push({	data: set,
 									lines : { show : false},
 									points : { show : visible, radius : POINT_SIZE},
@@ -312,6 +315,16 @@ $(function() {
 		} else {
 			$(this).val("Don't Use Smoothing");
 			smoothing = true;
+		}
+	});
+
+	$("#showDots").click(function(){
+		if(showDots){
+			$(this).val("Show Dots");
+			showDots = false;
+		} else {
+			$(this).val("Don't Show Dots");
+			showDots = true;
 		}
 	});
 
