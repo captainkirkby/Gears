@@ -152,14 +152,6 @@ $(function() {
 
 
 			function displaySet(name, dataSmoothing, smoothingAmount, visible, width){
-				// If we're looking at the refined period, subract 2, divide by 2, and multiply by a million
-
-				if(name == "refinedPeriod"){
-					$.each(dataToPlot[name], function(index, val) {
-						dataToPlot[name][index] = (val-2)*500000;
-					});
-				}
-
 
 				var set = [];
 				var smoothSet = [];
@@ -169,7 +161,14 @@ $(function() {
 					// Get timestamp as a date object
 					var date = new Date(Date.parse(data[index].timestamp));
 
-					set.push([date, data[index][name]]);
+					// If we're looking at the refined period, subract 2, divide by 2, and multiply by a million
+					if(name == "refinedPeriod"){
+						set.push([date, (data[index][name]-2)*500000]);
+					} else {
+						set.push([date, data[index][name]]);
+					}
+
+
 					smoothSet.push([date, smoothPoints(name, index, smoothingAmount)]);
 				}
 
