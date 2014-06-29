@@ -35,7 +35,7 @@ $(function() {
 	var NUM_THERMISTOR_SAMPLES = 55;
 	var NUM_HUMIDITY_SAMPLES = 55;
 	var NUM_CRUDE_PERIOD_SAMPLES = 0;
-	var NUM_REFINED_PERIOD_SAMPLES = 0;
+	var NUM_REFINED_PERIOD_SAMPLES = 55;
 
 	// Real time parameters
 	var TIMEOUT_VALUE = 333;
@@ -123,7 +123,7 @@ $(function() {
 		var dataURL = "fetch?" + $.param({
 			"from" : from,
 			"to" : to,
-			"series" : seriesToPlot
+			"series" : dataToPlot
 		});
 
 		lastFrom = from;
