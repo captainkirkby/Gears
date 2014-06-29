@@ -152,6 +152,15 @@ $(function() {
 
 
 			function displaySet(name, dataSmoothing, smoothingAmount, visible, width){
+				// If we're looking at the refined period, subract 2, divide by 2, and multiply by a million
+
+				if(name == "refinedPeriod"){
+					$.each(dataToPlot[name], function(index, val) {
+						dataToPlot[name][index] = (val-2)*500000;
+					});
+				}
+
+
 				var set = [];
 				var smoothSet = [];
 	
