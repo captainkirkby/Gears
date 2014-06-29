@@ -234,6 +234,8 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			var date = new Date();
 			datesBeingProcessed.unshift(date);
 
+			var QUADRANT = 0xFF;						// 2^8 when we're running the ADC in 8 bit mode
+
 			// Gets the raw data from the packet.raw field
 			var raw = [];
 			var rawFill = 0;
@@ -242,15 +244,46 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			var initialReadOffset = 34;
 			var initialReadOffsetWithPhase = initialReadOffset+(rawPhase);
 
+			// Store last buffer entry
+			var lastReading = buf.readUInt8(initialReadOffsetWithPhase);
+			// Value to add to each reading to expand from 8 bit to 10 bit values
+			var addToRawReading = QUADRANT * 3;
+
 			for(var readOffsetA = initialReadOffsetWithPhase; readOffsetA < MAX_PACKET_SIZE; readOffsetA++) {
 				raw[rawFill] = buf.readUInt8(readOffsetA);
-				//fs.appendFileSync('runningData.dat', (raw[rawFill]).toString() + '\n');
+
+				// This point minus last point (large positive means this goes down a quadrant, large negative means this goes up a quadrant
+				if(raw[rawFill] - lastReading > 150){
+					// This goes down a quadrant
+					addToRawReading -= QUADRANT;
+
+				} else if(raw[rawFill] - lastReading < -150){
+					// This goes up a quadrant
+					addToRawReading += QUADRANT;
+				}
+
+				lastReading = raw[rawFill];
+
+				raw[rawFill] += addToRawReading;
 				rawFill = rawFill + 1;
 			}
 
 			for(var readOffsetB = initialReadOffset; readOffsetB < initialReadOffsetWithPhase; readOffsetB++) {
 				raw[rawFill] = buf.readUInt8(readOffsetB);
-				// fs.appendFileSync('runningData.dat', (raw[rawFill]).toString() + '\n');
+
+				// This point minus last point (large positive means this goes down a quadrant, large negative means this goes up a quadrant
+				if(raw[rawFill] - lastReading > 150){
+					// This goes down a quadrant
+					addToRawReading -= QUADRANT;
+
+				} else if(raw[rawFill] - lastReading < -150){
+					// This goes up a quadrant
+					addToRawReading += QUADRANT;
+				}
+
+				lastReading = raw[rawFill];
+
+				raw[rawFill] += addToRawReading;
 				rawFill = rawFill + 1;
 			}
 
