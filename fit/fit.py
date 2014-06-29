@@ -284,16 +284,20 @@ class FrameProcessor(object):
             # Something is seriously wrong.
             return -2
         # do the fit
-        fitParams,bestFit = fitPhysicalModel(samples,self.tabs,self.args)
-        offset,direction = fitParams[:2]
+        direction,offset,span,quick = quickFit(samples)
+        if self.args.physical:
+            fitParams,bestFit = fitPhysicalModel(samples,self.tabs,self.args)
+            offset,direction = fitParams[:2]
+        else:
+            bestFit = None 
         # update our plots, if requested
         if self.args.show_plots and not self.args.batch_replay:
             plt.clf()
             plt.subplot(2,1,1)
             plt.plot(self.plotx,samples,'g+')
-            plt.plot(self.plotx,bestFit,'r-')
-            direction,t0,span,quick = quickFit(samples)
-            plt.plot(quick[0],quick[1],'b--')
+            if bestFit is not None:
+                plt.plot(self.plotx,bestFit,'r-')
+            plt.plot(quick[0],quick[1],'b:')
             plt.draw()
         # calculate the elapsed time since the last dead-center crossing in the same direction
         # which is nominally 2 seconds
@@ -344,6 +348,8 @@ def main():
         help = 'ADC sampling period in seconds')
     parser.add_argument('--show-plots', action = 'store_true',
         help = 'display analysis plots')
+    parser.add_argument('--physical', action = 'store_true',
+        help = 'fit frames to a physical model')
     parser.add_argument('--verbose', action = 'store_true',
         help = 'generate verbose output')
     args = parser.parse_args()
