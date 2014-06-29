@@ -4,6 +4,7 @@ import sys
 import math
 import numpy
 import scipy.interpolate
+from scipy.stats import linregress
 import matplotlib.pyplot as plt
 from iminuit import Minuit
 import argparse
@@ -125,16 +126,60 @@ def runningAvg(data,wlen=31):
     # remove the padding so the returned array has the same size and alignment as the input data
     return smooth[whalf:-whalf]
 
-def quickFit(frame):
+def lineFit(y,t1,t2):
+    """
+    Performs a linear fit to determine the value of t where y(t) crosses zero
+    using samples y[t1:t2].
+    """
+    t = numpy.arange(t1,t2)
+    slope, intercept, r_value, p_value, std_err = linregress(t,y[t1:t2])
+    return -intercept/slope
+
+def quickFit(frame,smoothing=15,fitsize=5):
+    """
+    Attempts a quick fit of the specified frame data or returns a RuntimeError
+    """
     # perform a running-average smoothing of the frame's raw sample data
-    smooth = runningAvg(frame)
+    smooth = runningAvg(frame,wlen=1+2*smoothing)
     # find the range of the smoothed data
     lo = numpy.min(smooth)
     hi = numpy.max(smooth)
     # find edges as points where the smoothed data crosses the midpoints between lo,hi
     midpt = 0.5*(lo+hi)
-    rising = numpy.logical_and(smooth[:-1] < midpt,smooth[1:] > midpt)
-    return smooth
+    smooth -= midpt
+    rising = numpy.logical_and(smooth[:-1] <= 0,smooth[1:] > 0)
+    falling = numpy.logical_and(smooth[:-1] > 0, smooth[1:] <= 0)
+    nrise = numpy.count_nonzero(rising)
+    nfall = numpy.count_nonzero(falling)
+    # check for the expected number of rising and falling edges
+    if nrise != 3:
+        raise RuntimeError("quickFit: expected 3 rising edges but found %d" % numpy.count_nonzero(rising))
+    if nfall != 3:
+        raise RuntimeError("quickFit: expected 3 falling edges but found %d" % numpy.count_nonzero(falling))
+    risePos = numpy.sort(numpy.argsort(rising)[-3:])
+    fallPos = numpy.sort(numpy.argsort(falling)[-3:])
+    # use the distance between the first falling and rising edges to discriminate between
+    # the two possible directions of travel and identify the index of the fiducal crossing
+    if risePos[0] - fallPos[0] > 150:
+        direction = +1.
+        xing = fallPos[1]
+    else:
+        direction = -1.
+        xing = risePos[1]
+    # perform a linear fit to the fiducial crossing
+    t0 = lineFit(smooth,xing-fitsize,xing+fitsize+1)
+    t = numpy.arange(xing-fitsize,xing+fitsize+1)
+    # perform linear fits to the first and last edges
+    tfirst = lineFit(smooth,fallPos[0]-fitsize,fallPos[0]+fitsize+1)
+    tlast = lineFit(smooth,risePos[-1]-fitsize,risePos[-1]+fitsize+1)
+    # build a visual representation of these fit results
+    quick = numpy.empty((2,6))
+    if direction > 0:
+        quick[0] = numpy.array((0.,tfirst,tfirst,t0,t0,1024.))
+    else:
+        quick[0] = numpy.array((0.,t0,t0,tlast,tlast,1024.))
+    quick[1] = numpy.array((hi,hi,lo,lo,hi,hi))
+    return direction,t0,tlast-tfirst,quick
 
 def fitSplineModel(frames,nknots,smax,args):
     # initialize a vector of frame sample offsets
@@ -247,8 +292,8 @@ class FrameProcessor(object):
             plt.subplot(2,1,1)
             plt.plot(self.plotx,samples,'g+')
             plt.plot(self.plotx,bestFit,'r-')
-            qf = quickFit(samples)
-            plt.plot(self.plotx,qf,'b--')
+            direction,t0,span,quick = quickFit(samples)
+            plt.plot(quick[0],quick[1],'b--')
             plt.draw()
         # calculate the elapsed time since the last dead-center crossing in the same direction
         # which is nominally 2 seconds
