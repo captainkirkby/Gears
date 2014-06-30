@@ -135,12 +135,16 @@ def lineFit(y,t1,t2):
     slope, intercept, r_value, p_value, std_err = linregress(t,y[t1:t2])
     return -intercept/slope
 
-def quickFit(frame,smoothing=15,fitsize=5):
+def quickFit(samples,smoothing=15,fitsize=5):
     """
-    Attempts a quick fit of the specified frame data or returns a RuntimeError
+    Attempts a quick fit of the specified sample data or returns a RuntimeError.
+    Returns the direction (+/-1) of travel, the estimated lo and hi ADC levels,
+    the estimated fiducial crossing time t0 relative to the first sample, and
+    the estimated rise and fall times relative to the fiducial and corrected for
+    the direction of travel. All times are measured in ADC samples.
     """
     # perform a running-average smoothing of the frame's raw sample data
-    smooth = runningAvg(frame,wlen=1+2*smoothing)
+    smooth = runningAvg(samples,wlen=1+2*smoothing)
     # find the range of the smoothed data
     lo = numpy.min(smooth)
     hi = numpy.max(smooth)
@@ -156,106 +160,86 @@ def quickFit(frame,smoothing=15,fitsize=5):
         raise RuntimeError("quickFit: expected 3 rising edges but found %d" % numpy.count_nonzero(rising))
     if nfall != 3:
         raise RuntimeError("quickFit: expected 3 falling edges but found %d" % numpy.count_nonzero(falling))
+    # locate the nearest ADC sample to each edge
     risePos = numpy.sort(numpy.argsort(rising)[-3:])
     fallPos = numpy.sort(numpy.argsort(falling)[-3:])
+    # perform linear fits to locate each edge to subsample precision
+    riseFit = numpy.empty((3,))
+    fallFit = numpy.empty((3,))
+    for i in range(3):
+        riseFit[i] = lineFit(smooth,risePos[i]-fitsize,risePos[i]+fitsize+1)
+        fallFit[i] = lineFit(smooth,fallPos[i]-fitsize,fallPos[i]+fitsize+1)
     # use the distance between the first falling and rising edges to discriminate between
-    # the two possible directions of travel and identify the index of the fiducal crossing
+    # the two possible directions of travel and calculate edge times relative to the
+    # fiducial, corrected for the direction of travel.
     if risePos[0] - fallPos[0] > 150:
         direction = +1.
-        xing = fallPos[1]
+        t0 = fallFit[1]
+        riseFit -= t0
+        fallFit -= t0
     else:
         direction = -1.
-        xing = risePos[1]
-    # perform a linear fit to the fiducial crossing
-    t0 = lineFit(smooth,xing-fitsize,xing+fitsize+1)
-    t = numpy.arange(xing-fitsize,xing+fitsize+1)
-    # perform linear fits to the first and last edges
-    tfirst = lineFit(smooth,fallPos[0]-fitsize,fallPos[0]+fitsize+1)
-    tlast = lineFit(smooth,risePos[-1]-fitsize,risePos[-1]+fitsize+1)
-    # build a visual representation of these fit results
-    quick = numpy.empty((2,6))
-    if direction > 0:
-        quick[0] = numpy.array((0.,tfirst,tfirst,t0,t0,1024.))
-    else:
-        quick[0] = numpy.array((0.,t0,t0,tlast,tlast,1024.))
-    quick[1] = numpy.array((hi,hi,lo,lo,hi,hi))
-    return direction,t0,tlast-tfirst,quick
+        t0 = riseFit[1]
+        tmp = numpy.copy(riseFit)
+        riseFit = (t0 - fallFit)[::-1]
+        fallFit = (t0 - tmp)[::-1]
+    return direction,lo,hi,t0,riseFit,fallFit
 
-def fitSplineModel(frames,nknots,smax,args):
-    # initialize a vector of frame sample offsets
-    nFrames,frameSize = frames.shape
-    assert frameSize == args.nsamples
-    tsample = args.adc_tick*numpy.arange(frameSize)
-    # use absolute min/max of frame samples to initialize range of transmission function
-    lo = numpy.min(frames.flat)
-    hi = numpy.max(frames.flat)
-    # prepare vector of positions where the transmission function is tabulated for interpolation
-    knots = numpy.linspace(-tmax,+tmax,nknots)
-    # initialize parameters for each tabulated tranmission function value
-    plist = [ ]
-    pdict = { }
-    for i,t in enumerate(knots):
-        s = 3*t/(0.9*tmax)
-        if s < -3:
-            pinit = lo
-        elif s < -1:
-            pinit = hi
-        elif s < 0:
-            pinit = lo
-        elif s < 1:
-            pinit = hi
-        elif s < 2:
-            pinit = lo
-        elif s < 3:
-            pinit = hi
-        else:
-            pinit = lo
-        pname = 'T%d' % i
-        pdict[pname] = pinit
-        plist.append(pname)
-
-    # initialize parameters for each frame's offset and relative speed
-    for i in range(len(frames)):
-        pname = 't%d' % i
-        pdict[pname] = 0.
-        plist.append(pname)
-        pname = 'v%d' % i
-        pdict[pname] = 1.
-        plist.append(pname)
-
-    # define chi-square function to use
-    def chiSquare(*params):
-        chisq = 0.
-        # initialize an interpolator of the transmission function using the specified knot values
-        transf = scipy.interpolate.UnivariateSpline(knots,params[:nknots])
-        # loop over frames
-        for i,frame in frames:
-            # lookup this frame's offset and relative speed parameter values
-            t0,v = params[nknots+2*i:nknots+2*i+2]
-            # transform the sample times to transmission function times
-            ttrans = (tsample - t0)/v
-            # evaluate the predicted transmission function for each sample
-            pred = transf(ttrans)
-            # update the chisq value
-            residuals = pred - frame
-            chisq += numpy.dot(residuals,residuals)
-        return chisq
-
-    # initialize fitter
-    print_level = 1 if args.verbose else 0
-    engine = Minuit(chiSquare,errordef=1.0,print_level=print_level,
-        forced_parameters=plist,**pdict)
-    engine.tol = 10.
-    # do the fit
-    minimum = engine.migrad()
-    if not minimum[0]['has_valid_parameters']:
-        raise RuntimeError('Fit failed!')
-
-    # calculate the best fit model
-    chiSquare(*engine.args)
-
-    # return best-fit parameter values and best-fit model prediction
-    return engine.args,prediction
+def buildSplineTemplate(frames,args):
+    """
+    Builds a universal template for the transmission function from the specified frames.
+    """
+    # get the number of frames and check the frame size
+    nframes,frameSize = frames.shape
+    assert frameSize == 1+args.nsamples
+    samples = frames[:,1:]
+    # perform quick fits to each frame
+    if args.verbose:
+        print 'Performing quick fits...'
+    dirvec = numpy.empty((nframes,))
+    lovec = numpy.empty((nframes,))
+    hivec = numpy.empty((nframes,))
+    t0vec = numpy.empty((nframes,))
+    risevec = numpy.empty((nframes,3))
+    fallvec = numpy.empty((nframes,3))
+    for i in range(nframes):
+        dirvec[i],lovec[i],hivec[i],t0vec[i],risevec[i],fallvec[i] = quickFit(samples[i])
+    # calculate the mean lo,hi levels
+    lo = numpy.mean(lovec)
+    hi = numpy.mean(hivec)
+    # calculate the mean positions of each edge relative to the fiducial
+    rise = numpy.mean(risevec,axis=0)
+    fall = numpy.mean(fallvec,axis=0)
+    print 'rise/fall',rise,fall
+    # Estimate the stretch factors that map the time between the outer edges to ds = 2
+    stretch = (risevec[:,-1] - fallvec[:,0])/2.
+    # initialize a vector of ADC sample counts
+    tadc = numpy.linspace(0.,args.nsamples-1.,args.nsamples)
+    # initialize our resampling grid
+    smax = 1 + args.spline_pad
+    sgrid = numpy.linspace(-smax,+smax,args.nspline)
+    # initialize the resampled values we will average
+    resampled = numpy.zeros_like(sgrid)
+    # loop over frames
+    if args.verbose:
+        print 'Stacking frames to build spline template...'
+    for i in range(nframes):
+        # convert this frame's ADC timing to s values, correcting for the direction of
+        # travel, the estimate fiducial crossing time, and the stretch factor.
+        svec = dirvec[i]*(tadc - t0vec[i])/stretch[i]
+        # normalize this frame's samples to [0,1]
+        yvec = (samples[i] - lo)/(hi - lo)
+        # ensure that svec is increasing
+        if dirvec[i] < 0:
+            svec = svec[::-1]
+            yvec = yvec[::-1]
+        # build a cubic spline interpolation of (svec,ynorm)
+        splineFit = scipy.interpolate.UnivariateSpline(svec,yvec,k=3,s=0.,)
+        # resample the spline fit to our s grid
+        resampled += splineFit(sgrid)
+    # average and return the resampled values
+    resampled /= nframes
+    return numpy.vstack((sgrid,resampled))
 
 class FrameProcessor(object):
     def __init__(self,tabs,args):
@@ -284,7 +268,7 @@ class FrameProcessor(object):
             # Something is seriously wrong.
             return -2
         # do the fit
-        direction,offset,span,quick = quickFit(samples)
+        direction,lo,hi,offset,rise,fall = quickFit(samples)
         if self.args.physical:
             fitParams,bestFit = fitPhysicalModel(samples,self.tabs,self.args)
             offset,direction = fitParams[:2]
@@ -297,7 +281,6 @@ class FrameProcessor(object):
             plt.plot(self.plotx,samples,'g+')
             if bestFit is not None:
                 plt.plot(self.plotx,bestFit,'r-')
-            plt.plot(quick[0],quick[1],'b:')
             plt.draw()
         # calculate the elapsed time since the last dead-center crossing in the same direction
         # which is nominally 2 seconds
@@ -350,6 +333,14 @@ def main():
         help = 'display analysis plots')
     parser.add_argument('--physical', action = 'store_true',
         help = 'fit frames to a physical model')
+    parser.add_argument('--spline', action = 'store_true',
+        help = 'fit frames to a spline model')
+    parser.add_argument('--save-template', type = str, default = None,
+        help = 'filename where spline template should be saved')
+    parser.add_argument('--nspline', type = int, default = 1024,
+        help = 'number of spline knots used to build spline template')
+    parser.add_argument('--spline-pad', type = float, default = 0.2,
+        help = 'amount of padding to use for spline fit region')
     parser.add_argument('--verbose', action = 'store_true',
         help = 'generate verbose output')
     args = parser.parse_args()
@@ -374,6 +365,12 @@ def main():
         if len(data) % 1+args.nsamples:
             print 'WARNING: Ignoring extra data beyond last frame'
         frames = data[:nframe*(1+args.nsamples)].reshape((nframe,1+args.nsamples))
+        if args.save_template:
+            template = buildSplineTemplate(frames,args)
+            numpy.savetxt(args.save_template,template.T)
+            plt.plot(template[0],template[1])
+            plt.show()
+            return 0
         for i,frame in enumerate(frames):
             elapsed,samples = frame[0],frame[1:]
             try:
