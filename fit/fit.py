@@ -292,7 +292,12 @@ class FrameProcessor(object):
         self.nextLastOffset = None
         self.lastOffset = None
         self.lastElapsed = None
-        self.periods = numpy.array([],dtype=numpy.float64)
+        self.lastAmplitude = None
+        # we use python arrays here since we do not know the final size in advance
+        # and they are more time efficient for appending than numpy arrays (but
+        # less space efficient)
+        self.periods = [ ]
+        self.swings = [ ]
         # initialize plot display if requested
         if args.show_plots:
             self.fig = plt.figure(figsize=(12,12))
@@ -322,55 +327,75 @@ class FrameProcessor(object):
         direction,lo,hi,offset,rise,fall = quickFit(samples)
         if self.args.physical:
             fitParams,bestFit = fitPhysicalModel(samples,self.tabs,self.args,direction,lo,hi,offset)
-            offset = fitParams[0]
+            offset,amplitude = fitParams[0],fitParams[5]
         elif self.template is not None:
             fitParams,bestFit = fitTemplateModel(samples,self.args,
                 direction,lo,hi,offset,rise,fall,self.template)
-            offset = fitParams[0]
+            offset,duration = fitParams[0],fitParams[1]
+            # convert duration in ADC ticks to a swing amplitude
+            velocity = 0.5*self.args.width/(duration*self.args.adc_tick) # mm/sec
+            if len(self.periods) > 0:
+                period = self.periods[-1]
+            else:
+                period = 2.
+            cosTheta = 1 - 0.5*(velocity*period/(2*math.pi*self.args.length))**2
+            amplitude = math.degrees(math.acos(cosTheta))
         else:
             bestFit = None
         # update our plots, if requested
         if self.args.show_plots and not self.args.batch_replay:
             plt.clf()
-            plt.subplot(2,1,1)
+            ax = plt.subplot(1,1,1)
+            ax.set_ylim([-4.,1024.])
             plt.plot(self.plotx,samples,'g+')
             if bestFit is not None:
                 plt.plot(self.plotx,bestFit,'r-')
             plt.draw()
-        # calculate the elapsed time since the last dead-center crossing in the same direction
-        # which is nominally 2 seconds
+        # Calculate the elapsed time since the last dead-center crossing in the same direction,
+        # which is nominally 2 seconds, and the peak-to-peak angular amplitude of two consecutive
+        # swings in opposite directions.
         if direction != self.lastDirection:
             if self.lastElapsed and self.lastOffset:
                 period = (self.lastElapsed - self.lastOffset + elapsed + offset)*self.args.adc_tick
             else:
                 # We must have processed at least two frames before we can calculate a period.
                 period = 0
+            if self.lastAmplitude is not None:
+                swing = amplitude + self.lastAmplitude
+            else:
+                swing = 0
         else:
             # We require alternating directions, so something went wrong but we will try to recover.
             period = -1
+            swing = -1
         # update our saved info
         self.lastDirection = direction
         self.lastOffset = self.nextLastOffset
         self.nextLastOffset = offset
         self.lastElapsed = elapsed
+        self.lastAmplitude = amplitude
         # remember this result
-        if abs(period - 2) < 0.1:
-            self.periods = numpy.append(self.periods,period)
-            if self.args.show_plots and not self.args.batch_replay:
-                plt.subplot(2,1,2)
-                plt.plot(1e6*(self.periods-2.0),'x')
-                plt.draw()
+        if abs(period-2) < 0.1 and swing > 0:
+            self.periods.append(period)
+            self.swings.append(swing)
         # return the estimated period in seconds
-        return period
+        return period,swing
 
     def finish(self):
+        periods = numpy.array(self.periods)
+        swings = numpy.array(self.swings)
         if self.args.show_plots:
             if self.args.batch_replay:
                 plt.clf()
-                plt.subplot(1,1,1)
-                plt.plot(1e6*(self.periods-2.0),'x')
+                plt.subplot(2,1,1)
+                mean = numpy.mean(periods)
+                # calculate the going in ppm
+                going = 1e6*(periods - mean)/mean
+                plt.plot(going,'x')
+                plt.subplot(2,1,2)
+                plt.plot(swings,'x')
             self.fig.savefig('fit.png')
-        numpy.savetxt('fit.dat',self.periods)
+        numpy.savetxt('fit.dat',periods)
 
 def main():
 
@@ -384,6 +409,10 @@ def main():
         help = 'number of IR ADC samples per frame')
     parser.add_argument('--adc-tick', type = float, default = 1664e-7,
         help = 'ADC sampling period in seconds')
+    parser.add_argument('--length', type = float, default = 1020.,
+        help = 'nominal length of pendulum to fiducial marker in milimeters')
+    parser.add_argument('--width', type = float, default = 30.,
+        help = 'nominal width of the fiducial marker in milimeters')
     parser.add_argument('--show-plots', action = 'store_true',
         help = 'display analysis plots')
     parser.add_argument('--physical', action = 'store_true',
@@ -431,8 +460,8 @@ def main():
         for i,frame in enumerate(frames):
             elapsed,samples = frame[0],frame[1:]
             try:
-                period = processor.process(elapsed,samples)
-                print 'Period = %f secs (%d/%d)' % (period,i,nframe)
+                period,swing = processor.process(elapsed,samples)
+                print 'Period = %f secs, swing = %f (%d/%d)' % (period,swing,i,nframe)
             except RuntimeError,e:
                 print str(e)
             if not args.batch_replay:
@@ -456,9 +485,9 @@ def main():
                     samples[args.nsamples - remaining] = value
                     remaining -= 1
                     if remaining == 0:
-                        period = processor.process(elapsed,samples)
+                        period,swing = processor.process(elapsed,samples)
                         # send the calculated period to our STDOUT and flush the buffer!
-                        print period
+                        print period,swing
                         sys.stdout.flush()
             except Exception,e:
                 # Try to keep going silently after any error
