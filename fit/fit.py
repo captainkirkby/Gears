@@ -63,39 +63,82 @@ def physicalModel(t0,direction,lo,hi,tabs,D=2.,L=1108.,dtheta=4.66,T=2.0,nsample
     # scale to ADC units
     return lo + (hi-lo)*trans
 
-def fitPhysicalModel(frame,tabs,args):
+def fitTemplateModel(samples,args,direction,lo,hi,offset,rise,fall,template):
 
-    # use absolute min/max to initialize lo/hi parameters
-    loGuess = numpy.min(frame)
-    hiGuess = numpy.max(frame)
+    # initial parameter guesses
+    loGuess = lo
+    rngGuess = hi-lo
+    t0Guess = offset
+    durationGuess = (rise[-1] - fall[0])/2.
+    
+    # initialize a vector of ADC sample counts
+    tadc = numpy.linspace(0.,args.nsamples-1.,args.nsamples)
 
-    # hard code initial parameter guesses for now
-    t0Guess = 495.
+    # initialize model prediction
+    global prediction
+    prediction = numpy.zeros_like(samples)
+
+    # define chi-square function to use
+    def chiSquare(t0,duration,lo,rng):
+        global prediction
+        # convert this frame's ADC timing to s values, correcting for the direction of
+        # travel, the estimate fiducial crossing time, and the stretch factor.
+        svec = direction*(tadc - t0)/duration
+        # evaluate the template at these s values
+        prediction[:] = 1.
+        mask = numpy.abs(svec) < 1 + args.spline_pad
+        prediction[mask] = template(svec[mask])
+        # rescale from [0,1] to [lo,hi]
+        prediction = lo + rng*prediction
+        # evaluate the chi-square
+        residuals = samples - prediction
+        return numpy.dot(residuals,residuals)
+
+    # initialize fitter
+    print_level = 1 if args.verbose else 0
+    engine = Minuit(chiSquare,errordef=1.0,print_level=print_level,
+        t0=t0Guess,error_t0=1.,
+        duration=durationGuess,error_duration=1.,
+        lo=loGuess,error_lo=1.,
+        rng=rngGuess,error_rng=1.)
+    engine.tol = 1.
+
+    # do the fit
+    minimum = engine.migrad()
+    if not minimum[0]['has_valid_parameters']:
+        raise RuntimeError('Fit failed!')
+
+    # calculate the best fit model
+    chiSquare(*engine.args)
+
+    # return best-fit parameter values and best-fit model prediction
+    return engine.args,prediction
+
+def fitPhysicalModel(samples,tabs,args,direction,lo,hi,offset):
+
+    # initial parameter guesses
+    loGuess = lo
+    hiGuess = hi
+    t0Guess = offset
     DGuess = 1.7
     LGuess = 1020.
     dthetaGuess = 4.66
 
     # initialize model prediction
     global prediction
-    prediction = numpy.zeros_like(frame)
+    prediction = numpy.zeros_like(samples)
 
     # define chi-square function to use
-    def chiSquare(t0,direction,lo,hi,D,L,dtheta):
+    def chiSquare(t0,lo,hi,D,L,dtheta):
         global prediction
         prediction = physicalModel(t0,direction,lo,hi,tabs,D,L,dtheta,
             nsamples=args.nsamples,adcTick=args.adc_tick)
-        residuals = frame - prediction
+        residuals = samples - prediction
         return numpy.dot(residuals,residuals)
-
-    # pick direction based on smallest chisq with initial parameter guesses
-    chiSqP = chiSquare(t0Guess,+1,loGuess,hiGuess,DGuess,LGuess,dthetaGuess)
-    chiSqM = chiSquare(t0Guess,-1,loGuess,hiGuess,DGuess,LGuess,dthetaGuess)
-    direction = +1. if chiSqP < chiSqM else -1.
 
     # initialize fitter
     print_level = 1 if args.verbose else 0
     engine = Minuit(chiSquare,errordef=1.0,print_level=print_level,
-        direction=direction,fix_direction=True,
         t0=t0Guess,error_t0=1.,
         lo=loGuess,error_lo=1.,
         hi=hiGuess,error_hi=1.,
@@ -256,6 +299,14 @@ class FrameProcessor(object):
             plt.ion()
             plt.show()
             self.plotx = numpy.arange(args.nsamples)
+        # load template if requested
+        if args.load_template is not None:
+            if args.physical:
+                raise RuntimeError('Options --physical and --load-template cannot be combined')
+            templateData = numpy.transpose(numpy.loadtxt(args.load_template))
+            self.template = scipy.interpolate.UnivariateSpline(templateData[0],templateData[1],k=3,s=0.)
+        else:
+            self.template = None
 
     def process(self,elapsed,samples):
         """
@@ -267,13 +318,17 @@ class FrameProcessor(object):
         if len(samples) != self.args.nsamples:
             # Something is seriously wrong.
             return -2
-        # do the fit
+        # always start with a quick fit
         direction,lo,hi,offset,rise,fall = quickFit(samples)
         if self.args.physical:
-            fitParams,bestFit = fitPhysicalModel(samples,self.tabs,self.args)
-            offset,direction = fitParams[:2]
+            fitParams,bestFit = fitPhysicalModel(samples,self.tabs,self.args,direction,lo,hi,offset)
+            offset = fitParams[0]
+        elif self.template is not None:
+            fitParams,bestFit = fitTemplateModel(samples,self.args,
+                direction,lo,hi,offset,rise,fall,self.template)
+            offset = fitParams[0]
         else:
-            bestFit = None 
+            bestFit = None
         # update our plots, if requested
         if self.args.show_plots and not self.args.batch_replay:
             plt.clf()
@@ -337,6 +392,8 @@ def main():
         help = 'fit frames to a spline model')
     parser.add_argument('--save-template', type = str, default = None,
         help = 'filename where spline template should be saved')
+    parser.add_argument('--load-template', type = str, default = None,
+        help = 'filename of spline template to load and use')
     parser.add_argument('--nspline', type = int, default = 1024,
         help = 'number of spline knots used to build spline template')
     parser.add_argument('--spline-pad', type = float, default = 0.2,
