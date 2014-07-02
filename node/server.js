@@ -244,6 +244,11 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			var initialReadOffset = 34;
 			var initialReadOffsetWithPhase = initialReadOffset+(rawPhase);
 
+			if(initialReadOffsetWithPhase >= MAX_PACKET_SIZE || initialReadOffsetWithPhase < 0){
+				console.log("PROBLEMS!! Phase is " + initialReadOffsetWithPhase);
+				return;
+			}
+
 			// Store last buffer entry
 			var lastReading = buf.readUInt8(initialReadOffsetWithPhase);
 			// Value to add to each reading to expand from 8 bit to 10 bit values
