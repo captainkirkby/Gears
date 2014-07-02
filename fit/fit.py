@@ -395,7 +395,7 @@ class FrameProcessor(object):
                 plt.subplot(2,1,2)
                 plt.plot(swings,'x')
             self.fig.savefig('fit.png')
-        numpy.savetxt('fit.dat',periods)
+        numpy.savetxt('fit.dat',numpy.vstack([periods,swings]).T)
 
 def main():
 
