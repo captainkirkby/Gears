@@ -293,7 +293,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			}
 
 			// Iterate through samples writing them to the fit pipe
-			for(var i = 0; i < rawFill; i++){
+			for(var i = 0; i < 2048; i++){
 				fit.stdin.write(raw[i] + '\n');
 				fs.appendFileSync('runningData.dat', raw[i] + '\n');
 			}
@@ -350,7 +350,10 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 // Write refined period to database
 function storeRefinedPeriod(period) {
 	period = Number(period.toString());
-	if(period === 0) return;
+	if(period >= 0 || isNaN(period)){
+		console.log("Bad Period : " + period);
+		return;
+	}
 	var storeDate = datesBeingProcessed.pop();
 	if(debug) console.log(period);
 	// console.log(storeDate);
