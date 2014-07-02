@@ -228,7 +228,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			fs.appendFileSync('runningData.dat', samplesSince + '\n');
 
 			// Write crude period to pipe
-			fit.stdin.write(samplesSince + '\n');		// Newline too?
+			//fit.stdin.write(samplesSince + '\n');		// Newline too?
 
 			// Prepare to recieve data
 			var date = new Date();
@@ -294,7 +294,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 
 			// Iterate through samples writing them to the fit pipe
 			for(var i = 0; i < 2048; i++){
-				fit.stdin.write(raw[i] + '\n');
+				//fit.stdin.write(raw[i] + '\n');
 				fs.appendFileSync('runningData.dat', raw[i] + '\n');
 			}
 
