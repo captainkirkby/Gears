@@ -225,7 +225,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			var timeSince = samplesSince*128*13/10000000;
 
 			// Write to first entry in file
-			//fs.appendFileSync('runningData.dat', samplesSince + '\n');
+			fs.appendFileSync('runningData.dat', samplesSince + '\n');
 
 			// Write crude period to pipe
 			fit.stdin.write(samplesSince + '\n');		// Newline too?
@@ -294,8 +294,8 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 
 			// Iterate through samples writing them to the fit pipe
 			for(var i = 0; i < rawFill; i++){
-				fit.stdin.write(raw[rawFill] + '\n');
-				//fs.appendFileSync('runningData.dat', raw[rawFill] + '\n');
+				fit.stdin.write(raw[i] + '\n');
+				fs.appendFileSync('runningData.dat', raw[i] + '\n');
 			}
 
 			// Calculates the thermistor resistance in ohms assuming 100uA current source.
