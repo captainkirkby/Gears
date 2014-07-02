@@ -17,7 +17,7 @@ var spawn = require('child_process').spawn;
 var lastDataSequenceNumber = 0;
 
 // Maximum packet size : change this when you want to modify the number of samples
-var MAX_PACKET_SIZE = 1058;
+var MAX_PACKET_SIZE = 2082;
 
 // Maximum number of results to return from a query (don't exceed number of pixels on graph!)
 var MAX_QUERY_RESULTS = 1000;
