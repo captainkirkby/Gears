@@ -406,6 +406,8 @@ def main():
         help = 'name of input data file to replay')
     parser.add_argument('--batch-replay', action = 'store_true',
         help = 'no interactive prompting for each frame during replay')
+    parser.add_argument('--max-frames', type = int, default = 0,
+        help = 'maximum number of frames to replay (or no limit if zero)')
     parser.add_argument('--nsamples', type=int, default=2048,
         help = 'number of IR ADC samples per frame')
     parser.add_argument('--adc-tick', type = float, default = 832e-7,
@@ -449,8 +451,13 @@ def main():
             print 'Read %d bytes from %s' % (len(data),args.replay)
         # loop over data frames
         nframe = len(data)/(1+args.nsamples)
-        if len(data) % 1+args.nsamples:
-            print 'WARNING: Ignoring extra data beyond last frame'
+
+        if args.max_frames == 0 or nframe <= args.max_frames:
+            if len(data) % 1+args.nsamples:
+                print 'WARNING: Ignoring extra data beyond last frame'
+        else:
+            print 'Will only replay %d of %d frames' % (args.max_frames,nframe)
+            nframe = args.max_frames
         frames = data[:nframe*(1+args.nsamples)].reshape((nframe,1+args.nsamples))
         if args.save_template:
             template = buildSplineTemplate(frames,args)
