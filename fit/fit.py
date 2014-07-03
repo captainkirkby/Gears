@@ -188,9 +188,13 @@ def quickFit(samples,smoothing=15,fitsize=5):
     """
     # perform a running-average smoothing of the frame's raw sample data
     smooth = runningAvg(samples,wlen=1+2*smoothing)
-    # find the range of the smoothed data
+    # Find the range of the smoothed data. Use the min of the smooth samples to estimate the
+    # lo value. Use the mean of the left and right margins to estimate the hi value. The
+    # reason why don't use the max of the smooth samples to estimate the hi value is that we
+    # observe some peaking (transmission > 1) near the edges.
     lo = numpy.min(smooth)
-    hi = numpy.max(smooth)
+    margin = int(math.floor(samples.size/16.))
+    hi = 0.5*(numpy.mean(smooth[:margin]) + numpy.mean(smooth[-margin:]))
     # find edges as points where the smoothed data crosses the midpoints between lo,hi
     midpt = 0.5*(lo+hi)
     smooth -= midpt
@@ -428,7 +432,7 @@ def main():
         help = 'filename of spline template to load and use')
     parser.add_argument('--nspline', type = int, default = 1024,
         help = 'number of spline knots used to build spline template')
-    parser.add_argument('--spline-pad', type = float, default = 0.2,
+    parser.add_argument('--spline-pad', type = float, default = 0.25,
         help = 'amount of padding to use for spline fit region')
     parser.add_argument('--verbose', action = 'store_true',
         help = 'generate verbose output')
