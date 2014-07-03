@@ -215,7 +215,7 @@ def quickFit(samples,smoothing=15,fitsize=5):
     # use the distance between the first falling and rising edges to discriminate between
     # the two possible directions of travel and calculate edge times relative to the
     # fiducial, corrected for the direction of travel.
-    if risePos[0] - fallPos[0] > 150:
+    if risePos[0] - fallPos[0] > samples.size/6.:
         direction = +1.
         t0 = fallFit[1]
         riseFit -= t0
@@ -341,6 +341,7 @@ class FrameProcessor(object):
             cosTheta = 1 - 0.5*(velocity*period/(2*math.pi*self.args.length))**2
             amplitude = math.degrees(math.acos(cosTheta))
         else:
+            amplitude = None
             bestFit = None
         # update our plots, if requested
         if self.args.show_plots and not self.args.batch_replay:
@@ -405,9 +406,9 @@ def main():
         help = 'name of input data file to replay')
     parser.add_argument('--batch-replay', action = 'store_true',
         help = 'no interactive prompting for each frame during replay')
-    parser.add_argument('--nsamples', type=int, default=1024,
+    parser.add_argument('--nsamples', type=int, default=2048,
         help = 'number of IR ADC samples per frame')
-    parser.add_argument('--adc-tick', type = float, default = 1664e-7,
+    parser.add_argument('--adc-tick', type = float, default = 832e-7,
         help = 'ADC sampling period in seconds')
     parser.add_argument('--length', type = float, default = 1020.,
         help = 'nominal length of pendulum to fiducial marker in milimeters')
