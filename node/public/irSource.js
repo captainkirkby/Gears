@@ -67,7 +67,7 @@ $(function() {
 		var dataURL = "fetch?" + $.param({
 			"from" : from,
 			"to" : to,
-			"series" : seriesToPlot
+			"series" : dataToPlot
 		});
 
 		lastFrom = from;
@@ -76,7 +76,7 @@ $(function() {
 		var POINT_SIZE = 0.5;
 
 		function onDataRecieved(data){
-			console.log(data[0]);
+			//console.log(data[0]);
 			var dataSet = [];
 			var YAxesSet = [];
 
@@ -97,7 +97,7 @@ $(function() {
 
 					set.push([index, data[count][name][index]]);
 				}
-				console.log(set);
+				//console.log(set);
 
 				dataSet.push({	data: set,
 								lines : { lineWidth : width, show : visible },

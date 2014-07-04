@@ -39,18 +39,18 @@ process.argv.forEach(function(val,index,array) {
 	else if(val == '--debug') debug = true;
 });
 
-// // Log to file
-// var access = fs.createWriteStream('node.access.log', { flags: 'a' });
-// var error = fs.createWriteStream('node.error.log', { flags: 'a' });
+// Log to file
+var access = fs.createWriteStream('node.access.log', { flags: 'a' });
+var error = fs.createWriteStream('node.error.log', { flags: 'a' });
 
-// // redirect stdout and stderr
-// process.stdout.pipe(access);
-// process.stderr.pipe(error);
+// redirect stdout and stderr
+process.stdout.pipe(access);
+process.stderr.pipe(error);
 
 // Start process with data pipes
 var fit = spawn('../fit/fit.py', [], { stdout : ['pipe', 'pipe', 'pipe']});
 // Send all output to node stdout (readable.pipe(writable))
-fit.stdout.pipe(process.stdout);
+// fit.stdout.pipe(process.stdout);
 
 // Make sure to kill the fit process when node is about to exit
 process.on('exit', function(){
@@ -220,19 +220,13 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 		else if(ptype == 0x01) {
 			if(debug) console.log("Got Data!");
 
-			// Calculates the time since the last reading assuming 10MHz clock with prescaler set to 128.
-			var samplesSince = buf.readUInt16LE(16);
-			var timeSince = samplesSince*128*13/10000000;
-
-			// Write to first entry in file
-			// fs.appendFileSync('runningData.dat', samplesSince + '\n');
-
-			// Write crude period to pipe
-			fit.stdin.write(samplesSince + '\n');		// Newline too?
-
 			// Prepare to recieve data
 			var date = new Date();
+
+			// Push most recent date to the top of the FIFO stack
 			datesBeingProcessed.unshift(date);
+
+			var QUADRANT = 0xFF;						// 2^8 when we're running the ADC in 8 bit mode
 
 			// Gets the raw data from the packet.raw field
 			var raw = [];
@@ -240,22 +234,70 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			var rawPhase = buf.readUInt16LE(32);
 			// console.log(rawPhase);
 			var initialReadOffset = 34;
-			var initialReadOffsetWithPhase = initialReadOffset+(rawPhase*2);		// *2 beacuse raw phase is in 16 bit word offset
+			var initialReadOffsetWithPhase = initialReadOffset+(rawPhase);
 
-			for(var readOffsetA = initialReadOffsetWithPhase; readOffsetA < MAX_PACKET_SIZE; readOffsetA=readOffsetA+2) {
-				raw[rawFill] = buf.readUInt16LE(readOffsetA);
-				// Write data to pipe
-				fit.stdin.write(raw[rawFill] + '\n');
-				//fs.appendFileSync('runningData.dat', (raw[rawFill]).toString() + '\n');
+			if(initialReadOffsetWithPhase >= MAX_PACKET_SIZE || initialReadOffsetWithPhase < 0){
+				console.log("PROBLEMS!! Phase is " + initialReadOffsetWithPhase);
+				return;
+			}
+
+			// Calculates the time since the last reading assuming 10MHz clock with prescaler set to 128.
+			var samplesSince = buf.readUInt16LE(16);
+			var timeSince = samplesSince*128*13/10000000;
+
+			// Write to first entry in file
+			fs.appendFileSync('runningData.dat', samplesSince + '\n');
+
+			// Write crude period to pipe
+			fit.stdin.write(samplesSince + '\n');
+
+			// Store last buffer entry
+			var lastReading = buf.readUInt8(initialReadOffsetWithPhase);
+			// Value to add to each reading to expand from 8 bit to 10 bit values
+			var addToRawReading = QUADRANT * 3;
+
+			for(var readOffsetA = initialReadOffsetWithPhase; readOffsetA < MAX_PACKET_SIZE; readOffsetA++) {
+				raw[rawFill] = buf.readUInt8(readOffsetA);
+
+				// This point minus last point (large positive means this goes down a quadrant, large negative means this goes up a quadrant
+				if(raw[rawFill] - lastReading > 150){
+					// This goes down a quadrant
+					addToRawReading -= QUADRANT;
+
+				} else if(raw[rawFill] - lastReading < -150){
+					// This goes up a quadrant
+					addToRawReading += QUADRANT;
+				}
+
+				lastReading = raw[rawFill];
+
+				raw[rawFill] += addToRawReading;
 				rawFill = rawFill + 1;
 			}
 
-			for(var readOffsetB = initialReadOffset; readOffsetB < initialReadOffsetWithPhase; readOffsetB=readOffsetB+2) {
-				raw[rawFill] = buf.readUInt16LE(readOffsetB);
-				// Write data to pipe
-				fit.stdin.write(raw[rawFill] + '\n');
-				// fs.appendFileSync('runningData.dat', (raw[rawFill]).toString() + '\n');
+			for(var readOffsetB = initialReadOffset; readOffsetB < initialReadOffsetWithPhase; readOffsetB++) {
+				raw[rawFill] = buf.readUInt8(readOffsetB);
+
+				// This point minus last point (large positive means this goes down a quadrant, large negative means this goes up a quadrant
+				if(raw[rawFill] - lastReading > 150){
+					// This goes down a quadrant
+					addToRawReading -= QUADRANT;
+
+				} else if(raw[rawFill] - lastReading < -150){
+					// This goes up a quadrant
+					addToRawReading += QUADRANT;
+				}
+
+				lastReading = raw[rawFill];
+
+				raw[rawFill] += addToRawReading;
 				rawFill = rawFill + 1;
+			}
+
+			// Iterate through samples writing them to the fit pipe
+			for(var i = 0; i < 2048; i++){
+				fit.stdin.write(raw[i] + '\n');
+				fs.appendFileSync('runningData.dat', raw[i] + '\n');
 			}
 
 			// Calculates the thermistor resistance in ohms assuming 100uA current source.
@@ -310,7 +352,11 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 // Write refined period to database
 function storeRefinedPeriod(period) {
 	period = Number(period.toString());
-	if(period === 0) return;
+	if(period >= 0 || isNaN(period)){
+		console.log("Bad Period : " + period);
+		return;
+	}
+	// Pop least recent date off FIFO stack
 	var storeDate = datesBeingProcessed.pop();
 	if(debug) console.log(period);
 	// console.log(storeDate);

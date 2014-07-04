@@ -14,6 +14,9 @@ $(function() {
 	// Tick significant figures
 	var TICK_SIG_FIGS = 6;
 
+	// Whether or not to show the dots on a smoothed curve
+	var showDots = true;
+
 	// Plot Settings
 	var dataToPlot = {
 		"temperature" : { "visible" : true, "width" : NORMAL, "color" : 0},
@@ -149,6 +152,7 @@ $(function() {
 
 
 			function displaySet(name, dataSmoothing, smoothingAmount, visible, width){
+
 				var set = [];
 				var smoothSet = [];
 	
@@ -157,8 +161,16 @@ $(function() {
 					// Get timestamp as a date object
 					var date = new Date(Date.parse(data[index].timestamp));
 
-					set.push([date, data[index][name]]);
-					smoothSet.push([date, smoothPoints(name, index, smoothingAmount)]);
+					// If we're looking at the refined period, subract 2, divide by 2, and multiply by a million
+					if(name == "refinedPeriod"){
+						set.push([date, (data[index][name]-2)*500000]);
+						smoothSet.push([date, (smoothPoints(name, index, smoothingAmount)-2)*500000]);
+					} else {
+						set.push([date, data[index][name]]);
+						smoothSet.push([date, smoothPoints(name, index, smoothingAmount)]);
+					}
+
+
 				}
 
 				dataSet.push({	data: dataSmoothing ? smoothSet : set,
@@ -167,7 +179,7 @@ $(function() {
 								yaxis: (count + 1),
 								color : dataToPlot[name].color});
 
-				if(smoothing){
+				if(smoothing && showDots){
 					dataSet.push({	data: set,
 									lines : { show : false},
 									points : { show : visible, radius : POINT_SIZE},
@@ -312,6 +324,16 @@ $(function() {
 		} else {
 			$(this).val("Don't Use Smoothing");
 			smoothing = true;
+		}
+	});
+
+	$("#showDots").click(function(){
+		if(showDots){
+			$(this).val("Show Dots");
+			showDots = false;
+		} else {
+			$(this).val("Don't Show Dots");
+			showDots = true;
 		}
 	});
 

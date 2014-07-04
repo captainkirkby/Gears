@@ -25,7 +25,7 @@ uint8_t analogSensors[NUM_SENSORS] = {ADC_IR_IN, ADC_THERMISTOR, ADC_HUMIDITY};
 #define ADC_ONE_SHOT_OVERSAMPLING 64
 
 // Buffer Length
-#define CIRCULAR_BUFFER_LENGTH 1024
+#define CIRCULAR_BUFFER_LENGTH 2048
 
 // Set trigger (percent of a 10 bit sample)
 #define THRESHOLD 500
@@ -33,7 +33,7 @@ uint8_t analogSensors[NUM_SENSORS] = {ADC_IR_IN, ADC_THERMISTOR, ADC_HUMIDITY};
 // How much further after the trigger we go
 // CIRCULAR_BUFFER_LENGTH - END_TIMER = time before trigger
 // Percent of a CIRCULAR_BUFFER_LENGTH sample that comes after the trigger
-#define END_TIMER 874
+#define END_TIMER 1748
 
 uint16_t testADC(uint8_t channel)
 {	
@@ -58,9 +58,9 @@ uint16_t testADC(uint8_t channel)
     // Note, this instruction takes 12 ADC clocks to execute
     ADCSRA |= 0B10000000;
 
-    // Set the Prescaler to 128 (10000KHz/128 = 78.125KHz)
+    // Set the Prescaler to 64 (10000KHz/64 = 156.25KHz)
     // Above 200KHz 10-bit results are not reliable.
-    ADCSRA |= 0B00000111;
+    ADCSRA |= 0B00000110;
 
 	
 	// start single convertion
@@ -118,9 +118,9 @@ void startFreeRunningADC(uint8_t channel)
     // immediately started.
     ADCSRB &= 0B11111000;
     
-    // Set the Prescaler to 128 (10000KHz/128 = 78.125KHz)
+    // Set the Prescaler to 64 (10000KHz/64 = 156.25KHz)
     // Above 200KHz 10-bit results are not reliable.
-    ADCSRA |= 0B00000111;
+    ADCSRA |= 0B00000110;
     
     // Set ADIE in ADCSRA (0x7A) to enable the ADC interrupt.
     // Without this, the internal interrupt will not trigger.
