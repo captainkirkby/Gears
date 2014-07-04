@@ -238,6 +238,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 
 			if(initialReadOffsetWithPhase >= MAX_PACKET_SIZE || initialReadOffsetWithPhase < 0){
 				console.log("PROBLEMS!! Phase is " + initialReadOffsetWithPhase);
+				// Probably shouldn't send next packet to fit.py
 				return;
 			}
 
@@ -356,6 +357,9 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 // Write refined period and swing arc angle to database
 // Format : period angle
 function storeRefinedPeriodAndAngle(periodAndAngle) {
+	// Pop least recent date off FIFO stack
+	var storeDate = datesBeingProcessed.pop();
+	
 	var period = Number(periodAndAngle.toString().split(" ")[0].toString());
 	var angle = Number(periodAndAngle.toString()
 		.split(" ")[1].toString());
@@ -366,8 +370,6 @@ function storeRefinedPeriodAndAngle(periodAndAngle) {
 		console.log("Bad Angle : " + angle);
 		return;
 	}
-	// Pop least recent date off FIFO stack
-	var storeDate = datesBeingProcessed.pop();
 	if(debug) console.log(period);
 	// console.log(storeDate);
 	// console.log(dataPacketModel);
