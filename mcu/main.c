@@ -132,7 +132,7 @@ int main(void)
             
             if(bmpError) flashNumber(200+bmpError);
 
-            dataPacket.rawPhase = currentElementIndex+1;
+            dataPacket.rawPhase = (currentElementIndex + 1) % CIRCULAR_BUFFER_LENGTH;
             dataPacket.thermistor = thermistorReading;
             dataPacket.humidity = humidityReading;
             
