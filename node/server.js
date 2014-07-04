@@ -359,7 +359,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 function storeRefinedPeriodAndAngle(periodAndAngle) {
 	// Pop least recent date off FIFO stack
 	var storeDate = datesBeingProcessed.pop();
-	
+
 	var period = Number(periodAndAngle.toString().split(" ")[0].toString());
 	var angle = Number(periodAndAngle.toString()
 		.split(" ")[1].toString());
@@ -460,8 +460,10 @@ function fetch(req,res,dataPacketModel) {
 					});
 
 					var averageData = function (dataSetToAverage, index, arr){
-						average[dataSetToAverage] += results[count][dataSetToAverage];
-						averageCount[dataSetToAverage]++;
+						if(results[count][dataSetToAverage] !== null && results[count][dataSetToAverage] > 0){
+							average[dataSetToAverage] += results[count][dataSetToAverage];
+							averageCount[dataSetToAverage]++;
+						}
 					};
 
 					// Average boxes out
