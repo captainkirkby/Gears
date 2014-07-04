@@ -172,7 +172,7 @@ async.parallel({
 				receive(data,assembler,config.db.bootPacketModel,config.db.dataPacketModel);
 			});
 
-			fit.stdout.on('data', storeRefinedPeriod);
+			fit.stdout.on('data', storeRefinedPeriodAndAngle);
 		}
 		// Defines our webapp routes.
 		var app = express();
@@ -351,11 +351,16 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 	});
 }
 
-// Write refined period to database
-function storeRefinedPeriod(period) {
-	period = Number(period.toString());
+// Write refined period and swing arc angle to database
+// Format : period angle
+function storeRefinedPeriodAndAngle(periodAndAngle) {
+	var period = Number(periodAndAngle.split(" ")[0].toString());
+	var angle = Number(periodAndAngle.split(" ")[1].toString());
 	if(period >= 0 || isNaN(period)){
 		console.log("Bad Period : " + period);
+		return;
+	} else if(angle >= 0 || isNaN(angle)){
+		console.log("Bad Angle : " + angle);
 		return;
 	}
 	// Pop least recent date off FIFO stack
