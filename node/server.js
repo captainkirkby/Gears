@@ -356,8 +356,8 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 // Write refined period and swing arc angle to database
 // Format : period angle
 function storeRefinedPeriodAndAngle(periodAndAngle) {
-	var period = Number(periodAndAngle.split(" ")[0].toString());
-	var angle = Number(periodAndAngle.split(" ")[1].toString());
+	var period = Number(periodAndAngle.toString().split(" ")[0].toString());
+	var angle = Number(periodAndAngle.toString().split(" ")[1].toString());
 	if(period >= 0 || isNaN(period)){
 		console.log("Bad Period : " + period);
 		return;
