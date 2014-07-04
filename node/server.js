@@ -222,6 +222,8 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 
 			// Prepare to recieve data
 			var date = new Date();
+
+			// Push most recent date to the top of the FIFO stack
 			datesBeingProcessed.unshift(date);
 
 			var QUADRANT = 0xFF;						// 2^8 when we're running the ADC in 8 bit mode
@@ -354,6 +356,7 @@ function storeRefinedPeriod(period) {
 		console.log("Bad Period : " + period);
 		return;
 	}
+	// Pop least recent date off FIFO stack
 	var storeDate = datesBeingProcessed.pop();
 	if(debug) console.log(period);
 	// console.log(storeDate);
