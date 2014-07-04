@@ -418,11 +418,13 @@ function fetch(req,res,dataPacketModel) {
 	if(to == 'Invalid Date') to = new Date();
 	// Converts begin date into a javascript Date object.
 	var relativeSeconds = parseInt(from, 10);
-	if(relativeSeconds < 0) {
+	if(!isNaN(relativeSeconds) && relativeSeconds < 0) {
+		console.log(relativeSeconds)
 		// Interprets from as number of seconds to fetch before end date.
 		from = new Date(to.getTime() + 1000*relativeSeconds);
 	}
 	else {
+		console.log(latestDate.toISOString());
 		// Tries to interpret from as a date string.
 		if(from == 'start' && latestDate !== null){
 			from = latestDate;
