@@ -163,8 +163,10 @@ $(function() {
 
 					// If we're looking at the refined period, subract 2, divide by 2, and multiply by a million
 					if(name == "refinedPeriod"){
-						set.push([date, (data[index][name]-2)*500000]);
-						smoothSet.push([date, (smoothPoints(name, index, smoothingAmount)-2)*500000]);
+						if(data[index][name] > 0){
+							set.push([date, (data[index][name]-2)*500000]);
+							smoothSet.push([date, (smoothPoints(name, index, smoothingAmount)-2)*500000]);
+						}
 					} else {
 						set.push([date, data[index][name]]);
 						smoothSet.push([date, smoothPoints(name, index, smoothingAmount)]);
