@@ -16,6 +16,9 @@ var spawn = require('child_process').spawn;
 // Tracks the last seen data packet sequence number to enable sequencing errors to be detected.
 var lastDataSequenceNumber = 0;
 
+// Tracks the date of the first boot packet
+var latestDate;
+
 // Maximum packet size : change this when you want to modify the number of samples
 var MAX_PACKET_SIZE = 2082;
 
@@ -200,12 +203,13 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 	assembler.ingest(data,function(ptype,buf) {
 		var saveMe = true;
 		if(ptype === 0x00) {
+			latestDate = new Date()
 			// Prepares boot packet for storing to the database.
 			// NB: the boot packet layout is hardcoded here!
 			hash = '';
 			for(var offset = 11; offset < 31; offset++) hash += sprintf("%02x",buf.readUInt8(offset));
 			p = new bootPacketModel({
-				'timestamp': new Date(),
+				'timestamp': latestDate,
 				'serialNumber': sprintf("%08x",buf.readUInt32LE(0)),
 				'bmpSensorOk': buf.readUInt8(4),
 				'gpsSerialOk': buf.readUInt8(5),
@@ -420,10 +424,14 @@ function fetch(req,res,dataPacketModel) {
 	}
 	else {
 		// Tries to interpret from as a date string.
-		from = new Date(Date.parse(from));
-		if(from == 'Invalid Date') {
-			// Defaults to fetching 120 seconds.
-			from = new Date(to.getTime() - 120000);
+		if(from == 'start' && latestDate !== null){
+			from = latestDate;
+		} else {
+			from = new Date(Date.parse(from));
+			if(from == 'Invalid Date') {
+				// Defaults to fetching 120 seconds.
+				from = new Date(to.getTime() - 120000);
+			}
 		}
 	}
 	if(debug) console.log('query',from,to);
