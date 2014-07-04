@@ -137,6 +137,7 @@ async.parallel({
 				timestamp: { type: Date, index: true },
 				crudePeriod: Number,
 				refinedPeriod: Number,
+				angle: Number,
 				sequenceNumber: Number,
 				temperature: Number,
 				pressure: Number,
@@ -313,6 +314,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 				'timestamp': date,
 				'crudePeriod': buf.readUInt16LE(16),
 				'refinedPeriod': null,
+				'angle': null,
 				'sequenceNumber': buf.readInt32LE(0),
 				'temperature': buf.readInt32LE(18)/160.0,
 				'pressure': buf.readInt32LE(22),
@@ -370,7 +372,7 @@ function storeRefinedPeriodAndAngle(periodAndAngle) {
 	// console.log(dataPacketModel);
 
 	var conditions	= { timestamp : storeDate };
-	var update		= { $set : { refinedPeriod : period }};
+	var update		= { $set : { refinedPeriod : period , angle : angle}};
 	var options		= { multi : false };
 
 	dataPacketModel.update(conditions, update, options, function(err, numberAffected){
