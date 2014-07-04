@@ -17,7 +17,7 @@ var spawn = require('child_process').spawn;
 var lastDataSequenceNumber = 0;
 
 // Tracks the date of the first boot packet
-var latestDate;
+var latestDate = null;
 
 // Maximum packet size : change this when you want to modify the number of samples
 var MAX_PACKET_SIZE = 2082;
@@ -203,7 +203,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 	assembler.ingest(data,function(ptype,buf) {
 		var saveMe = true;
 		if(ptype === 0x00) {
-			latestDate = new Date()
+			latestDate = new Date();
 			// Prepares boot packet for storing to the database.
 			// NB: the boot packet layout is hardcoded here!
 			hash = '';
@@ -419,7 +419,7 @@ function fetch(req,res,dataPacketModel) {
 	// Converts begin date into a javascript Date object.
 	var relativeSeconds = parseInt(from, 10);
 	if(!isNaN(relativeSeconds) && relativeSeconds < 0) {
-		console.log(relativeSeconds)
+		console.log(relativeSeconds);
 		// Interprets from as number of seconds to fetch before end date.
 		from = new Date(to.getTime() + 1000*relativeSeconds);
 	}
