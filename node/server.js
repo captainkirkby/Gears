@@ -220,16 +220,6 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 		else if(ptype == 0x01) {
 			if(debug) console.log("Got Data!");
 
-			// Calculates the time since the last reading assuming 10MHz clock with prescaler set to 128.
-			var samplesSince = buf.readUInt16LE(16);
-			var timeSince = samplesSince*128*13/10000000;
-
-			// Write to first entry in file
-			fs.appendFileSync('runningData.dat', samplesSince + '\n');
-
-			// Write crude period to pipe
-			//fit.stdin.write(samplesSince + '\n');		// Newline too?
-
 			// Prepare to recieve data
 			var date = new Date();
 			datesBeingProcessed.unshift(date);
@@ -248,6 +238,16 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 				console.log("PROBLEMS!! Phase is " + initialReadOffsetWithPhase);
 				return;
 			}
+
+			// Calculates the time since the last reading assuming 10MHz clock with prescaler set to 128.
+			var samplesSince = buf.readUInt16LE(16);
+			var timeSince = samplesSince*128*13/10000000;
+
+			// Write to first entry in file
+			fs.appendFileSync('runningData.dat', samplesSince + '\n');
+
+			// Write crude period to pipe
+			fit.stdin.write(samplesSince + '\n');
 
 			// Store last buffer entry
 			var lastReading = buf.readUInt8(initialReadOffsetWithPhase);
