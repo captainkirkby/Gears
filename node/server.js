@@ -226,9 +226,6 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			// Prepare to recieve data
 			var date = new Date();
 
-			// Push most recent date to the top of the FIFO stack
-			datesBeingProcessed.unshift(date);
-
 			var QUADRANT = 0xFF;						// 2^8 when we're running the ADC in 8 bit mode
 
 			// Gets the raw data from the packet.raw field
@@ -247,12 +244,6 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			// Calculates the time since the last reading assuming 10MHz clock with prescaler set to 128.
 			var samplesSince = buf.readUInt16LE(16);
 			var timeSince = samplesSince*128*13/10000000;
-
-			// Write to first entry in file
-			fs.appendFileSync('runningData.dat', samplesSince + '\n');
-
-			// Write crude period to pipe
-			fit.stdin.write(samplesSince + '\n');
 
 			// Store last buffer entry
 			var lastReading = buf.readUInt8(initialReadOffsetWithPhase);
@@ -297,12 +288,6 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 				rawFill = rawFill + 1;
 			}
 
-			// Iterate through samples writing them to the fit pipe
-			for(var i = 0; i < 2048; i++){
-				fit.stdin.write(raw[i] + '\n');
-				fs.appendFileSync('runningData.dat', raw[i] + '\n');
-			}
-
 			// Calculates the thermistor resistance in ohms assuming 100uA current source.
 			var rtherm = buf.readUInt16LE(26)/65536.0*5.0/100e-6;
 			// Calculates the corresponding temperature in degC using a Steinhart-Hart model.
@@ -335,14 +320,29 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			// Never save the first packet since there is usually a startup glitch
 			// where the serial port sees a second boot packet arriving during the first
 			// data packet that still needs to be debugged...
-			if(lastDataSequenceNumber == 1) saveMe = false;
+			if(lastDataSequenceNumber == 1) {
+				saveMe = false;
+			} else{
+				saveMe = true;
+				// Write to first entry in file
+				fs.appendFileSync('runningData.dat', samplesSince + '\n');
+				// Push most recent date to the top of the FIFO stack
+				datesBeingProcessed.unshift(date);
+				// Write crude period to pipe
+				fit.stdin.write(samplesSince + '\n');
+
+				// Iterate through samples writing them to the fit pipe
+				for(var i = 0; i < 2048; i++){
+					fit.stdin.write(raw[i] + '\n');
+					fs.appendFileSync('runningData.dat', raw[i] + '\n');
+				}
+			}
 		}
 		else {
 			console.log('Got unexpected packet type',ptype);
 			return;
 		}
 		if(saveMe) {
-			//console.log(p);
 			p.save(function(err,p) {
 				if(err) console.log('Error saving data packet',p);
 			});
