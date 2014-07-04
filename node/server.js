@@ -296,7 +296,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 
 			// Iterate through samples writing them to the fit pipe
 			for(var i = 0; i < 2048; i++){
-				//fit.stdin.write(raw[i] + '\n');
+				fit.stdin.write(raw[i] + '\n');
 				fs.appendFileSync('runningData.dat', raw[i] + '\n');
 			}
 
