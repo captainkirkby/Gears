@@ -357,11 +357,12 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 // Format : period angle
 function storeRefinedPeriodAndAngle(periodAndAngle) {
 	var period = Number(periodAndAngle.toString().split(" ")[0].toString());
-	var angle = Number(periodAndAngle.toString().split(" ")[1].toString());
-	if(period >= 0 || isNaN(period)){
+	var angle = Number(periodAndAngle.toString()
+		.split(" ")[1].toString());
+	if(period <= 0 || isNaN(period)){
 		console.log("Bad Period : " + period);
 		return;
-	} else if(angle >= 0 || isNaN(angle)){
+	} else if(angle <= 0 || isNaN(angle)){
 		console.log("Bad Angle : " + angle);
 		return;
 	}
