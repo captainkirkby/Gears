@@ -284,12 +284,14 @@ $(function() {
 		var fromArg;
 		var toArg;
 
-		// Check for valid dates
-		if(!isNaN(from)){
-			fromArg = from.toISOString();
-		} else if($("#from").val().toUpperCase() === 'start'.toUpperCase()){
+		// Check for valid from
+		if($("#from").val().toUpperCase() === 'START'){
 			fromArg = $("#from").val();
+		} else if(!isNaN(from)){
+			fromArg = from.toISOString();
 		}
+
+		// Check for valid to
 		if(!isNaN(to)){
 			toArg = to.toISOString();
 		}
