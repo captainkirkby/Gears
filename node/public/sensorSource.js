@@ -287,6 +287,8 @@ $(function() {
 		// Check for valid dates
 		if(!isNaN(from)){
 			fromArg = from.toISOString();
+		} else if($("#from").val().toUpperCase() === 'start'.toUpperCase()){
+			fromArg = $("#from").val();
 		}
 		if(!isNaN(to)){
 			toArg = to.toISOString();
