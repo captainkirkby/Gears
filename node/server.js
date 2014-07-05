@@ -427,7 +427,6 @@ function fetch(req,res,dataPacketModel) {
 	else {
 		// Tries to interpret from as start keyword
 		if(from == 'start' && latestDate !== null){
-			console.log("Start!");
 			from = latestDate;
 		// Tries to interpret from as a date string
 		} else {
