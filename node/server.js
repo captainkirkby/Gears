@@ -413,6 +413,8 @@ function fetch(req,res,dataPacketModel) {
 	// Gets the date range to fetch.
 	var from = ('from' in req.query) ? req.query.from : '-120';
 	var to = ('to' in req.query) ? req.query.to : 'now';
+
+	console.log(from);
 	// Converts end date into a javascript Date object.
 	to = new Date(Date.parse(to));
 	if(to == 'Invalid Date') to = new Date();
