@@ -427,6 +427,7 @@ function fetch(req,res,dataPacketModel) {
 		console.log(latestDate.toISOString());
 		// Tries to interpret from as a date string.
 		if(from == 'start' && latestDate !== null){
+			console.log("Start!");
 			from = latestDate;
 		} else {
 			from = new Date(Date.parse(from));
