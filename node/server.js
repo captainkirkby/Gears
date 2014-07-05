@@ -414,23 +414,22 @@ function fetch(req,res,dataPacketModel) {
 	var from = ('from' in req.query) ? req.query.from : '-120';
 	var to = ('to' in req.query) ? req.query.to : 'now';
 
-	console.log(from);
 	// Converts end date into a javascript Date object.
 	to = new Date(Date.parse(to));
 	if(to == 'Invalid Date') to = new Date();
+
 	// Converts begin date into a javascript Date object.
 	var relativeSeconds = parseInt(from, 10);
 	if(!isNaN(relativeSeconds) && relativeSeconds < 0) {
-		console.log(relativeSeconds);
 		// Interprets from as number of seconds to fetch before end date.
 		from = new Date(to.getTime() + 1000*relativeSeconds);
 	}
 	else {
-		console.log(latestDate.toISOString());
-		// Tries to interpret from as a date string.
+		// Tries to interpret from as start keyword
 		if(from == 'start' && latestDate !== null){
 			console.log("Start!");
 			from = latestDate;
+		// Tries to interpret from as a date string
 		} else {
 			from = new Date(Date.parse(from));
 			if(from == 'Invalid Date') {

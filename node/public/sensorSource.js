@@ -296,8 +296,6 @@ $(function() {
 			toArg = to.toISOString();
 		}
 
-		alert(fromArg);
-
 		displayData(fromArg,toArg);
 	});
 
