@@ -7,6 +7,7 @@ var async = require('async');
 var express = require('express');
 var serial = require('serialport');
 var mongoose = require('mongoose');
+var sleep = require('sleep').sleep;
 
 var packet = require('./packet');
 
@@ -410,6 +411,7 @@ function boot(req,res,bootPacketModel) {
 
 // Responds to a request to fetch data.
 function fetch(req,res,dataPacketModel) {
+	sleep(10);
 	// Gets the date range to fetch.
 	var from = ('from' in req.query) ? req.query.from : '-120';
 	var to = ('to' in req.query) ? req.query.to : 'now';
