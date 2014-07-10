@@ -89,7 +89,7 @@ function fetch(query, dataPacketModel, debug) {
 	dataPacketModel.find()
 		.where('timestamp').gt(from).lte(to)
 		.limit(MAX_QUERY_RESULTS*1000).sort([['timestamp', 1]])
-		.select(('series' in req.query) ? 'timestamp ' + visibleSets.join(" ") : '')
+		.select(('series' in query) ? 'timestamp ' + visibleSets.join(" ") : '')
 		.exec(function(err,results) {
 			if(err) throw err;
 
