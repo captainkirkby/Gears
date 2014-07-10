@@ -204,6 +204,7 @@ async.parallel({
 						});
 					}
 				});
+				// Wait for done signal
 			});
 
 		}
