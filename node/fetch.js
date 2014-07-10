@@ -52,7 +52,7 @@ var MAX_QUERY_RESULTS = 1000;
 
 // Responds to a request to fetch data.
 function fetch(query, dataPacketModel, debug) {
-	sleep(5);
+	// sleep(5);
 	// Gets the date range to fetch.
 	var from = ('from' in query) ? query.from : '-120';
 	var to = ('to' in query) ? query.to : 'now';
