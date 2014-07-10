@@ -2,8 +2,6 @@ var mongoose = require('mongoose');
 var sleep = require('sleep').sleep;
 
 console.log("Worker Starting!");
-
-if(noDatabase) return callback(null,null);
 console.log('Connecting to the database...');
 mongoose.connect('mongodb://localhost:27017/ticktockDemoTest3');
 var db = mongoose.connection;
