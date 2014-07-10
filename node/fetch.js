@@ -1,6 +1,6 @@
 var express = require('express');
 var mongoose = require('mongoose');
-var sleep = require('sleep');
+var sleep = require('sleep').sleep;
 
 console.log("Worker Starting!");
 
