@@ -203,6 +203,7 @@ async.parallel({
 					// Listen for ready signal and done response
 					fetchWorker.on('message', function(message){
 						if(message.ready){
+							fetchWorkerReady = message.ready;
 							// Send query when we're ready
 							fetchWorker.send({
 								'query' : req.query,
