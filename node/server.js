@@ -198,7 +198,7 @@ async.parallel({
 			// app.get('/fetch', function(req,res) { return fetch(req,res,config.db.dataPacketModel); });
 			app.get('/fetch', function(req,res) {
 				if(!fetchWorkerReady){
-					console.log("Offloading to new Worker");
+					if(debug) console.log("Offloading to new Worker");
 					fetchWorker = fork('fetch.js', [], { stdio: 'inherit' });
 
 					// Listen for ready signal and done response
@@ -224,7 +224,7 @@ async.parallel({
 						if(debug) console.log("Signal : " + signal);
 					})
 				} else {
-					console.log("Offloading to existing worker");
+					if(debug) console.log("Offloading to existing worker");
 					// Already ready, send the query
 					fetchWorker.send({
 						'query' : req.query,
@@ -232,7 +232,7 @@ async.parallel({
 					});
 					fetchWorker.once('message', function(message){
 						if(message.done){
-							console.log("Done Fetching, send to page");
+							if(debug) console.log("Done Fetching, send to page");
 							res.send(message.results);
 						}
 					});
