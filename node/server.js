@@ -200,7 +200,6 @@ async.parallel({
 						// Send query when we're ready
 						fetchWorker.send({
 							'query'	: req.query,
-							'res'	: res,
 							'debug'	: debug
 						});
 					}

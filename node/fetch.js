@@ -41,7 +41,7 @@ db.once('open', function() {
 
 	process.on('message', function(message) {
 		if(message.debug) console.log("Starting Fetch");
-		fetch(message.query, message.res, dataPacketModel, message.debug);
+		fetch(message.query, dataPacketModel, message.debug);
 		if(message.debug) console.log("Fetch Finished");
 	});
 
@@ -134,9 +134,9 @@ function fetch(query, res, dataPacketModel, debug) {
 				}
 
 				console.log(newResults[0]);
-				res.send(newResults);
+				// res.send(newResults);
 			} else {
-				res.send(results);
+				// res.send(results);
 			}
 		});
 }
