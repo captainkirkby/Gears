@@ -34,6 +34,10 @@ var datesBeingProcessed = [];
 // Global pointer to data packet model
 var dataPacketModel = null;
 
+// Global status for fetchWorker
+var fetchWorker = null;
+var fetchWorkerReady = false;
+
 // Parses command-line arguments.
 var noSerial = false;
 var noDatabase = false;
@@ -193,20 +197,28 @@ async.parallel({
 			// Serves data dynamically via AJAX.
 			// app.get('/fetch', function(req,res) { return fetch(req,res,config.db.dataPacketModel); });
 			app.get('/fetch', function(req,res) {
-				var fetchWorker = fork('fetch.js', [], { stdio: 'inherit' });
-				// Wait for ready signal
-				fetchWorker.on('message', function(message){
-					if(message.ready){
-						// Send query when we're ready
-						fetchWorker.send({
-							'query' : req.query,
-							'debug' : debug
-						});
-					} else if(message.done){
-						res.send(message.results);
-					}
-				});
-				// Wait for done signal
+				if(!fetchWorkerReady){
+					fetchWorker = fork('fetch.js', [], { stdio: 'inherit' });
+
+					// Listen for ready signal and done response
+					fetchWorker.on('message', function(message){
+						if(message.ready){
+							// Send query when we're ready
+							fetchWorker.send({
+								'query' : req.query,
+								'debug' : debug
+							});
+						} else if(message.done){
+							res.send(message.results);
+						}
+					});
+				} else {
+					// Already ready, send the query
+					fetchWorker.send({
+						'query' : req.query,
+						'debug' : debug
+					});
+				}
 			});
 
 		}
