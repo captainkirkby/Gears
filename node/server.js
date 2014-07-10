@@ -198,11 +198,11 @@ async.parallel({
 			// app.get('/fetch', function(req,res) { return fetch(req,res,config.db.dataPacketModel); });
 			app.get('/fetch', function(req,res) {
 				if(!fetchWorkerReady){
-					console.log("Offloading to new Worker")
+					console.log("Offloading to new Worker");
 					fetchWorker = fork('fetch.js', [], { stdio: 'inherit' });
 
 					// Listen for ready signal and done response
-					fetchWorker.on('message', function(message){
+					fetchWorker.once('message', function(message){
 						if(message.ready){
 							fetchWorkerReady = message.ready;
 							// Send query when we're ready
@@ -210,9 +210,12 @@ async.parallel({
 								'query' : req.query,
 								'debug' : debug
 							});
-						} else if(message.done){
-							console.log("Done Fetching, send to page");
-							res.send(message.results);
+							fetchWorker.once('message', function(message){
+								if(message.done){
+									console.log("Done Fetching, send to page");
+									res.send(message.results);
+								}
+							});
 						}
 					});
 
@@ -226,6 +229,12 @@ async.parallel({
 					fetchWorker.send({
 						'query' : req.query,
 						'debug' : debug
+					});
+					fetchWorker.once('message', function(message){
+						if(message.done){
+							console.log("Done Fetching, send to page");
+							res.send(message.results);
+						}
 					});
 				}
 			});
