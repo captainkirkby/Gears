@@ -7,14 +7,14 @@ console.log("Worker Starting!");
 // Maximum number of results to return from a query (don't exceed number of pixels on graph!)
 var MAX_QUERY_RESULTS = 1000;
 
-process.on('message', function(m) {
-	console.log("Starting Fetch");
-	fetch(m.query, m.dataPacketModel);
-	console.log("Fetch Finished");
+process.on('message', function(message) {
+	if(message.debug) console.log("Starting Fetch");
+	fetch(message.query, message.dataPacketModel, message.debug);
+	if(message.debug) console.log("Fetch Finished");
 });
 
 // Responds to a request to fetch data.
-function fetch(query, dataPacketModel) {
+function fetch(query, dataPacketModel, debug) {
 	sleep(5);
 	// Gets the date range to fetch.
 	var from = ('from' in query) ? query.from : '-120';
