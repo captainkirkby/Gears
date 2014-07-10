@@ -31,9 +31,6 @@ var MAX_QUERY_RESULTS = 1000;
 // FIFO : unshift on, then pop off
 var datesBeingProcessed = [];
 
-// Global pointer to data packet model
-var dataPacketModel = null;
-
 // Global status for fetchWorker
 var fetchWorker = null;
 var fetchWorkerReady = false;
@@ -182,7 +179,9 @@ async.parallel({
 				receive(data,assembler,config.db.bootPacketModel,config.db.dataPacketModel);
 			});
 
-			fit.stdout.on('data', storeRefinedPeriodAndAngle);
+			fit.stdout.on('data', function(data){
+				storeRefinedPeriodAndAngle(data, config.db.dataPacketModel);
+			});
 		}
 		// Defines our webapp routes.
 		var app = express();
@@ -409,7 +408,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 
 // Write refined period and swing arc angle to database
 // Format : period angle
-function storeRefinedPeriodAndAngle(periodAndAngle) {
+function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel) {
 	// Pop least recent date off FIFO stack
 	var storeDate = datesBeingProcessed.pop();
 
