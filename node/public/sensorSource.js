@@ -25,7 +25,7 @@ $(function() {
 		"thermistor" : { "visible" : true, "width" : NORMAL, "color" : 3},
 		"humidity" : { "visible" : true, "width" : NORMAL, "color" : 4},
 		"refinedPeriod" : { "visible" : true, "width" : NORMAL, "color" : 6},
-		"angle" : { "visible" : true, "width" : NORMAL, "color" : 6}
+		"angle" : { "visible" : true, "width" : NORMAL, "color" : 7}
 	};
 
 	// Store last request parameters
