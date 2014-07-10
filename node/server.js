@@ -7,12 +7,13 @@ var async = require('async');
 var express = require('express');
 var serial = require('serialport');
 var mongoose = require('mongoose');
-var sleep = require('sleep').sleep;
 
 var packet = require('./packet');
 
 var sprintf = require('sprintf').sprintf;
 var spawn = require('child_process').spawn;
+var fork = require('child_process').fork;
+
 
 // Tracks the last seen data packet sequence number to enable sequencing errors to be detected.
 var lastDataSequenceNumber = 0;
@@ -190,7 +191,16 @@ async.parallel({
 			// Serves boot packet info.
 			app.get('/boot', function(req,res) { return boot(req,res,config.db.bootPacketModel); });
 			// Serves data dynamically via AJAX.
-			app.get('/fetch', function(req,res) { return fetch(req,res,config.db.dataPacketModel); });
+			// app.get('/fetch', function(req,res) { return fetch(req,res,config.db.dataPacketModel); });
+			app.get('/fetch', function(req,res) {
+				var fetchWorker = spawn('fetch.js');
+				fetchWorker.send({
+					'req' : req,
+					'res' : res,
+					'dataPacketModel' : config.db.dataPacketModel
+				});
+			});
+
 		}
 		// Starts our webapp.
 		console.log('starting web server on port 3000');
@@ -411,7 +421,6 @@ function boot(req,res,bootPacketModel) {
 
 // Responds to a request to fetch data.
 function fetch(req,res,dataPacketModel) {
-	sleep(10);
 	// Gets the date range to fetch.
 	var from = ('from' in req.query) ? req.query.from : '-120';
 	var to = ('to' in req.query) ? req.query.to : 'now';
