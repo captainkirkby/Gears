@@ -211,6 +211,7 @@ async.parallel({
 								'debug' : debug
 							});
 						} else if(message.done){
+							console.log("Done Fetching, send to page");
 							res.send(message.results);
 						}
 					});
