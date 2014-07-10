@@ -197,7 +197,6 @@ async.parallel({
 				console.log(dataPacketModel);
 				fetchWorker.send({
 					'query' : req.query,
-					'dataPacketModel' : dataPacketModel,
 					'debug' : debug
 				});
 			});
