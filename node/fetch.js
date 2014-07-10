@@ -4,18 +4,21 @@ var sleep = require('sleep');
 
 console.log("Worker Starting!");
 
+// Maximum number of results to return from a query (don't exceed number of pixels on graph!)
+var MAX_QUERY_RESULTS = 1000;
+
 process.on('Message', function(m) {
 	console.log("Starting Fetch");
-	fetch(m.req, m.res, m.dataPacketModel);
+	fetch(m.query, m.dataPacketModel);
 	console.log("Fetch Finished");
 });
 
 // Responds to a request to fetch data.
-function fetch(req,res,dataPacketModel) {
+function fetch(query, dataPacketModel) {
 	sleep(5);
 	// Gets the date range to fetch.
-	var from = ('from' in req.query) ? req.query.from : '-120';
-	var to = ('to' in req.query) ? req.query.to : 'now';
+	var from = ('from' in query) ? query.from : '-120';
+	var to = ('to' in query) ? query.to : 'now';
 
 	// Converts end date into a javascript Date object.
 	to = new Date(Date.parse(to));
@@ -44,7 +47,7 @@ function fetch(req,res,dataPacketModel) {
 
 	// TODO: expand fetch to natural borders
 
-	var visibleSets = getVisibleSets(req);
+	var visibleSets = getVisibleSets(query);
 
 	dataPacketModel.find()
 		.where('timestamp').gt(from).lte(to)
@@ -93,18 +96,18 @@ function fetch(req,res,dataPacketModel) {
 					});
 				}
 
-				// console.log(newResults[0]);
-				res.send(newResults);
+				console.log(newResults[0]);
+				//res.send(newResults);
 			} else {
-				res.send(results);
+				//res.send(results);
 			}
 		});
 }
 
-function getVisibleSets(req) {
+function getVisibleSets(query) {
 	var visibleSets = [];
-	for(var k in req.query.series) {
-		if(req.query.series[k].visible == 'true'){
+	for(var k in query.series) {
+		if(query.series[k].visible == 'true'){
 			visibleSets.push(k);
 		}
 	}

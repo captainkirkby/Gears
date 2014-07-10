@@ -195,8 +195,7 @@ async.parallel({
 			app.get('/fetch', function(req,res) {
 				var fetchWorker = fork('fetch.js', [], { stdio: 'inherit' });
 				fetchWorker.send({
-					'req' : req,
-					'res' : res,
+					'query' : req.query,
 					'dataPacketModel' : config.db.dataPacketModel
 				});
 			});
