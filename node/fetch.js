@@ -41,7 +41,7 @@ db.once('open', function() {
 
 	process.on('message', function(message) {
 		if(message.debug) console.log("Starting Fetch");
-		fetch(message.query, dataPacketModel, message.debug);
+		fetch(message.query, message.res, dataPacketModel, message.debug);
 		if(message.debug) console.log("Fetch Finished");
 	});
 
@@ -51,7 +51,7 @@ db.once('open', function() {
 var MAX_QUERY_RESULTS = 1000;
 
 // Responds to a request to fetch data.
-function fetch(query, dataPacketModel, debug) {
+function fetch(query, res, dataPacketModel, debug) {
 	sleep(5);
 	// Gets the date range to fetch.
 	var from = ('from' in query) ? query.from : '-120';
@@ -134,9 +134,9 @@ function fetch(query, dataPacketModel, debug) {
 				}
 
 				console.log(newResults[0]);
-				//res.send(newResults);
+				res.send(newResults);
 			} else {
-				//res.send(results);
+				res.send(results);
 			}
 		});
 }

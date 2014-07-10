@@ -199,8 +199,9 @@ async.parallel({
 					if(message.ready){
 						// Send query when we're ready
 						fetchWorker.send({
-							'query' : req.query,
-							'debug' : debug
+							'query'	: req.query,
+							'res'	: res,
+							'debug'	: debug
 						});
 					}
 				});
