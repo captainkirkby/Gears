@@ -134,10 +134,13 @@ function fetch(query, dataPacketModel, debug) {
 				}
 
 				console.log(newResults[0]);
-				//res.send(newResults);
-			} else {
-				//res.send(results);
+				results = newResults;
 			}
+			// Send message to parent
+			process.send({ 
+				"done"		: true,
+				"results"	: results
+			});
 		});
 }
 

@@ -202,6 +202,8 @@ async.parallel({
 							'query' : req.query,
 							'debug' : debug
 						});
+					} else if(message.done){
+						res.send(message.results);
 					}
 				});
 				// Wait for done signal
