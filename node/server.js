@@ -198,6 +198,7 @@ async.parallel({
 			// app.get('/fetch', function(req,res) { return fetch(req,res,config.db.dataPacketModel); });
 			app.get('/fetch', function(req,res) {
 				if(!fetchWorkerReady){
+					console.log("Offloading to new Worker")
 					fetchWorker = fork('fetch.js', [], { stdio: 'inherit' });
 
 					// Listen for ready signal and done response
@@ -219,6 +220,7 @@ async.parallel({
 						if(debug) console.log("Signal : " + signal);
 					})
 				} else {
+					console.log("Offloading to existing worker");
 					// Already ready, send the query
 					fetchWorker.send({
 						'query' : req.query,
