@@ -1,18 +1,56 @@
-var express = require('express');
 var mongoose = require('mongoose');
 var sleep = require('sleep').sleep;
 
 console.log("Worker Starting!");
 
+if(noDatabase) return callback(null,null);
+console.log('Connecting to the database...');
+mongoose.connect('mongodb://localhost:27017/ticktockDemoTest3');
+var db = mongoose.connection;
+db.on('error', console.error.bind(console, 'db connection error:'));
+db.once('open', function() {
+	console.log('db connection established.');
+	// Defines the schema and model for our serial boot packets
+	var bootPacketSchema = mongoose.Schema({
+		timestamp: { type: Date, index: true },
+		serialNumber: String,
+		bmpSensorOk: Boolean,
+		gpsSerialOk: Boolean,
+		sensorBlockOK: Boolean,
+		commitTimestamp: Date,
+		commitHash: String,
+		commitStatus: Number
+	});
+	var bootPacketModel = mongoose.model('bootPacketModel',bootPacketSchema);
+	// Defines the schema and model for our serial data packets
+	var dataPacketSchema = mongoose.Schema({
+		timestamp: { type: Date, index: true },
+		crudePeriod: Number,
+		refinedPeriod: Number,
+		angle: Number,
+		sequenceNumber: Number,
+		temperature: Number,
+		pressure: Number,
+		thermistor: Number,
+		humidity: Number,
+		irLevel: Number,
+		raw: Array
+	});
+	var dataPacketModel = mongoose.model('dataPacketModel',dataPacketSchema);
+
+	// Send ready message
+	process.send({"ready" : true});
+
+	process.on('message', function(message) {
+		if(message.debug) console.log("Starting Fetch");
+		fetch(message.query, dataPacketModel, message.debug);
+		if(message.debug) console.log("Fetch Finished");
+	});
+
+});
+
 // Maximum number of results to return from a query (don't exceed number of pixels on graph!)
 var MAX_QUERY_RESULTS = 1000;
-
-process.on('message', function(message) {
-	if(message.debug) console.log("Starting Fetch");
-	if(message.debug) console.log(message);
-	fetch(message.query, message.dataPacketModel, message.debug);
-	if(message.debug) console.log("Fetch Finished");
-});
 
 // Responds to a request to fetch data.
 function fetch(query, dataPacketModel, debug) {
