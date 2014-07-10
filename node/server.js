@@ -212,6 +212,11 @@ async.parallel({
 							res.send(message.results);
 						}
 					});
+
+					fetchWorker.on('exit', function(code, signal){
+						if(debug) console.log("Code : " + code);
+						if(debug) console.log("Signal : " + signal);
+					})
 				} else {
 					// Already ready, send the query
 					fetchWorker.send({
