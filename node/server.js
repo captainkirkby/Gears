@@ -196,7 +196,7 @@ async.parallel({
 				var fetchWorker = fork('fetch.js', [], { stdio: 'inherit' });
 				fetchWorker.send({
 					'query' : req.query,
-					'dataPacketModel' : config.db.dataPacketModel,
+					'dataPacketModel' : dataPacketModel,
 					'debug' : debug
 				});
 			});

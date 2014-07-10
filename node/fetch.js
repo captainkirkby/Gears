@@ -9,6 +9,7 @@ var MAX_QUERY_RESULTS = 1000;
 
 process.on('message', function(message) {
 	if(message.debug) console.log("Starting Fetch");
+	if(message.debug) console.log(message.dataPacketModel);
 	fetch(message.query, message.dataPacketModel, message.debug);
 	if(message.debug) console.log("Fetch Finished");
 });
