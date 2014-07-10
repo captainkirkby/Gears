@@ -193,7 +193,7 @@ async.parallel({
 			// Serves data dynamically via AJAX.
 			// app.get('/fetch', function(req,res) { return fetch(req,res,config.db.dataPacketModel); });
 			app.get('/fetch', function(req,res) {
-				var fetchWorker = fork('fetch.js');
+				var fetchWorker = fork('fetch.js', [], { stdio: 'inherit' });
 				fetchWorker.send({
 					'req' : req,
 					'res' : res,

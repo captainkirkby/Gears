@@ -2,6 +2,8 @@ var express = require('express');
 var mongoose = require('mongoose');
 var sleep = require('sleep');
 
+console.log("Worker Starting!");
+
 process.on('Message', function(m) {
 	console.log("Starting Fetch");
 	fetch(m.req, m.res, m.dataPacketModel);
