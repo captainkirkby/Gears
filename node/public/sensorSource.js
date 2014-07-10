@@ -1,7 +1,7 @@
 $(function() {
 
 	// Reverse Order
-	var seriesToPlot = ["temperature", "pressure", "crudePeriod", "thermistor", "humidity", "refinedPeriod"];
+	var seriesToPlot = ["temperature", "pressure", "crudePeriod", "thermistor", "humidity", "refinedPeriod", "angle"];
 
 	// Drawing Constants
 	var NORMAL = 2;
@@ -24,7 +24,8 @@ $(function() {
 		"crudePeriod" : { "visible" : true, "width" : NORMAL, "color" : 2},
 		"thermistor" : { "visible" : true, "width" : NORMAL, "color" : 3},
 		"humidity" : { "visible" : true, "width" : NORMAL, "color" : 4},
-		"refinedPeriod" : { "visible" : true, "width" : NORMAL, "color" : 6}
+		"refinedPeriod" : { "visible" : true, "width" : NORMAL, "color" : 6},
+		"angle" : { "visible" : true, "width" : NORMAL, "color" : 6}
 	};
 
 	// Store last request parameters
@@ -39,6 +40,7 @@ $(function() {
 	var NUM_HUMIDITY_SAMPLES = 55;
 	var NUM_CRUDE_PERIOD_SAMPLES = 0;
 	var NUM_REFINED_PERIOD_SAMPLES = 55;
+	var NUM_ANGLE_SAMPLES = 55;
 
 	// Real time parameters
 	var TIMEOUT_VALUE = 333;
@@ -54,7 +56,8 @@ $(function() {
 			"crudePeriod" : NUM_CRUDE_PERIOD_SAMPLES,
 			"thermistor" : NUM_THERMISTOR_SAMPLES,
 			"humidity" : NUM_HUMIDITY_SAMPLES,
-			"refinedPeriod" : NUM_REFINED_PERIOD_SAMPLES
+			"refinedPeriod" : NUM_REFINED_PERIOD_SAMPLES,
+			"angle" : NUM_ANGLE_SAMPLES
 		};
 		var result = lookUpTable[set];
 		if(!result) result = 0;
@@ -85,7 +88,8 @@ $(function() {
 							"crudePeriod"	: "Period (samples)",
 							"thermistor"	: "Thermistor (°C)",
 							"humidity"		: "Humidity (%)",
-							"refinedPeriod"	: "Period (s)"};
+							"refinedPeriod"	: "Period (s)",
+							"angle"			: "Angle (degrees)"};
 		
 		var result = lookUpTable[name];
 		if(!result) {
