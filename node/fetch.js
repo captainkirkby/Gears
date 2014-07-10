@@ -1,12 +1,16 @@
 var express = require('express');
 var mongoose = require('mongoose');
+var sleep = require('sleep');
 
-process.on('message', function(m) {
+process.on('Message', function(m) {
+	console.log("Starting Fetch");
 	fetch(m.req, m.res, m.dataPacketModel);
+	console.log("Fetch Finished");
 });
 
 // Responds to a request to fetch data.
 function fetch(req,res,dataPacketModel) {
+	sleep(5);
 	// Gets the date range to fetch.
 	var from = ('from' in req.query) ? req.query.from : '-120';
 	var to = ('to' in req.query) ? req.query.to : 'now';
