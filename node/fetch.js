@@ -7,7 +7,7 @@ console.log("Worker Starting!");
 // Maximum number of results to return from a query (don't exceed number of pixels on graph!)
 var MAX_QUERY_RESULTS = 1000;
 
-process.on('Message', function(m) {
+process.on('message', function(m) {
 	console.log("Starting Fetch");
 	fetch(m.query, m.dataPacketModel);
 	console.log("Fetch Finished");
