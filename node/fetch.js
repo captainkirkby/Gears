@@ -1,5 +1,8 @@
 var mongoose = require('mongoose');
 
+// Tracks the date of the first boot packet
+var latestDate = null;
+
 console.log("Worker Starting!");
 console.log('Connecting to the database...');
 mongoose.connect('mongodb://localhost:27017/ticktockDemoTest3');
