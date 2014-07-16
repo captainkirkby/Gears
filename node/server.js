@@ -197,8 +197,9 @@ async.parallel({
 			// app.get('/fetch', function(req,res) { return fetch(req,res,config.db.dataPacketModel); });
 			app.get('/fetch', function(req,res) {
 				if(!fetchWorkerReady){
+					// Create new Worker
 					if(debug) console.log("Offloading to new Worker");
-					fetchWorker = fork('fetch.js', [], { stdio: 'inherit' });
+					fetchWorker = fork('fetch.js', [], { stdio: 'inherit' , execArgv: '--debug'});
 
 					// Listen for ready signal and done response
 					fetchWorker.once('message', function(message){
@@ -207,7 +208,6 @@ async.parallel({
 							// Send query when we're ready
 							fetchWorker.send({
 								'query' : req.query,
-								'debug' : debug
 							});
 							fetchWorker.once('message', function(message){
 								if(message.done){
@@ -221,13 +221,13 @@ async.parallel({
 					fetchWorker.on('exit', function(code, signal){
 						if(debug) console.log("Code : " + code);
 						if(debug) console.log("Signal : " + signal);
-					})
+					});
 				} else {
+					// Use existing workera
 					if(debug) console.log("Offloading to existing worker");
 					// Already ready, send the query
 					fetchWorker.send({
 						'query' : req.query,
-						'debug' : debug
 					});
 					fetchWorker.once('message', function(message){
 						if(message.done){

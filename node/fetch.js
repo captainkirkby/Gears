@@ -3,6 +3,11 @@ var mongoose = require('mongoose');
 // Tracks the date of the first boot packet
 var latestDate = null;
 
+var debug = false;
+process.argv.forEach(function(val,index,array) {
+	if(val == '--debug') debug = true;
+});
+
 console.log("Worker Starting!");
 console.log('Connecting to the database...');
 mongoose.connect('mongodb://localhost:27017/ticktockDemoTest3');
@@ -42,9 +47,9 @@ db.once('open', function() {
 	process.send({"ready" : true});
 
 	process.on('message', function(message) {
-		if(message.debug) console.log("Starting Fetch");
-		fetch(message.query, dataPacketModel, message.debug);
-		if(message.debug) console.log("Fetch Finished");
+		if(debug) console.log("Starting Fetch");
+		fetch(message.query, dataPacketModel);
+		if(debug) console.log("Fetch Finished");
 	});
 
 });
@@ -53,7 +58,7 @@ db.once('open', function() {
 var MAX_QUERY_RESULTS = 1000;
 
 // Responds to a request to fetch data.
-function fetch(query, dataPacketModel, debug) {
+function fetch(query, dataPacketModel) {
 	// Gets the date range to fetch.
 	var from = ('from' in query) ? query.from : '-120';
 	var to = ('to' in query) ? query.to : 'now';
