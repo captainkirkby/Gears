@@ -37,7 +37,7 @@ OBJCOPY        = avr-objcopy
 OBJDUMP        = avr-objdump
 
 # all: CFLAGS += '-DMAX_TIME_COUNT=8000000L>>1' -DADABOOT
-all: CFLAGS += '-DMAX_TIME_COUNT=F_CPU>>1' -DADABOOT
+all: CFLAGS += '-DMAX_TIME_COUNT=F_CPU>>3' -DADABOOT
 all: $(PROGRAM).hex
 
 $(PROGRAM).hex: $(PROGRAM).elf
