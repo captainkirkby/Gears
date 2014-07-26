@@ -1,11 +1,22 @@
+// Implements the Database Fetch component of the clock metrology project
+// Created by D & D Kirkby, Dec 2013
+
+
 var mongoose = require('mongoose');
 
 // Tracks the date of the first boot packet
 var latestDate = null;
 
+// Parses command-line arguments.
+var noSerial = false;
+var noDatabase = false;
 var debug = false;
+var pythonFlags = ["--load-template", "template2048.dat"];
 process.argv.forEach(function(val,index,array) {
-	if(val == '--debug') debug = true;
+	if(val == '--no-serial') noSerial = true;
+	else if(val == '--no-database') noDatabase = true;
+	else if(val == '--debug') debug = true;
+	else if(val == '--physical')  pythonFlags = ["--physical"];
 });
 
 console.log("Worker Starting!");
