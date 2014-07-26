@@ -41,7 +41,7 @@ process.stdout.pipe(access);
 process.stderr.pipe(error);
 
 // Start process with data pipes
-var fit = spawn('../fit/fit.py', pythonFlags, { cwd : "../fit", stdout : ['pipe', 'pipe', 'pipe']});
+var fit = spawn('../fit/fit.py', pythonFlags, { cwd : "../fit", stdio : 'pipe'});
 // Send all output to node stdout (readable.pipe(writable))
 // fit.stdout.pipe(process.stdout);
 
