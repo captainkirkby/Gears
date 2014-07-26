@@ -104,10 +104,16 @@ async.parallel({
 				port.on('open',function(err) {
 					if(err) return portCallback(err);
 					console.log('Port open');
-					// Flushes any pending data in the buffer.
 					port.flush();
-					// Forwards the open serial port.
-					portCallback(null,port);
+					// Start the mcu application (dependency on bootloader)
+					port.write('S\n\r', function(err, data){
+						if(err) console.log("Error:" + err);
+						if(data) console.log("Data: " + data);
+						// Flushes any pending data in the buffer.
+						port.flush();
+						// Forwards the open serial port.
+						portCallback(null,port);
+					});
 				});
 			}],
 			// Propagates our device info to data logger.
@@ -170,7 +176,7 @@ async.parallel({
 		config.startupTime = new Date();
 		if(config.db && config.port) {
 			// Logs TickTock packets from the serial port into the database.
-			console.log('starting data logger with',config);
+			//console.log('starting data logger with',config);
 			// Initializes our binary packet assembler to initially only accept a boot packet.
 			// NB: the maximum and boot packet sizes are hardcoded here!
 			var assembler = new packet.Assembler(0xFE,3,MAX_PACKET_SIZE,{0x00:32},0);
@@ -251,6 +257,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 	assembler.ingest(data,function(ptype,buf) {
 		var saveMe = true;
 		if(ptype === 0x00) {
+			if(debug) console.log("Got Boot Packet!");
 			latestDate = new Date();
 			// Prepares boot packet for storing to the database.
 			// NB: the boot packet layout is hardcoded here!
