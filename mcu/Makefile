@@ -27,17 +27,22 @@ CLOCK      = 10000000
 # Select programmer from the following list
 # usbtiny.........Program an AVR directly via its ISP port using a USBTinyISP
 # arduino.........Program an AVR with an Arduino acting as an ISP
-# bootloader.........Program with a bootloader
+# bootloader......Program with a bootloader
 PROGRAMMER = bootloader
+
+# Select serial port format
+# ubuntu ........./dev/ttyUSB*
+# OS X .........../dev/tty.usbserial*
+PORT = /dev/ttyUSB*
 
 ##FUSES      = -U hfuse:w:0xd9:m -U lfuse:w:0x24:m
 
 ifeq ($(PROGRAMMER),usbtiny)
 	PROGRAMMER_ARGS = -c usbtiny -P usb
 else ifeq ($(PROGRAMMER),arduino)
-	PROGRAMMER_ARGS = -c stk500v1 -P /dev/tty.usbserial* -b 19200
+	PROGRAMMER_ARGS = -c stk500v1 -P $(PORT) -b 19200
 else ifeq ($(PROGRAMMER),bootloader)
-	PROGRAMMER_ARGS = -c arduino -P /dev/tty.usbserial* -b 19200
+	PROGRAMMER_ARGS = -c arduino -P $(PORT) -b 19200
 else
 	PROGRAMMER_ARGS = -c usbtiny -P usb
 endif
