@@ -4,12 +4,7 @@
 
 var mongoose = require('mongoose');
 var express = require('express');
-var spawn = require('child_process').spawn;
 var fork = require('child_process').fork;
-
-
-// Tracks the date of the first boot packet
-var latestDate = null;
 
 // Global status for fetchWorker
 var fetchWorker = null;
