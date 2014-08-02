@@ -39,26 +39,36 @@ def analyze(args):
     amplitudeVariation = 60.*(dump['angle'][rng] - meanAmplitude)
 
     # Calculate mean-subtracted variations of environmental parameters.
-    meanTemp = np.mean(dump['thermistor'][rng])
-    tempVariation = dump['thermistor'][rng] - meanTemp
-    meanPres = np.mean(dump['pressure'][rng])
-    presVariation = dump['pressure'][rng] - meanPres
-    meanHumid = np.mean(dump['humidity'][rng])
-    humidVariation = dump['humidity'][rng] - meanHumid
+    temp = dump['thermistor'][rng]
+    meanTemp = np.mean(temp)
+    rmsTemp = np.std(temp)
+    tempVariation = temp - meanTemp
+    pres = dump['pressure'][rng]
+    meanPres = np.mean(pres)
+    rmsPres = np.std(pres)
+    presVariation = pres - meanPres
+    humid = dump['humidity'][rng]
+    meanHumid = np.mean(humid)
+    rmsHumid = np.std(humid)
+    humidVariation = humid - meanHumid
+
+    what = periodVariation
+    ##what = amplitudeVariation
 
     # Use a periodogram to find the dominant periodic frequencies in the signal.
-    freq,psd = signal.periodogram(periodVariation,nfft=3*60*60,detrend='linear')
+    freq,psd = signal.periodogram(what,nfft=3*60*60,detrend='linear')
     maxPsd = np.max(psd)
     dominant = np.argsort(psd)[-args.nfreq:][::-1]
     print psd[dominant]
     print 1./freq[dominant]
 
     # Initialize plotting.
-    fig = plt.figure(figsize=(12,12))
+    fig = plt.figure(figsize=(12,16))
     fig.set_facecolor('white')
 
+    '''
     # Plot the periodogram
-    plt.subplot(2,1,1)
+    plt.subplot(2,2,1)
     plt.loglog(freq,psd)
     plt.ylim([1e-3*maxPsd,1.5*maxPsd])
 
@@ -68,10 +78,12 @@ def analyze(args):
     ax.set_xticks(ticks,minor=False)
     ax.xaxis.grid(True)
     ax.yaxis.grid(True)
+    '''
 
     # Initialize periodic features for linear regression.
+    nenv = 4
     t = np.arange(n)
-    X = np.empty((n,2*args.nfreq+3))
+    X = np.empty((n,2*args.nfreq+nenv))
     for i,f in enumerate(freq[dominant]):
         X[:,2*i+0] = np.sin(2*math.pi*f*t)
         X[:,2*i+1] = np.cos(2*math.pi*f*t)        
@@ -79,25 +91,53 @@ def analyze(args):
     X[:,2*args.nfreq+0] = tempVariation
     X[:,2*args.nfreq+1] = presVariation
     X[:,2*args.nfreq+2] = humidVariation
+    X[:,2*args.nfreq+3] = 0.5*tempVariation**2
 
     # Do the fit.
-    ##model = linear_model.RidgeCV(alphas=[0.1, 1.0, 10.0])
     model = linear_model.LinearRegression()
-    model.fit(X,periodVariation)
-    periodFit = model.predict(X)
+    ##model = linear_model.Ridge(alpha=0.5)
+    ##model = linear_model.RidgeCV(alphas=[0.1, 1.0, 10.0])
+    model.fit(X,what)
+    bestFit = model.predict(X)
 
     # Look up the environmental coefficients.
-    tempCoef,presCoef,humidCoef = model.coef_[-3:]
-    print 'Temperature: mean = %.3f C, coef = %+.5f ppm/C' % (meanTemp,tempCoef)
-    print 'Pressure: mean = %.3f Pa, coef = %+.5f ppm/Pa' % (meanPres,presCoef)
-    print 'Humidity: mean = %.2f%%, coef = %+.5f ppm/%%' % (meanHumid,humidCoef)
+    tempCoef,presCoef,humidCoef,tempCoef2 = model.coef_[-nenv:]
+    print 'Temperature: mean = %.3f C, rms = %.3f C, coef = %+.5f ppm/C, coef2 = %+.5f ppm/C^2' % (
+        meanTemp,rmsTemp,tempCoef,tempCoef2)
+    print 'Pressure: mean = %.3f Pa, rms = %.3f Pa, coef = %+.5f ppm/Pa' % (
+        meanPres,rmsPres,presCoef)
+    print 'Humidity: mean = %.2f%%, rms = %.2f%%, coef = %+.5f ppm/%%' % (
+        meanHumid,rmsHumid,humidCoef)
 
     # Plot the fitted period data.
-    plt.subplot(2,1,2)
-    plt.xlabel('Elapsed Time (days)')
+    plt.subplot(3,1,1)
+    plt.xlabel('Elapsed Time (secs)')
     plt.ylabel('Period Variation (ppm)')
-    plt.plot(sampleDays,periodVariation,'.')
-    plt.plot(sampleDays,periodFit,'-')
+    nsub = 600
+    tsec = np.arange(nsub)
+    plt.plot(tsec,what[:nsub],'.')
+    plt.plot(tsec,bestFit[:nsub],'-')
+
+    Xenv = np.copy(X)
+    Xenv[:,:-4] = 0.
+    envFit = model.predict(Xenv)
+
+    plt.subplot(3,1,2)
+    plt.xlabel('Elapsed Time (days)')
+    plt.ylabel('Environmental Variations (ppm)')
+    plt.plot(sampleDays,envFit)
+    plt.plot(sampleDays,tempCoef*tempVariation,label='temp')
+    plt.plot(sampleDays,presCoef*presVariation,label='pres')
+    plt.plot(sampleDays,humidCoef*humidVariation,label='humid')
+    plt.legend()
+
+    noise = what - bestFit
+    plt.subplot(3,1,3)
+    #plt.xlabel('Elapsed Time (days)')
+    #plt.ylabel('Fit Residuals (ppm)')
+    #plt.plot(sampleDays,noise,'.')
+    plt.hist(noise,bins=100,range=(-400.,+400.))
+    plt.xlabel('Fit Residuals (ppm)')
 
     plt.show()
 
@@ -109,13 +149,13 @@ def main():
         help = 'generate verbose output')
     parser.add_argument('-i','--input', type=str, default='/Volumes/Data/clock/clockData.npy',
         help = 'name of converted database dump file to read')
-    parser.add_argument('-n','--nsamples', type=int, default=0,
+    parser.add_argument('-n','--nsamples', type=int, default=430000,
         help = 'number of samples to analyze (or zero for all)')
     parser.add_argument('--nskip', type = int, default = 2,
         help = 'number of initial samples to skip')
     parser.add_argument('--nominal-period', type = float, default = 2.0,
         help = 'nominal pendulum period in seconds')
-    parser.add_argument('--nfreq', type = int, default = 10,
+    parser.add_argument('--nfreq', type = int, default = 50,
         help = 'number of periodic frequencies to fit for')
     args = parser.parse_args()
     # do the analysis
