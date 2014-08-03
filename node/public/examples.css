@@ -10,12 +10,26 @@ a:hover { color: #28b; }
 h2 {
 	margin-top: 15px;
 	font: normal 32px "omnes-pro", Helvetica, Arial, sans-serif;
+
+}
+
+h2.loadingDiv {
+	margin-bottom: 15px;
+	display: inline-block;
+	height: 100%;
+	vertical-align: middle;
 }
 
 h3 {
 	margin-left: 30px;
 	font: normal 26px "omnes-pro", Helvetica, Arial, sans-serif;
 	color: #666;
+}
+
+.loading{
+	display: inline-block;
+	height: 100%;
+	vertical-align: middle;
 }
 
 #status {
@@ -69,7 +83,7 @@ input[type=checkbox] {
 	box-sizing: border-box;
 	width: 850px;
 	height: 450px;
-	padding: 20px 15px 15px 15px;
+	padding: 5px 15px 15px 15px;
 	margin: 15px auto 30px auto;
 	border: 1px solid #ddd;
 	background: #fff;

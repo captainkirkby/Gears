@@ -236,7 +236,11 @@ $(function() {
 				legend: { show : true, position : "nw", sorted : "ascending"}
 			});
 
+			stopSpinner();
+
 		}
+
+		startSpinner();
 
 		$.ajax({
 			url:dataURL,
@@ -244,6 +248,8 @@ $(function() {
 			dataType:"json",
 			success:onDataRecieved
 		});
+
+		
 	}
 
 	function continuousUpdate(length){
@@ -258,6 +264,16 @@ $(function() {
 		$("#from").prop('disabled', !enabled);
 		$("#to").prop('disabled', !enabled);
 		$("#length").prop('disabled', !enabled);
+	}
+
+	function startSpinner(){
+		$(".loading").show();
+		setManualFetchEnabled(false);
+	}
+
+	function stopSpinner(){
+		$(".loading").hide();
+		setManualFetchEnabled(true);
 	}
 
 	$("#placeholder").on("click", ".legendColorBox",function(){
