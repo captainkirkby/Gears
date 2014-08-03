@@ -22,17 +22,18 @@ process.argv.forEach(function(val,index,array) {
 	else if(val == '--physical')  pythonFlags = ["--physical"];
 });
 
-// Start process with data pipes
-var logger = fork('logger.js', process.argv.slice(2,process.argv.length), { stdio : 'inherit'});
+if(!noSerial){
+	// Start process with data pipes
+	var logger = fork('logger.js', process.argv.slice(2,process.argv.length), { stdio : 'inherit'});
+	
+	// Make sure to kill the fit process when node is about to exit
+	process.on('exit', function(){
+		console.log("Stopping Data Logger " + __filename);
+		logger.kill();
+	});
+}
 
-// Make sure to kill the fit process when node is about to exit
-process.on('exit', function(){
-	console.log("Stopping Data Logger");
-	logger.kill();
-});
-
-
-console.log('Connecting to the database...1');
+console.log(__filename + ' connecting to the database...');
 mongoose.connect('mongodb://localhost:27017/ticktockDemoTest3');
 var db = mongoose.connection;
 db.on('error', console.error.bind(console, 'db connection error:'));
@@ -96,7 +97,7 @@ function startWebApp(config)
 			if(!fetchWorkerReady){
 				// Create new Worker
 				if(debug) console.log("Offloading to new Worker");
-				fetchWorker = fork('fetch.js', [process.argv.slice(2,process.argv.length)], { stdio: 'inherit'});
+				fetchWorker = fork('fetch.js', process.argv.slice(2,process.argv.length), { stdio: 'inherit'});
 
 				// Listen for ready signal and done response
 				fetchWorker.once('message', function(message){
@@ -108,7 +109,7 @@ function startWebApp(config)
 						});
 						fetchWorker.once('message', function(message){
 							if(message.done){
-								console.log("Done Fetching, send to page");
+								if(debug) console.log("Done Fetching, send to page");
 								res.send(message.results);
 							}
 						});

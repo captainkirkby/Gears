@@ -1,7 +1,6 @@
 // Implements the Database Fetch component of the clock metrology project
 // Created by D & D Kirkby, Dec 2013
 
-
 var mongoose = require('mongoose');
 
 // Tracks the date of the first boot packet
@@ -19,13 +18,13 @@ process.argv.forEach(function(val,index,array) {
 	else if(val == '--physical')  pythonFlags = ["--physical"];
 });
 
-console.log("Worker Starting!");
-console.log('Connecting to the database...');
+if(debug) console.log("Worker Starting!");
+if(debug) console.log('Connecting to the database...');
 mongoose.connect('mongodb://localhost:27017/ticktockDemoTest3');
 var db = mongoose.connection;
 db.on('error', console.error.bind(console, 'db connection error:'));
 db.once('open', function() {
-	console.log('db connection established.');
+	if(debug) console.log('db connection established.');
 	// Defines the schema and model for our serial boot packets
 	var bootPacketSchema = mongoose.Schema({
 		timestamp: { type: Date, index: true },
@@ -60,7 +59,6 @@ db.once('open', function() {
 	process.on('message', function(message) {
 		if(debug) console.log("Starting Fetch");
 		fetch(message.query, dataPacketModel);
-		if(debug) console.log("Fetch Finished");
 	});
 
 });
@@ -150,11 +148,11 @@ function fetch(query, dataPacketModel) {
 					});
 				}
 
-				console.log(newResults[0]);
+				if(debug) console.log(newResults[0]);
 				results = newResults;
 			}
 			// Send message to parent
-			process.send({ 
+			process.send({
 				"done"		: true,
 				"results"	: results
 			});

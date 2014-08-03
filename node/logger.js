@@ -102,7 +102,7 @@ async.parallel({
 	// Connects to the database where packets from TickTock are logged.
 	db: function(callback) {
 		if(noDatabase) return callback(null,null);
-		console.log('Connecting to the database...2');
+		console.log(__filename + ' connecting to the database...2');
 		mongoose.connect('mongodb://localhost:27017/ticktockDemoTest3');
 		var db = mongoose.connection;
 		db.on('error', console.error.bind(console, 'db connection error:'));
