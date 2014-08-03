@@ -2,6 +2,7 @@
 
 import math
 import numpy as np
+import scipy.interpolate
 import matplotlib.pyplot as plt
 
 from scipy import signal
@@ -51,6 +52,12 @@ def analyze(args):
     meanHumid = np.mean(humid)
     rmsHumid = np.std(humid)
     humidVariation = humid - meanHumid
+
+    # Smooth the humidity signal, if requested.
+    if args.humidity_smoothing > 0:
+        humidSpline = scipy.interpolate.UnivariateSpline(sampleDays,humidVariation,
+            s=args.humidity_smoothing*n)
+        humidVariation = humidSpline(sampleDays)
 
     what = periodVariation
     ##what = amplitudeVariation
@@ -139,6 +146,7 @@ def analyze(args):
     plt.hist(noise,bins=100,range=(-400.,+400.))
     plt.xlabel('Fit Residuals (ppm)')
 
+    plt.savefig('learn.png')
     plt.show()
 
 def main():
@@ -155,6 +163,8 @@ def main():
         help = 'number of initial samples to skip')
     parser.add_argument('--nominal-period', type = float, default = 2.0,
         help = 'nominal pendulum period in seconds')
+    parser.add_argument('--humidity-smoothing', type = float, default = 0.01,
+        help = 'amount of smoothing to apply to raw humidity data (or zero for none)')
     parser.add_argument('--nfreq', type = int, default = 50,
         help = 'number of periodic frequencies to fit for')
     args = parser.parse_args()
