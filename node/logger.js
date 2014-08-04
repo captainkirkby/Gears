@@ -135,17 +135,12 @@ async.parallel({
 				raw: Array
 			});
 			var dataPacketModel = mongoose.model('dataPacketModel',dataPacketSchema);
-
 			// Defines the schema and model for Minute averages
 			var minuteAverageSchema = mongoose.Schema({
 				timestamp: { type: Date, index: true },
 				average: Number
 			});
 			var minuteAverageModel = mongoose.model('minuteAverageModel',minuteAverageSchema);
-			minuteAverageModel.prototpye.lastMinute = -1;
-			minuteAverageModel.prototpye.minutesRunningTotal = 0;
-			minuteAverageModel.prototpye.samplesPerMinute = 0;
-
 			// Defines the schema and model for Hour averages
 			var hourAverageSchema = mongoose.Schema({
 				timestamp: { type: Date, index: true },
@@ -166,7 +161,7 @@ async.parallel({
 				'bootPacketModel':bootPacketModel,
 				'dataPacketModel':dataPacketModel,
 				'minuteAverageModel':minuteAverageModel,
-				'hourAverageModel':hourAverageModel
+				'hourAverageModel':hourAverageModel,
 				'runningTotals':runningTotals
 			});
 		});
