@@ -43,11 +43,20 @@ button {
 }
 
 input {
-	font-size: 18px;
+	font-size: 12px;
+}
+
+input[type=button] {
+	padding: 0px 7px;
 }
 
 input[type=checkbox] {
-	margin: 7px;
+	margin: 5px;
+}
+
+.checkboxes {
+	font-size: 12px;
+	float:right;
 }
 
 #header {

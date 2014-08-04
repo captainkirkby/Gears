@@ -88,7 +88,7 @@ $(function() {
 							"crudePeriod"	: "Period (samples)",
 							"thermistor"	: "Thermistor (°C)",
 							"humidity"		: "Humidity (%)",
-							"refinedPeriod"	: "Period (s)",
+							"refinedPeriod"	: "Period (ppm)",
 							"angle"			: "Angle (degrees)"};
 		
 		var result = lookUpTable[name];
@@ -343,23 +343,19 @@ $(function() {
 		continuousUpdate(length);
 	});
 
-	$("#toggleSmoothing").click(function(){
-		if(smoothing){
-			$(this).val("Use Smoothing");
-			smoothing = false;
-		} else {
-			$(this).val("Don't Use Smoothing");
+	$("#toggleSmoothing").change(function(){
+		if($(this).is(":checked")) {
 			smoothing = true;
+		} else {
+			smoothing = false;
 		}
 	});
 
-	$("#showDots").click(function(){
-		if(showDots){
-			$(this).val("Show Dots");
-			showDots = false;
-		} else {
-			$(this).val("Don't Show Dots");
+	$("#showDots").change(function(){
+		if($(this).is(":checked")) {
 			showDots = true;
+		} else {
+			showDots = false;
 		}
 	});
 
