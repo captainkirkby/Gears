@@ -152,9 +152,14 @@ async.parallel({
 				average: Number
 			});
 			var hourAverageModel = mongoose.model('hourAverageModel',hourAverageSchema);
-			hourAverageModel.prototpye.lastHour = -1;
-			hourAverageModel.prototpye.hoursRunningTotal = 0;
-			hourAverageModel.prototpye.samplesPerHour = 0;
+
+			var runningTotals = {};
+			runningTotals.lastMinute = -1;
+			runningTotals.minutesRunningTotal = 0;
+			runningTotals.samplesPerMinute = 0;
+			runningTotals.lastHour = -1;
+			runningTotals.hoursRunningTotal = 0;
+			runningTotals.samplesPerHour = 0;
 
 			// Propagates our database connection and db models to data logger.
 			callback(null,{
@@ -162,6 +167,7 @@ async.parallel({
 				'dataPacketModel':dataPacketModel,
 				'minuteAverageModel':minuteAverageModel,
 				'hourAverageModel':hourAverageModel
+				'runningTotals':runningTotals
 			});
 		});
 	}},
@@ -180,7 +186,8 @@ async.parallel({
 			var assembler = new packet.Assembler(0xFE,3,MAX_PACKET_SIZE,{0x00:32},0);
 			// Handles incoming chunks of binary data from the device.
 			config.port.on('data',function(data) {
-				receive(data,assembler,config.db.bootPacketModel,config.db.dataPacketModel,config.db.minuteAverageModel,config.db.hourAverageModel);
+				receive(data,assembler,config.db.bootPacketModel,config.db.dataPacketModel,
+					config.db.minuteAverageModel,config.db.hourAverageModel,config.db.runningTotals);
 			});
 
 			fit.stdout.on('data', function(data){
@@ -192,7 +199,7 @@ async.parallel({
 
 // Receives a new chunk of binary data from the serial port and returns the
 // updated value of remaining that should be used for the next call.
-function receive(data,assembler,bootPacketModel,dataPacketModel,minuteAverageModel,hourAverageModel) {
+function receive(data,assembler,bootPacketModel,dataPacketModel,minuteAverageModel,hourAverageModel,runningTotals) {
 	assembler.ingest(data,function(ptype,buf) {
 		var saveMe = true;
 		if(ptype === 0x00) {
@@ -224,26 +231,26 @@ function receive(data,assembler,bootPacketModel,dataPacketModel,minuteAverageMod
 			var date = new Date();
 
 			// New minute, new average
-			if(date.getMinutes() != minuteAverageModel.prototpye.lastMinute){
+			if(date.getMinutes() != runningTotals.lastMinute){
 				// Store with date object on the most recent side of the window
-				var b = minuteAverageModel.prototpye.minutesRunningTotal/minuteAverageModel.prototpye.samplesPerMinute;
+				var b = runningTotals.minutesRunningTotal/runningTotals.samplesPerMinute;
 				console.log(b);
-				// store(minuteAverageModel.prototpye.minutesRunningTotal/minuteAverageModel.prototpye.samplesPerMinute, date);
-				minuteAverageModel.prototpye.minutesRunningTotal = 0;
-				minuteAverageModel.prototpye.samplesPerMinute = 0;
+				// store(runningTotals.minutesRunningTotal/runningTotals.samplesPerMinute, date);
+				runningTotals.minutesRunningTotal = 0;
+				runningTotals.samplesPerMinute = 0;
 			}
 
 			minuteAverageModel.prototpye.lastMinute = date.getMinutes();
 
 
 			// New hour, new average
-			if(date.getHours() != hourAverageModel.prototpye.lastHour){
+			if(date.getHours() != runningTotals.lastHour){
 				// Store with date object on the most recent side of the window
-				var c = hourAverageModel.prototpye.hoursRunningTotal/hourAverageModel.prototpye.samplesPerHour;
+				var c = runningTotals.hoursRunningTotal/runningTotals.samplesPerHour;
 				console.log(c);
-				store(hourAverageModel.prototpye.hoursRunningTotal/hourAverageModel.prototpye.samplesPerHour, date);
-				hourAverageModel.prototpye.hoursRunningTotal = 0;
-				hourAverageModel.prototpye.samplesPerHour = 0;
+				// store(runningTotals.hoursRunningTotal/runningTotals.samplesPerHour, date);
+				runningTotals.hoursRunningTotal = 0;
+				runningTotals.samplesPerHour = 0;
 			}
 	
 			hourAverageModel.prototpye.lastHour = date.getHours();
