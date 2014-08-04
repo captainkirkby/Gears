@@ -355,7 +355,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel,minuteAverageMod
 			} else{
 				saveMe = true;
 				// Write to first entry in file
-				fs.appendFileSync('runningData.dat', samplesSince + '\n');
+				// fs.appendFileSync('runningData.dat', samplesSince + '\n');
 				// Push most recent date to the top of the FIFO stack
 				datesBeingProcessed.unshift(date);
 				// Write crude period to pipe
@@ -364,7 +364,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel,minuteAverageMod
 				// Iterate through samples writing them to the fit pipe
 				for(var i = 0; i < 2048; i++){
 					fit.stdin.write(raw[i] + '\n');
-					fs.appendFileSync('runningData.dat', raw[i] + '\n');
+					// fs.appendFileSync('runningData.dat', raw[i] + '\n');
 				}
 			}
 		}
