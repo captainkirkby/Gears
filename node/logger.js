@@ -235,7 +235,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel,minuteAverageMod
 				runningTotals.samplesPerMinute = 0;
 			}
 
-			minuteAverageModel.prototpye.lastMinute = date.getMinutes();
+			runningTotals.lastMinute = date.getMinutes();
 
 
 			// New hour, new average
@@ -248,7 +248,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel,minuteAverageMod
 				runningTotals.samplesPerHour = 0;
 			}
 	
-			hourAverageModel.prototpye.lastHour = date.getHours();
+			runningTotals.lastHour = date.getHours();
 
 
 			// 2^8 when we're running the ADC in 8 bit mode
