@@ -22,7 +22,6 @@
 #include "Circle.h"
 #include "Point.h"
 
-
 #define BATCH_MODE 0
 #define ERROR_MODE 1
 #define NORMAL_MODE 2
@@ -33,10 +32,29 @@ static const double pi = 4*std::atan(1);
 static const double piHalves = 2*std::atan(1);
 
 bool doubleRatio = true;
-bool monteCarlo = false;
+bool monteCarlo = true;
 
 uint16_t status = 0;
 uint16_t ysteps = 21;
+
+/* A random number generator with a period of about 2 x 10^19 */
+
+unsigned long long int v;
+
+unsigned long long int64() {
+    v ^= v >> 21; v ^= v << 35; v ^= v >> 4;
+    return v*2685821657736338717LL;
+}
+
+double mersenneRandom() {
+    return 5.42101086242752217e-20*int64();
+}
+
+void setSeed(unsigned long long int j) {
+    v = 4101842887655102017LL;
+    v ^= j;
+    v = int64();
+}
 
 // Function prototypes
 double getFractionalArea(Grid grid, Circle circle, Notch notch);
@@ -68,8 +86,8 @@ int main(int argc, char const *argv[])
 	// Handle Signals
 	std::signal(SIGINFO, catch_function);
 
-	// initialize random seed
- 	std::srand(time(NULL));
+	// Initialize random number generator
+	setSeed(24071966);
 
 	// Circle Parameters
 	Circle circle(0.001,Point(0,0));
@@ -262,6 +280,11 @@ double getFractionalAreaGrid(Grid grid, Circle circle, Notch notch)
 	uint32_t ix;
 	uint32_t iy;
 
+	double x = circle.getX();
+	double y = circle.getY();
+	double r = circle.getR();
+	double d = grid.getD();
+
 	const uint32_t n = grid.getN();
 
 	for (ix = 0; ix < n; ++ix)
@@ -269,8 +292,8 @@ double getFractionalAreaGrid(Grid grid, Circle circle, Notch notch)
 		Point p(0,0);
 		for (iy = 0; iy < n; ++iy)
 		{
-			p.x = circle.getX() -circle.getR() +ix*grid.getD() + grid.getD()/2.0;
-			p.y = circle.getY() -circle.getR() +iy*grid.getD() + grid.getD()/2.0;
+			p.x = x - r + ix*d + d/2.0;
+			p.y = y - r + iy*d + d/2.0;
 	
 			if(circle.inCircle(p)){
 				++areaCircle;
@@ -286,7 +309,7 @@ double getFractionalAreaGrid(Grid grid, Circle circle, Notch notch)
 	if(doubleRatio){
 		return ((double) areaCircleAndNotch)/(areaCircle);
 	} else {
-		return ((double)areaCircleAndNotch)*grid.getD()*grid.getD()/(pi*circle.getRSq());
+		return ((double)areaCircleAndNotch)*d*d/(pi*circle.getRSq());
 	}
 }
 
@@ -298,6 +321,10 @@ double getFractionalAreaMonteCarlo(Grid grid, Circle circle, Notch notch)
 	uint32_t ix;
 	uint32_t iy;
 
+	double x = circle.getX();
+	double y = circle.getY();
+	double r = circle.getR();
+
 	const uint32_t n = grid.getN();
 
 	for (ix = 0; ix < n; ++ix)
@@ -305,8 +332,8 @@ double getFractionalAreaMonteCarlo(Grid grid, Circle circle, Notch notch)
 		Point p(0,0);
 		for (iy = 0; iy < n; ++iy)
 		{
-			p.x = circle.getX() -circle.getR() + (((double) rand())/RAND_MAX)*2*circle.getR();
-			p.y = circle.getY() -circle.getR() + (((double) rand())/RAND_MAX)*2*circle.getR();
+			p.x = x - r + mersenneRandom()*2*r;
+			p.y = y - r + mersenneRandom()*2*r;
 	
 			if(circle.inCircle(p)){
 				++areaCircle;
@@ -332,9 +359,6 @@ double deg2rad(double degrees)
 static void catch_function(int signo) {
     std::fprintf(stderr, "%i/%i\n", status, ysteps);
 }
-
-
-
 
 
 

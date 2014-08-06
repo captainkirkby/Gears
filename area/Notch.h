@@ -24,8 +24,9 @@ public:
 
 	bool inNotch(Point p)
 	{
+		double abs_x = std::fabs(p.x);
 		// Is point within the width and inside the angle?
-		return (((this->_infSlope)?(p.y >= 0):(std::fabs(p.x)) <= p.y*this->_slope) && std::fabs(p.x) <= this->_halfWidth);
+		return (((this->_infSlope)?(p.y >= 0):(abs_x) <= p.y*this->_slope) && abs_x <= this->_halfWidth);
 	}
 
 	double getAngle() const

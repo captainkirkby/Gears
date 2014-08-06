@@ -23,8 +23,12 @@ public:
 
 	bool inCircle(Point p)
 	{
+		double center_x = this->_c.x;
+		double center_y = this->_c.y;
+		double point_x = p.x;
+		double point_y = p.y;
 		// Is the distance from the point to the center of the circle less than the radius
-		return (p.x-this->_c.x)*(p.x-this->_c.x) + (p.y-this->_c.y)*(p.y-this->_c.y) < this->_rSq;
+		return (point_x-center_x)*(point_x-center_x) + (point_y-center_y)*(point_y-center_y) < this->_rSq;
 	}
 
 
