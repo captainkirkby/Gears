@@ -35,7 +35,8 @@ bool doubleRatio = true;
 bool monteCarlo = true;
 
 uint16_t status = 0;
-uint16_t ysteps = 21;
+uint16_t maxSteps = 0;
+
 
 /* A random number generator with a period of about 2 x 10^19 */
 
@@ -65,9 +66,9 @@ double deg2rad(double degrees);
 uint8_t calculateError(Grid grid, Notch notch);
 
 void printDYDFForRange(double ystart, double yrange, double ysteps, Grid grid, Circle circle, Notch notch);
+void printCurvesForRange(double ystart, double yrange, double ysteps, Grid grid, Circle circle, Notch notch);
 void printDYDF(double y1, double y2, Grid grid, Circle circle, Notch notch);
 void printCurve(double xstart, double xrange, double xsteps, Grid grid, Circle circle, Notch notch);
-void printCurvesForRange(double ystart, double yrange, double ysteps, Grid grid, Circle circle, Notch notch);
 
 static void catch_function(int signo);
 
@@ -93,7 +94,7 @@ int main(int argc, char const *argv[])
 	Circle circle(0.001,Point(0,0));
 
 	// Grid Parameters
-	Grid grid(10000,circle);
+	Grid grid(1000,circle);
 	
 	// Notch Parameters (vertex @ origin)
 	Notch notch(deg2rad(10.0));
@@ -119,27 +120,33 @@ int main(int argc, char const *argv[])
 	Notch notch45Degrees(deg2rad(45.0));
 	Notch notch20Degrees(deg2rad(20.0));
 	Notch notch10Degrees(deg2rad(10.0));
+
+
+	uint16_t yStepsPerRange = 21;
 	
 
 	if(calculateError(grid,notch)) return 0;
 
 	// double yOptimum = (circle.getR()/(2*tan(notch.getAngle())));
-	double yOptimum = 0;
+	// double yOptimum = 0;
 
 	// printCurvesForRange(yOptimum,0.00002,3,grid,circle,notch);
-	//printDYDFForRange(yOptimum,0.0008,ysteps,grid,circle,squareNotch);
+	//printDYDFForRange(yOptimum,0.0008,yStepsPerRange,grid,circle,squareNotch);
 
-	// printDYDFForRange((circle.getR()/(2*tan(notch80Degrees.getAngle()))),0.0008,101.0,grid,circle,notch80Degrees);
-	// printDYDFForRange((circle.getR()/(2*tan(notch70Degrees.getAngle()))),0.0008,101.0,grid,circle,notch70Degrees);
-	// printDYDFForRange((circle.getR()/(2*tan(notch60Degrees.getAngle()))),0.0008,101.0,grid,circle,notch60Degrees);
+	// printDYDFForRange((circle.getR()/(2*tan(notch80Degrees.getAngle()))),0.0008,yStepsPerRange,grid,circle,notch80Degrees);
+	// printDYDFForRange((circle.getR()/(2*tan(notch70Degrees.getAngle()))),0.0008,yStepsPerRange,grid,circle,notch70Degrees);
+	// printDYDFForRange((circle.getR()/(2*tan(notch60Degrees.getAngle()))),0.0008,yStepsPerRange,grid,circle,notch60Degrees);
 
 	monteCarlo = true;
-	printDYDFForRange((circle.getR()/(2*tan(notch45Degrees.getAngle()))),0.0008,ysteps,grid,circle,notch45Degrees);
-	monteCarlo = false;
-	printDYDFForRange((circle.getR()/(2*tan(notch45Degrees.getAngle()))),0.0008,ysteps,grid,circle,notch45Degrees);
+	// printDYDFForRange((circle.getR()/(2*tan(notch45Degrees.getAngle()))),0.0008,yStepsPerRange,grid,circle,notch45Degrees);
+	printCurvesForRange((circle.getR()/(2*tan(notch45Degrees.getAngle()))),0.0008,yStepsPerRange,grid,circle,notch45Degrees);
 
-	// printDYDFForRange((circle.getR()/(2*tan(notch20Degrees.getAngle()))),0.0008,101.0,grid,circle,notch20Degrees);
-	// printDYDFForRange((circle.getR()/(2*tan(notch10Degrees.getAngle()))),0.0008,101.0,grid,circle,notch10Degrees);
+	monteCarlo = false;
+	// printDYDFForRange((circle.getR()/(2*tan(notch45Degrees.getAngle()))),0.0008,yStepsPerRange,grid,circle,notch45Degrees);
+	//printCurvesForRange((circle.getR()/(2*tan(notch45Degrees.getAngle()))),0.0008,yStepsPerRange,grid,circle,notch45Degrees);
+
+	// printDYDFForRange((circle.getR()/(2*tan(notch20Degrees.getAngle()))),0.0008,yStepsPerRange,grid,circle,notch20Degrees);
+	// printDYDFForRange((circle.getR()/(2*tan(notch10Degrees.getAngle()))),0.0008,yStepsPerRange,grid,circle,notch10Degrees);
 
 	return 0;
 }
@@ -147,6 +154,8 @@ int main(int argc, char const *argv[])
 void printDYDFForRange(double ystart, double yrange, double ysteps, Grid grid, Circle circle, Notch notch)
 {
 	double iy;
+
+	maxSteps += ysteps;
 
 	for (iy = 1; iy < ysteps; ++iy)
 	{
@@ -193,6 +202,8 @@ void printCurvesForRange(double ystart, double yrange, double ysteps, Grid grid,
 {
 	double iy;
 
+	maxSteps += ysteps;
+
 	for (iy = 0; iy < ysteps; ++iy)
 	{
 		double yc = ystart + yrange*(iy/ysteps);
@@ -200,9 +211,11 @@ void printCurvesForRange(double ystart, double yrange, double ysteps, Grid grid,
 
 		clock_t start_s,finish_s;
 		start_s = std::clock();
+
+		++status;
 	
 		// Calculate curve
-		printCurve(0,0.1*circle.getR(),1,grid,circle,notch);
+		printCurve(0,circle.getR(),ysteps,grid,circle,notch);
 
 		if(MODE != BATCH_MODE){
 			std::printf("Finished y=%.3fmm*************************\n", yc*1000);
@@ -233,9 +246,9 @@ void printCurve(double xstart, double xrange, double xsteps, Grid grid, Circle c
 		if(MODE != BATCH_MODE){
 			finish_s = std::clock();
 			std::printf("Cycles: %lu\nTime: %.3f sec\n\n", (finish_s - start_s), ((finish_s - start_s)/((double) CLOCKS_PER_SEC)));
-		} else {
-			std::printf("%.16f\n",fractionalArea);
 		}
+
+		std::printf("%.16f\n",fractionalArea);
 	}
 }
 
@@ -361,7 +374,7 @@ double deg2rad(double degrees)
 }
 
 static void catch_function(int signo) {
-    std::fprintf(stderr, "%i/%i\n", status, ysteps);
+    std::fprintf(stderr, "%i/%i\n", status, maxSteps);
 }
 
 

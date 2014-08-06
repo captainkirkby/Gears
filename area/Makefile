@@ -7,8 +7,8 @@
 
 CC					= clang++
 CFLAGS				= -lm -Wall -fopenmp -o area.out
-NUM_GRAPHS			= 2
-POINTS_PER_GRAPH	= 20
+NUM_GRAPHS			= 21
+POINTS_PER_GRAPH	= 21
 ONE					= 1
 POINTS_MINUS_ONE	= $(shell echo $(POINTS_PER_GRAPH)-$(ONE) | bc)
 
@@ -21,11 +21,11 @@ run: area.out
 batch: area.out
 	./area.out b
 
-graph: area.out
+graph: compile
 	./area.out b > temp.dat \
-	&& gnuplot -p -e 'plot for [t=0:$(NUM_GRAPHS)] "temp.dat" using 2:1\
+	&& gnuplot -p -e 'plot for [t=0:$(NUM_GRAPHS)] "temp.dat" \
 	every ::(t*$(POINTS_PER_GRAPH))::(t*$(POINTS_PER_GRAPH)+$(POINTS_MINUS_ONE)) with lines title "".t' \
 
 last: temp.dat
-	gnuplot -p -e 'plot for [t=0:$(NUM_GRAPHS)] "temp.dat" using 2:1\
+	gnuplot -p -e 'plot for [t=0:$(NUM_GRAPHS)] "temp.dat" \
 	every ::(t*$(POINTS_PER_GRAPH))::(t*$(POINTS_PER_GRAPH)+$(POINTS_MINUS_ONE)) with lines title "".t'
