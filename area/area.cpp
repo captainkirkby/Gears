@@ -17,16 +17,11 @@
 #include <stdlib.h> 
 #include <stdbool.h>
 #include <time.h>
-#ifdef _OPENMP
-#include <omp.h>
-#endif
 #include <signal.h>
 
 #define BATCH_MODE 0
 #define ERROR_MODE 1
 #define NORMAL_MODE 2
-
-#define OPENMP true
 
 uint8_t MODE = BATCH_MODE;
 
@@ -284,14 +279,8 @@ void printDYDFForRange(double ystart, double yrange, double ysteps, Grid grid, C
 		double yc1 = ystart + yrange*((iy-1)/ysteps);
 		double yc2 = ystart + yrange*(iy/ysteps);
 
-		double start, finish;
 		clock_t start_s,finish_s;
-
-		if(OPENMP){
-			start = omp_get_wtime();
-		} else {
-			start = clock();
-		}
+		start_s = clock();
 
 		++status;
 	
@@ -301,13 +290,8 @@ void printDYDFForRange(double ystart, double yrange, double ysteps, Grid grid, C
 		if(MODE != BATCH_MODE){
 			printf("Finished y=%.3fmm*************************\n", ((yc1+yc2)/2)*1000);
 
-			if(OPENMP){
-				finish = omp_get_wtime();
-				 printf("Time: %.2f sec\n\n", (finish - start));
-			} else {
-				finish_s = clock();
-				printf("Cycles: %lu\nTime: %lu sec\n\n", (finish_s - start_s), ((finish_s - start_s)/CLOCKS_PER_SEC));
-			}			
+			finish_s = clock();
+			printf("Cycles: %lu\nTime: %.3f sec\n\n", (finish_s - start_s), ((finish_s - start_s)/((double) CLOCKS_PER_SEC)));
 		}
 	}
 }
@@ -340,14 +324,8 @@ void printCurvesForRange(double ystart, double yrange, double ysteps, Grid grid,
 		double yc = ystart + yrange*(iy/ysteps);
 		circle.setY(yc);
 
-		double start, finish;
 		clock_t start_s,finish_s;
-
-		if(OPENMP){
-			start = omp_get_wtime();
-		} else {
-			start = clock();
-		}
+		start_s = clock();
 	
 		// Calculate curve
 		printCurve(0,0.1*circle.getR(),1,grid,circle,notch);
@@ -355,13 +333,8 @@ void printCurvesForRange(double ystart, double yrange, double ysteps, Grid grid,
 		if(MODE != BATCH_MODE){
 			printf("Finished y=%.3fmm*************************\n", yc*1000);
 
-			if(OPENMP){
-				finish = omp_get_wtime();
-				 printf("Time: %.2f sec\n\n", (finish - start));
-			} else {
-				finish_s = clock();
-				printf("Cycles: %lu\nTime: %lu sec\n\n", (finish_s - start_s), ((finish_s - start_s)/CLOCKS_PER_SEC));
-			}			
+			finish_s = clock();
+			printf("Cycles: %lu\nTime: %.3f sec\n\n", (finish_s - start_s), ((finish_s - start_s)/((double) CLOCKS_PER_SEC)));		
 		}
 
 	}
@@ -376,27 +349,16 @@ void printCurve(double xstart, double xrange, double xsteps, Grid grid, Circle c
 		double xc = xstart + xrange*(ix/xsteps);
 		circle.setX(xc);
 
-		double start, finish;
-		clock_t start_s, finish_s;
-
-		if(OPENMP){
-			start = omp_get_wtime();
-		} else {
-			start = clock();
-		}
+		clock_t start_s,finish_s;
+		start_s = clock();
 
 		// Calculate area
 		double fractionalArea = getFractionalArea(grid,circle,notch);
 	
 
 		if(MODE != BATCH_MODE){
-			if(OPENMP){
-				finish = omp_get_wtime();
-				printf("Area: %.10f\nTime: %.2f sec\n", fractionalArea, (finish - start));
-			} else {
-				finish_s = clock();
-				printf("Area: %.10f\nCycles: %lu\nTime: %lu sec\n", fractionalArea, (finish_s - start_s), ((finish_s - start_s)/CLOCKS_PER_SEC));
-			}
+			finish_s = clock();
+			printf("Cycles: %lu\nTime: %.3f sec\n\n", (finish_s - start_s), ((finish_s - start_s)/((double) CLOCKS_PER_SEC)));
 		} else {
 			printf("%.16f\n",fractionalArea);
 		}
@@ -415,23 +377,16 @@ uint8_t calculateError(Grid grid, Notch notch)
 	
 			for(errorN = 101; errorN < 100000; errorN*=1.1){
 
-				double start, finish;
-
-				if(OPENMP){
-					start = omp_get_wtime();
-				}
+				clock_t start_s,finish_s;
+				start_s = clock();
 
 				Grid errorGrid(errorN, errorCircle);
 
 				double errorFractionalArea = getFractionalArea(errorGrid,errorCircle,notch);
 	
-				if(OPENMP){
-					finish = omp_get_wtime();
-					printf("Error: %.8fppm\tTime: %.3f\tn=%u\n\n",fabs((errorFractionalArea*pi/notch.getAngle()-1)*1000000), 
-						(finish - start), errorGrid.getN());
-				} else {
-					printf("Error: %.8fppm\tn=%u\n\n",fabs((errorFractionalArea*pi/notch.getAngle()-1)*1000000), errorGrid.getN());
-				}
+				finish_s = clock();
+				printf("Error: %.8fppm\tTime: %.3f\tn=%u\n\n",fabs((errorFractionalArea*pi/notch.getAngle()-1)*1000000), 
+					((finish_s - start_s)/((double) CLOCKS_PER_SEC)), errorGrid.getN());
 			}
 			return 1;
 		} else {
@@ -460,8 +415,6 @@ double getFractionalAreaGrid(Grid grid, Circle circle, Notch notch)
 	for (ix = 0; ix < n; ++ix)
 	{
 		Point p(0,0);
-		//if(!OPENMP) omp_set_num_threads(1);
-		//#pragma omp parallel for private(p) reduction(+:areaCircle,areaCircleAndNotch)
 		for (iy = 0; iy < n; ++iy)
 		{
 			p.x = circle.getX() -circle.getR() +ix*grid.getD() + grid.getD()/2.0;
@@ -498,8 +451,6 @@ double getFractionalAreaMonteCarlo(Grid grid, Circle circle, Notch notch)
 	for (ix = 0; ix < n; ++ix)
 	{
 		Point p(0,0);
-		//if(!OPENMP) omp_set_num_threads(1);
-		//#pragma omp parallel for private(p) reduction(+:areaCircle,areaCircleAndNotch)
 		for (iy = 0; iy < n; ++iy)
 		{
 			p.x = circle.getX() -circle.getR() + (((double) rand())/RAND_MAX)*2*circle.getR();
