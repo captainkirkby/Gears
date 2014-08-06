@@ -17,6 +17,12 @@
 #include <ctime>
 #include <csignal>
 
+#include "Notch.h"
+#include "Grid.h"
+#include "Circle.h"
+#include "Point.h"
+
+
 #define BATCH_MODE 0
 #define ERROR_MODE 1
 #define NORMAL_MODE 2
@@ -31,158 +37,6 @@ bool monteCarlo = false;
 
 uint16_t status = 0;
 uint16_t ysteps = 21;
-
-// Point class
-class Point
-{
-public:
-	Point()
-	{
-		this->x = 0;
-		this->y = 0;
-	}
-
-	Point(double x, double y)
-	{
-		this->x = x;
-		this->y = y;
-	}
-	double x;
-	double y;
-};
-
-// Circle Class
-class Circle
-{
-public:
-	Circle(double r, Point c)
-	{
-		this->_r = r;
-		this->_c = c;
-		this->_rSq = r*r;
-	}
-
-	Circle(double r)
-	{
-		this->_r = r;
-		this->_c = Point();
-		this->_rSq = r*r;
-	}
-
-	bool inCircle(Point p)
-	{
-		// Is the distance from the point to the center of the circle less than the radius
-		return (p.x-this->_c.x)*(p.x-this->_c.x) + (p.y-this->_c.y)*(p.y-this->_c.y) < this->_rSq;
-	}
-
-
-	double getR() const
-	{
-		return this->_r;
-	}
-
-	double getRSq() const
-	{
-		return this->_rSq;
-	}
-
-	Point getC() const
-	{
-		return this->_c;
-	}
-
-	double getX() const
-	{
-		return this->_c.x;
-	}
-
-	double getY() const
-	{
-		return this->_c.y;
-	}
-
-	void setX(double x)
-	{
-		this->_c.x = x;
-	}
-
-	void setY(double y)
-	{
-		this->_c.y = y;
-	}
-
-private:
-	double _r;
-	double _rSq;
-	Point _c;
-};
-
-// Notch Class
-class Notch
-{
-public:
-	// static const double DEFAULT_WIDTH = 0.002;	// 2mm
-	Notch(double angle)
-	{
-		this->_halfWidth = 0.002;
-		this->_angle = angle;			// In radians
-		if(angle != piHalves) {
-			this->_slope = std::tan(angle);
-			this->_infSlope = false;
-		} else {
-			this->_slope = 0;
-			this->_infSlope = true;
-		}
-	}
-
-	bool inNotch(Point p)
-	{
-		// Is point within the width and inside the angle?
-		return (((this->_infSlope)?(p.y >= 0):(std::fabs(p.x)) <= p.y*this->_slope) && std::fabs(p.x) <= this->_halfWidth);
-	}
-
-	double getAngle() const
-	{
-		return this->_angle;
-	}
-
-	void setAngle(double angle)
-	{
-		this->_angle = angle;
-	}
-
-private:
-	double _halfWidth;
-	double _angle;
-	double _slope;
-	bool _infSlope;
-};
-
-
-class Grid
-{
-public:
-	Grid(uint32_t n, Circle c)
-	{
-		this->_n = n;
-		this->_d = 2.0*c.getR()/n;
-	}
-
-	uint32_t getN() const
-	{
-		return this->_n;
-	}
-
-	double getD() const
-	{
-		return this->_d;
-	}
-
-private:
-	uint32_t _n;
-	double _d;
-
-};
 
 // Function prototypes
 double getFractionalArea(Grid grid, Circle circle, Notch notch);
