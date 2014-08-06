@@ -10,14 +10,12 @@
 //
 //
 
-#include <math.h>
-#include <stdint.h>
-#include <inttypes.h>
-#include <stdio.h>
-#include <stdlib.h> 
-#include <stdbool.h>
-#include <time.h>
-#include <signal.h>
+#include <cmath>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib> 
+#include <ctime>
+#include <csignal>
 
 #define BATCH_MODE 0
 #define ERROR_MODE 1
@@ -25,11 +23,11 @@
 
 uint8_t MODE = BATCH_MODE;
 
-static const double pi = 4*atan(1);
-static const double piHalves = 2*atan(1);
+static const double pi = 4*std::atan(1);
+static const double piHalves = 2*std::atan(1);
 
 bool doubleRatio = true;
-bool monteCarlo = true;
+bool monteCarlo = false;
 
 uint16_t status = 0;
 uint16_t ysteps = 21;
@@ -129,7 +127,7 @@ public:
 		this->_halfWidth = 0.002;
 		this->_angle = angle;			// In radians
 		if(angle != piHalves) {
-			this->_slope = tan(angle);
+			this->_slope = std::tan(angle);
 			this->_infSlope = false;
 		} else {
 			this->_slope = 0;
@@ -140,7 +138,7 @@ public:
 	bool inNotch(Point p)
 	{
 		// Is point within the width and inside the angle?
-		return (((this->_infSlope)?(p.y >= 0):(fabs(p.x)) <= p.y*this->_slope) && fabs(p.x) <= this->_halfWidth);
+		return (((this->_infSlope)?(p.y >= 0):(std::fabs(p.x)) <= p.y*this->_slope) && std::fabs(p.x) <= this->_halfWidth);
 	}
 
 	double getAngle() const
@@ -214,10 +212,10 @@ int main(int argc, char const *argv[])
 	}
 
 	// Handle Signals
-	signal(SIGINFO, catch_function);
+	std::signal(SIGINFO, catch_function);
 
 	// initialize random seed
- 	srand(time(NULL));
+ 	std::srand(time(NULL));
 
 	// Circle Parameters
 	Circle circle(0.001,Point(0,0));
@@ -280,7 +278,7 @@ void printDYDFForRange(double ystart, double yrange, double ysteps, Grid grid, C
 		double yc2 = ystart + yrange*(iy/ysteps);
 
 		clock_t start_s,finish_s;
-		start_s = clock();
+		start_s = std::clock();
 
 		++status;
 	
@@ -288,10 +286,10 @@ void printDYDFForRange(double ystart, double yrange, double ysteps, Grid grid, C
 		printDYDF(yc1,yc2,grid,circle,notch);
 
 		if(MODE != BATCH_MODE){
-			printf("Finished y=%.3fmm*************************\n", ((yc1+yc2)/2)*1000);
+			std::printf("Finished y=%.3fmm*************************\n", ((yc1+yc2)/2)*1000);
 
-			finish_s = clock();
-			printf("Cycles: %lu\nTime: %.3f sec\n\n", (finish_s - start_s), ((finish_s - start_s)/((double) CLOCKS_PER_SEC)));
+			finish_s = std::clock();
+			std::printf("Cycles: %lu\nTime: %.3f sec\n\n", (finish_s - start_s), ((finish_s - start_s)/((double) CLOCKS_PER_SEC)));
 		}
 	}
 }
@@ -305,14 +303,14 @@ void printDYDF(double y1, double y2, Grid grid, Circle circle, Notch notch)
 	circle.setY(y2);
 	double fractionalArea2 = getFractionalArea(grid,circle,notch);
 
-	if(MODE != BATCH_MODE) printf("y1: %.10f f1: %.10f\n",y1,fractionalArea1);
-	if(MODE != BATCH_MODE) printf("y2: %.10f f2: %.10f\n",y2,fractionalArea2);
-	if(MODE != BATCH_MODE) printf("dy: %.10f df: %.10f\n",fabs(y2-y1),fabs(fractionalArea2-fractionalArea1));
-	if(MODE != BATCH_MODE) printf("Grid d: %.10f\n",grid.getD());
+	if(MODE != BATCH_MODE) std::printf("y1: %.10f f1: %.10f\n",y1,fractionalArea1);
+	if(MODE != BATCH_MODE) std::printf("y2: %.10f f2: %.10f\n",y2,fractionalArea2);
+	if(MODE != BATCH_MODE) std::printf("dy: %.10f df: %.10f\n",std::fabs(y2-y1),std::fabs(fractionalArea2-fractionalArea1));
+	if(MODE != BATCH_MODE) std::printf("Grid d: %.10f\n",grid.getD());
 
 
 
-	printf("%.16f\n",(1000*1000*fabs(y2-y1)/(fabs(fractionalArea2-fractionalArea1)*1024.0)));
+	std::printf("%.16f\n",(1000*1000*std::fabs(y2-y1)/(std::fabs(fractionalArea2-fractionalArea1)*1024.0)));
 }
 
 void printCurvesForRange(double ystart, double yrange, double ysteps, Grid grid, Circle circle, Notch notch)
@@ -325,16 +323,16 @@ void printCurvesForRange(double ystart, double yrange, double ysteps, Grid grid,
 		circle.setY(yc);
 
 		clock_t start_s,finish_s;
-		start_s = clock();
+		start_s = std::clock();
 	
 		// Calculate curve
 		printCurve(0,0.1*circle.getR(),1,grid,circle,notch);
 
 		if(MODE != BATCH_MODE){
-			printf("Finished y=%.3fmm*************************\n", yc*1000);
+			std::printf("Finished y=%.3fmm*************************\n", yc*1000);
 
-			finish_s = clock();
-			printf("Cycles: %lu\nTime: %.3f sec\n\n", (finish_s - start_s), ((finish_s - start_s)/((double) CLOCKS_PER_SEC)));		
+			finish_s = std::clock();
+			std::printf("Cycles: %lu\nTime: %.3f sec\n\n", (finish_s - start_s), ((finish_s - start_s)/((double) CLOCKS_PER_SEC)));		
 		}
 
 	}
@@ -350,17 +348,17 @@ void printCurve(double xstart, double xrange, double xsteps, Grid grid, Circle c
 		circle.setX(xc);
 
 		clock_t start_s,finish_s;
-		start_s = clock();
+		start_s = std::clock();
 
 		// Calculate area
 		double fractionalArea = getFractionalArea(grid,circle,notch);
 	
 
 		if(MODE != BATCH_MODE){
-			finish_s = clock();
-			printf("Cycles: %lu\nTime: %.3f sec\n\n", (finish_s - start_s), ((finish_s - start_s)/((double) CLOCKS_PER_SEC)));
+			finish_s = std::clock();
+			std::printf("Cycles: %lu\nTime: %.3f sec\n\n", (finish_s - start_s), ((finish_s - start_s)/((double) CLOCKS_PER_SEC)));
 		} else {
-			printf("%.16f\n",fractionalArea);
+			std::printf("%.16f\n",fractionalArea);
 		}
 	}
 }
@@ -378,14 +376,14 @@ uint8_t calculateError(Grid grid, Notch notch)
 			for(errorN = 101; errorN < 100000; errorN*=1.1){
 
 				clock_t start_s,finish_s;
-				start_s = clock();
+				start_s = std::clock();
 
 				Grid errorGrid(errorN, errorCircle);
 
 				double errorFractionalArea = getFractionalArea(errorGrid,errorCircle,notch);
 	
-				finish_s = clock();
-				printf("Error: %.8fppm\tTime: %.3f\tn=%u\n\n",fabs((errorFractionalArea*pi/notch.getAngle()-1)*1000000), 
+				finish_s = std::clock();
+				std::printf("Error: %.8fppm\tTime: %.3f\tn=%u\n\n",fabs((errorFractionalArea*pi/notch.getAngle()-1)*1000000), 
 					((finish_s - start_s)/((double) CLOCKS_PER_SEC)), errorGrid.getN());
 			}
 			return 1;
@@ -464,8 +462,6 @@ double getFractionalAreaMonteCarlo(Grid grid, Circle circle, Notch notch)
 			}
 		}
 	}
-
-	//if(MODE != BATCH_MODE) printf("Number of random points: %" PRIu64 "\n", area);
 	
 	if(doubleRatio){
 		return ((double) areaCircleAndNotch)/(areaCircle);
@@ -480,7 +476,7 @@ double deg2rad(double degrees)
 }
 
 static void catch_function(int signo) {
-    fprintf(stderr, "%i/%i\n", status, ysteps);
+    std::fprintf(stderr, "%i/%i\n", status, ysteps);
 }
 
 
