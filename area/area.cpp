@@ -127,13 +127,17 @@ int main(int argc, char const *argv[])
 	double yOptimum = 0;
 
 	// printCurvesForRange(yOptimum,0.00002,3,grid,circle,notch);
-	printDYDFForRange(yOptimum,0.0008,ysteps,grid,circle,squareNotch);
+	//printDYDFForRange(yOptimum,0.0008,ysteps,grid,circle,squareNotch);
 
 	// printDYDFForRange((circle.getR()/(2*tan(notch80Degrees.getAngle()))),0.0008,101.0,grid,circle,notch80Degrees);
 	// printDYDFForRange((circle.getR()/(2*tan(notch70Degrees.getAngle()))),0.0008,101.0,grid,circle,notch70Degrees);
 	// printDYDFForRange((circle.getR()/(2*tan(notch60Degrees.getAngle()))),0.0008,101.0,grid,circle,notch60Degrees);
 
-	// printDYDFForRange((circle.getR()/(2*tan(notch45Degrees.getAngle()))),0.0008,101.0,grid,circle,notch45Degrees);
+	monteCarlo = true;
+	printDYDFForRange((circle.getR()/(2*tan(notch45Degrees.getAngle()))),0.0008,ysteps,grid,circle,notch45Degrees);
+	monteCarlo = false;
+	printDYDFForRange((circle.getR()/(2*tan(notch45Degrees.getAngle()))),0.0008,ysteps,grid,circle,notch45Degrees);
+
 	// printDYDFForRange((circle.getR()/(2*tan(notch20Degrees.getAngle()))),0.0008,101.0,grid,circle,notch20Degrees);
 	// printDYDFForRange((circle.getR()/(2*tan(notch10Degrees.getAngle()))),0.0008,101.0,grid,circle,notch10Degrees);
 
@@ -182,7 +186,7 @@ void printDYDF(double y1, double y2, Grid grid, Circle circle, Notch notch)
 
 
 
-	std::printf("%.16f\n",(1000*1000*std::fabs(y2-y1)/(std::fabs(fractionalArea2-fractionalArea1)*1024.0)));
+	std::printf("%.16f %.16f\n",(1000*1000*std::fabs(y2-y1)/(std::fabs(fractionalArea2-fractionalArea1)*1024.0)),(y2+y1)/2);
 }
 
 void printCurvesForRange(double ystart, double yrange, double ysteps, Grid grid, Circle circle, Notch notch)
