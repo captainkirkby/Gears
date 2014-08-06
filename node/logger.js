@@ -138,22 +138,42 @@ async.parallel({
 			// Defines the schema and model for Minute averages
 			var minuteAverageSchema = mongoose.Schema({
 				timestamp: { type: Date, index: true },
-				average: Number
+				crudePeriod: Number,
+				temperature: Number,
+				pressure: Number,
+				thermistor: Number,
+				humidity: Number
 			});
 			var minuteAverageModel = mongoose.model('minuteAverageModel',minuteAverageSchema);
 			// Defines the schema and model for Hour averages
 			var hourAverageSchema = mongoose.Schema({
 				timestamp: { type: Date, index: true },
-				average: Number
+				crudePeriod: Number,
+				temperature: Number,
+				pressure: Number,
+				thermistor: Number,
+				humidity: Number
 			});
 			var hourAverageModel = mongoose.model('hourAverageModel',hourAverageSchema);
 
 			var runningTotals = {};
 			runningTotals.lastMinute = -1;
-			runningTotals.minutesRunningTotal = 0;
+			runningTotals.minutesRunningTotal = {
+				crudePeriod: 0,
+				temperature: 0,
+				pressure: 0,
+				thermistor: 0,
+				humidity: 0
+			};
 			runningTotals.samplesPerMinute = 0;
 			runningTotals.lastHour = -1;
-			runningTotals.hoursRunningTotal = 0;
+			runningTotals.hoursRunningTotal = {
+				crudePeriod: 0,
+				temperature: 0,
+				pressure: 0,
+				thermistor: 0,
+				humidity: 0
+			};
 			runningTotals.samplesPerHour = 0;
 
 			// Propagates our database connection and db models to data logger.
@@ -224,32 +244,6 @@ function receive(data,assembler,bootPacketModel,dataPacketModel,minuteAverageMod
 
 			// Prepare to recieve data
 			var date = new Date();
-
-			// New minute, new average
-			if(date.getMinutes() != runningTotals.lastMinute){
-				// Store with date object on the most recent side of the window
-				var b = runningTotals.minutesRunningTotal/runningTotals.samplesPerMinute;
-				console.log(b);
-				// store(runningTotals.minutesRunningTotal/runningTotals.samplesPerMinute, date);
-				runningTotals.minutesRunningTotal = 0;
-				runningTotals.samplesPerMinute = 0;
-			}
-
-			runningTotals.lastMinute = date.getMinutes();
-
-
-			// New hour, new average
-			if(date.getHours() != runningTotals.lastHour){
-				// Store with date object on the most recent side of the window
-				var c = runningTotals.hoursRunningTotal/runningTotals.samplesPerHour;
-				console.log(c);
-				// store(runningTotals.hoursRunningTotal/runningTotals.samplesPerHour, date);
-				runningTotals.hoursRunningTotal = 0;
-				runningTotals.samplesPerHour = 0;
-			}
-	
-			runningTotals.lastHour = date.getHours();
-
 
 			// 2^8 when we're running the ADC in 8 bit mode
 			var QUADRANT = 0xFF;
@@ -341,6 +335,48 @@ function receive(data,assembler,bootPacketModel,dataPacketModel,minuteAverageMod
 				'raw': raw
 			});
 			//console.log(raw);
+
+			// New minute, new average
+			if(date.getMinutes() != runningTotals.lastMinute){
+				// Store with date object on the most recent side of the window
+				var b = runningTotals.minutesRunningTotal/runningTotals.samplesPerMinute;
+				console.log(b);
+				// store(runningTotals.minutesRunningTotal/runningTotals.samplesPerMinute, date);
+				runningTotals.minutesRunningTotal = 0;
+				runningTotals.samplesPerMinute = 0;
+
+				runningTotals.lastHour = date.getHours();
+				runningTotals.hoursRunningTotal.crudePeriod += crudePeriod;
+				runningTotals.hoursRunningTotal.temperature += temperature;
+				runningTotals.hoursRunningTotal.pressure += pressure;
+				runningTotals.hoursRunningTotal.thermistor += thermistor;
+				runningTotals.hoursRunningTotal.humidity += humidity;
+			}
+
+			runningTotals.lastMinute = date.getMinutes();
+			runningTotals.minutesRunningTotal.crudePeriod += crudePeriod;
+			runningTotals.minutesRunningTotal.temperature += temperature;
+			runningTotals.minutesRunningTotal.pressure += pressure;
+			runningTotals.minutesRunningTotal.thermistor += thermistor;
+			runningTotals.minutesRunningTotal.humidity += humidity;
+
+
+
+
+			// New hour, new average
+			if(date.getHours() != runningTotals.lastHour){
+				// Store with date object on the most recent side of the window
+				var c = runningTotals.hoursRunningTotal/runningTotals.samplesPerHour;
+				console.log(c);
+				// store(runningTotals.hoursRunningTotal/runningTotals.samplesPerHour, date);
+				runningTotals.hoursRunningTotal = 0;
+				runningTotals.samplesPerHour = 0;
+			}
+	
+
+
+
+
 			// Checks for a packet sequence error.
 			if(p.sequenceNumber != lastDataSequenceNumber+1) {
 				console.log('Got packet #%d when expecting packet #%d',
