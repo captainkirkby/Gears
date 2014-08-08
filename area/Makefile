@@ -34,6 +34,10 @@ shape: compile
 	./area.out s > temp.dat \
 	&& gnuplot -geometry 700x700 -p -e 'set size square; set xrange [-0.006:0.006]; set yrange [-0.001:0.01]; plot  "temp.dat" using 1:2 title "" '
 
+curve: compile
+	./area.out c > temp.dat \
+	&& gnuplot -geometry 700x700 -p -e 'set size square; plot "temp.dat" using 1:2 with lines title "" '
+
 last: temp.dat
 	gnuplot -geometry 500x500 -p -e 'plot for [t=0:$(NUM_GRAPHS_MINUS_ONE)] "temp.dat" using 2:1 \
 	every ::(t*$(POINTS_PER_GRAPH))::(t*$(POINTS_PER_GRAPH)+$(POINTS_MINUS_ONE)) with lines title "".t'

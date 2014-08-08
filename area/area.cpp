@@ -91,6 +91,9 @@ int main(int argc, char const *argv[])
 	// Grid Parameters
 	Grid grid(1000,circle);
 
+	// Notch Parameters
+	Notch notch(deg2rad(90));
+
 	// Deal with command line arguments
 	if(argc > 1){
 		if(*argv[1] == 'b') {
@@ -110,14 +113,20 @@ int main(int argc, char const *argv[])
 			uint8_t i;	
 			for(i = 0; i < numDegreesToTest; ++i)
 			{
-				Notch notch(deg2rad(degreesToTest[i]));
-				printDYDFForRange(-0.0015,0.0030,yStepsPerRange,grid,circle,notch);
+				Notch testNotch(deg2rad(degreesToTest[i]));
+				printDYDFForRange(-0.0015,0.0030,yStepsPerRange,grid,circle,testNotch);
 			}
 		
 			return 0;
 		}
-		else if(*argv[1] == 'e') MODE = ERROR_MODE;
-		else if(*argv[1] == 'n') MODE = NORMAL_MODE;
+		else if(*argv[1] == 'e') {
+			MODE = ERROR_MODE;
+			calculateError(grid, notch);
+		}
+		else if(*argv[1] == 'c') {
+			MODE = BATCH_MODE;
+			printCurve(-0.002,0.004,20,grid,circle,notch);
+		}
 		else if(*argv[1] == 's') {
 			MODE = GRAPH_MODE;
 			// Circle Parameters
@@ -125,9 +134,6 @@ int main(int argc, char const *argv[])
 
 			// Grid Parameters
 			Grid shapeGrid(1000,shapeCircle);
-
-			// Notch Parameters
-			Notch notch(deg2rad(10));
 
 			getFractionalAreaMonteCarlo(shapeGrid,shapeCircle,notch);
 		} else {
@@ -143,10 +149,10 @@ void printDYDFForRange(double ystart, double yrange, double ysteps, Grid grid, C
 {
 	double iy;
 
-	for (iy = 1; iy < ysteps; ++iy)
+	for (iy = 0; iy <= ysteps; ++iy)
 	{
-		double yc1 = ystart + yrange*((iy-1)/ysteps);
-		double yc2 = ystart + yrange*(iy/ysteps);
+		double yc1 = ystart + yrange*(iy/ysteps);
+		double yc2 = ystart + yrange*((iy+1)/ysteps);
 
 		clock_t start_s,finish_s;
 		start_s = std::clock();
@@ -188,7 +194,7 @@ void printCurvesForRange(double ystart, double yrange, double ysteps, Grid grid,
 {
 	double iy;
 
-	for (iy = 0; iy < ysteps; ++iy)
+	for (iy = 0; iy <= ysteps; ++iy)
 	{
 		double yc = ystart + yrange*(iy/ysteps);
 		circle.setY(yc);
@@ -215,7 +221,7 @@ void printCurve(double xstart, double xrange, double xsteps, Grid grid, Circle c
 {
 	double ix;
 
-	for (ix = 0; ix < xsteps; ++ix)
+	for (ix = 0; ix <= xsteps; ++ix)
 	{
 		double xc = xstart + xrange*(ix/xsteps);
 		circle.setX(xc);
@@ -231,7 +237,7 @@ void printCurve(double xstart, double xrange, double xsteps, Grid grid, Circle c
 			finish_s = std::clock();
 			std::printf("Cycles: %lu\nTime: %.3f sec\n\n", (finish_s - start_s), ((finish_s - start_s)/((double) CLOCKS_PER_SEC)));
 		} else if(MODE == BATCH_MODE) {
-			std::printf("%.16f\n",fractionalArea);
+			std::printf("%.16f %.16f\n",xc,fractionalArea);
 		}
 	}
 }
@@ -239,31 +245,29 @@ void printCurve(double xstart, double xrange, double xsteps, Grid grid, Circle c
 // Assume for accuracy that theta is 10 degrees
 uint8_t calculateError(Grid grid, Notch notch)
 {
-	if(MODE == NORMAL_MODE){
-		// Percent Error
-		Circle errorCircle(0.001);
+	// Percent Error
+	Circle errorCircle(0.001);
 
-		if(MODE == ERROR_MODE){
-			uint32_t errorN;
-	
-			for(errorN = 101; errorN < 100000; errorN*=1.1){
+	if(MODE == ERROR_MODE){
+		uint32_t errorN;
 
-				clock_t start_s,finish_s;
-				start_s = std::clock();
+		for(errorN = 101; errorN < 100000; errorN*=1.1){
 
-				Grid errorGrid(errorN, errorCircle);
+			clock_t start_s,finish_s;
+			start_s = std::clock();
 
-				double errorFractionalArea = getFractionalArea(errorGrid,errorCircle,notch);
-	
-				finish_s = std::clock();
-				std::printf("Error: %.8fppm\tTime: %.3f\tn=%u\n\n",fabs((errorFractionalArea*pi/notch.getAngle()-1)*1000000), 
-					((finish_s - start_s)/((double) CLOCKS_PER_SEC)), errorGrid.getN());
-			}
-			return 1;
-		} else {
-			double errorFractionalArea = getFractionalArea(grid,errorCircle,notch);
-			printf("Error: %.8fppm\tn=%u\n\n",fabs((errorFractionalArea*pi/notch.getAngle()-1)*1000000), grid.getN());
+			Grid errorGrid(errorN, errorCircle);
+
+			double errorFractionalArea = getFractionalArea(errorGrid,errorCircle,notch);
+
+			finish_s = std::clock();
+			std::printf("Error: %.8fppm\tTime: %.3f\tn=%u\n\n",fabs((errorFractionalArea*pi/notch.getAngle()-1)*1000000), 
+				((finish_s - start_s)/((double) CLOCKS_PER_SEC)), errorGrid.getN());
 		}
+		return 1;
+	} else {
+		double errorFractionalArea = getFractionalArea(grid,errorCircle,notch);
+		printf("Error: %.8fppm\tn=%u\n\n",fabs((errorFractionalArea*pi/notch.getAngle()-1)*1000000), grid.getN());
 	}
 	return 0;
 }
