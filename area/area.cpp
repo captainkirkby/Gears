@@ -8,6 +8,8 @@
 //	|
 //	| +y
 //
+//  e.g.
+// 	printDYDFForRange((circle.getR()/(2*tan(notch80Degrees.getAngle()))),0.0008,yStepsPerRange,grid,circle,notch80Degrees);
 //
 
 #include <cmath>
@@ -25,6 +27,8 @@
 #define BATCH_MODE 0
 #define ERROR_MODE 1
 #define NORMAL_MODE 2
+#define GRAPH_MODE 3
+
 
 uint8_t MODE = BATCH_MODE;
 
@@ -75,15 +79,6 @@ static void catch_function(int signo);
 
 int main(int argc, char const *argv[])
 {
-	// Deal with command line arguments
-	if(argc > 1){
-		if(*argv[1] == 'b') MODE = BATCH_MODE;
-		else if(*argv[1] == 'e') MODE = ERROR_MODE;
-		else if(*argv[1] == 'n') MODE = NORMAL_MODE;
-	} else {
-		MODE = NORMAL_MODE;
-	}
-
 	// Handle Signals
 	std::signal(SIGINFO, catch_function);
 
@@ -94,59 +89,48 @@ int main(int argc, char const *argv[])
 	Circle circle(0.001,Point(0,0));
 
 	// Grid Parameters
-	Grid grid(1000,circle);
-	
-	// Notch Parameters (vertex @ origin)
-	Notch notch(deg2rad(10.0));
+	Grid grid(5000,circle);
 
+	// Deal with command line arguments
+	if(argc > 1){
+		if(*argv[1] == 'b') {
+			MODE = BATCH_MODE;
+		}
+		else if(*argv[1] == 'd') {
 
-	// doubleRatio = false;
-	// printf("Monte Carlo Fractional Area Single: %.18f\n",getFractionalAreaMonteCarlo(grid,circle,notch));
-	// printf("Grid Fractional Area Single: %.18f\n",getFractionalArea(grid,circle,notch));
-	// doubleRatio = true;
-	// printf("Monte Carlo Fractional Area Double: %.18f\n",getFractionalAreaMonteCarlo(grid,circle,notch));
-	// printf("Grid Fractional Area Double: %.18f\n",getFractionalArea(grid,circle,notch));
-	// printf("Expected: %.8f\n\n",(1.0/18.0));
+			MODE = BATCH_MODE;
 
+			// Parameters of test
+			uint16_t yStepsPerRange = 41;
+			const uint8_t numDegreesToTest = 10;
+			double degreesToTest[numDegreesToTest] = { 90.0, 80.0, 70.0, 60.0 , 50.0, 45.0, 40.0, 30.0, 20.0, 10.0};
 
-	// return 0;
+			maxSteps += yStepsPerRange*numDegreesToTest;
+			
+			uint8_t i;	
+			for(i = 0; i < numDegreesToTest; ++i)
+			{
+				Notch notch(deg2rad(degreesToTest[i]));
+				printDYDFForRange(-0.0015,0.0030,yStepsPerRange,grid,circle,notch);
+			}
+		
+			return 0;
+		}
+		else if(*argv[1] == 'e') MODE = ERROR_MODE;
+		else if(*argv[1] == 'n') MODE = NORMAL_MODE;
+		else if(*argv[1] == 'g') {
+			MODE = GRAPH_MODE;
+			// Notch Parameters
+			Notch notch(deg2rad(45));
+			circle.setY(0.000);
+			circle.setX(0.000);
 
-	Notch squareNotch(deg2rad(90.0));
+			getFractionalAreaMonteCarlo(grid,circle,notch);
+		} else {
+			MODE = NORMAL_MODE;
+		}
 
-	Notch notch80Degrees(deg2rad(80.0));
-	Notch notch70Degrees(deg2rad(70.0));
-	Notch notch60Degrees(deg2rad(60.0));
-
-	Notch notch45Degrees(deg2rad(45.0));
-	Notch notch20Degrees(deg2rad(20.0));
-	Notch notch10Degrees(deg2rad(10.0));
-
-
-	uint16_t yStepsPerRange = 21;
-	
-
-	if(calculateError(grid,notch)) return 0;
-
-	// double yOptimum = (circle.getR()/(2*tan(notch.getAngle())));
-	// double yOptimum = 0;
-
-	// printCurvesForRange(yOptimum,0.00002,3,grid,circle,notch);
-	//printDYDFForRange(yOptimum,0.0008,yStepsPerRange,grid,circle,squareNotch);
-
-	// printDYDFForRange((circle.getR()/(2*tan(notch80Degrees.getAngle()))),0.0008,yStepsPerRange,grid,circle,notch80Degrees);
-	// printDYDFForRange((circle.getR()/(2*tan(notch70Degrees.getAngle()))),0.0008,yStepsPerRange,grid,circle,notch70Degrees);
-	// printDYDFForRange((circle.getR()/(2*tan(notch60Degrees.getAngle()))),0.0008,yStepsPerRange,grid,circle,notch60Degrees);
-
-	monteCarlo = true;
-	// printDYDFForRange((circle.getR()/(2*tan(notch45Degrees.getAngle()))),0.0008,yStepsPerRange,grid,circle,notch45Degrees);
-	printCurvesForRange((circle.getR()/(2*tan(notch45Degrees.getAngle()))),0.0008,yStepsPerRange,grid,circle,notch45Degrees);
-
-	monteCarlo = false;
-	// printDYDFForRange((circle.getR()/(2*tan(notch45Degrees.getAngle()))),0.0008,yStepsPerRange,grid,circle,notch45Degrees);
-	//printCurvesForRange((circle.getR()/(2*tan(notch45Degrees.getAngle()))),0.0008,yStepsPerRange,grid,circle,notch45Degrees);
-
-	// printDYDFForRange((circle.getR()/(2*tan(notch20Degrees.getAngle()))),0.0008,yStepsPerRange,grid,circle,notch20Degrees);
-	// printDYDFForRange((circle.getR()/(2*tan(notch10Degrees.getAngle()))),0.0008,yStepsPerRange,grid,circle,notch10Degrees);
+	}
 
 	return 0;
 }
@@ -154,8 +138,6 @@ int main(int argc, char const *argv[])
 void printDYDFForRange(double ystart, double yrange, double ysteps, Grid grid, Circle circle, Notch notch)
 {
 	double iy;
-
-	maxSteps += ysteps;
 
 	for (iy = 1; iy < ysteps; ++iy)
 	{
@@ -170,7 +152,7 @@ void printDYDFForRange(double ystart, double yrange, double ysteps, Grid grid, C
 		// Calculate curve
 		printDYDF(yc1,yc2,grid,circle,notch);
 
-		if(MODE != BATCH_MODE){
+		if(MODE == NORMAL_MODE){
 			std::printf("Finished y=%.3fmm*************************\n", ((yc1+yc2)/2)*1000);
 
 			finish_s = std::clock();
@@ -188,21 +170,19 @@ void printDYDF(double y1, double y2, Grid grid, Circle circle, Notch notch)
 	circle.setY(y2);
 	double fractionalArea2 = getFractionalArea(grid,circle,notch);
 
-	if(MODE != BATCH_MODE) std::printf("y1: %.10f f1: %.10f\n",y1,fractionalArea1);
-	if(MODE != BATCH_MODE) std::printf("y2: %.10f f2: %.10f\n",y2,fractionalArea2);
-	if(MODE != BATCH_MODE) std::printf("dy: %.10f df: %.10f\n",std::fabs(y2-y1),std::fabs(fractionalArea2-fractionalArea1));
-	if(MODE != BATCH_MODE) std::printf("Grid d: %.10f\n",grid.getD());
-
-
-
-	std::printf("%.16f %.16f\n",(1000*1000*std::fabs(y2-y1)/(std::fabs(fractionalArea2-fractionalArea1)*1024.0)),(y2+y1)/2);
+	if(MODE == NORMAL_MODE) {
+		std::printf("y1: %.10f f1: %.10f\n",y1,fractionalArea1);
+		std::printf("y2: %.10f f2: %.10f\n",y2,fractionalArea2);
+		std::printf("dy: %.10f df: %.10f\n",std::fabs(y2-y1),std::fabs(fractionalArea2-fractionalArea1));
+		std::printf("Grid d: %.10f\n",grid.getD());
+	} else if(MODE == BATCH_MODE) {
+		std::printf("%.16f %.16f\n",(1000*1000*std::fabs(y2-y1)/(std::fabs(fractionalArea2-fractionalArea1)*1024.0)),(y2+y1)/2);
+	}
 }
 
 void printCurvesForRange(double ystart, double yrange, double ysteps, Grid grid, Circle circle, Notch notch)
 {
 	double iy;
-
-	maxSteps += ysteps;
 
 	for (iy = 0; iy < ysteps; ++iy)
 	{
@@ -217,7 +197,7 @@ void printCurvesForRange(double ystart, double yrange, double ysteps, Grid grid,
 		// Calculate curve
 		printCurve(0,circle.getR(),ysteps,grid,circle,notch);
 
-		if(MODE != BATCH_MODE){
+		if(MODE == NORMAL_MODE){
 			std::printf("Finished y=%.3fmm*************************\n", yc*1000);
 
 			finish_s = std::clock();
@@ -243,19 +223,19 @@ void printCurve(double xstart, double xrange, double xsteps, Grid grid, Circle c
 		double fractionalArea = getFractionalArea(grid,circle,notch);
 	
 
-		if(MODE != BATCH_MODE){
+		if(MODE == NORMAL_MODE){
 			finish_s = std::clock();
 			std::printf("Cycles: %lu\nTime: %.3f sec\n\n", (finish_s - start_s), ((finish_s - start_s)/((double) CLOCKS_PER_SEC)));
+		} else if(MODE == BATCH_MODE) {
+			std::printf("%.16f\n",fractionalArea);
 		}
-
-		std::printf("%.16f\n",fractionalArea);
 	}
 }
 
 // Assume for accuracy that theta is 10 degrees
 uint8_t calculateError(Grid grid, Notch notch)
 {
-	if(MODE != BATCH_MODE){
+	if(MODE == NORMAL_MODE){
 		// Percent Error
 		Circle errorCircle(0.001);
 
@@ -321,7 +301,7 @@ double getFractionalAreaGrid(Grid grid, Circle circle, Notch notch)
 		}
 	}
 
-	// if(MODE != BATCH_MODE) printf("Number of grids: %" PRIu64 "\n", area);
+	// if(MODE == NORMAL_MODE) printf("Number of grids: %" PRIu64 "\n", area);
 	
 	if(doubleRatio){
 		return ((double) areaCircleAndNotch)/(areaCircle);
@@ -356,6 +336,7 @@ double getFractionalAreaMonteCarlo(Grid grid, Circle circle, Notch notch)
 				++areaCircle;
 				if(notch.inNotch(p)){
 					++areaCircleAndNotch;
+					if(MODE == GRAPH_MODE) printf("%.8f %.8f\n", p.x, p.y);
 				}
 			}
 		}

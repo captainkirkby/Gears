@@ -5,12 +5,14 @@
 #
 # g++-4.9
 
-CC					= clang++
-CFLAGS				= -lm -Wall -fopenmp -o area.out
-NUM_GRAPHS			= 21
-POINTS_PER_GRAPH	= 21
-ONE					= 1
-POINTS_MINUS_ONE	= $(shell echo $(POINTS_PER_GRAPH)-$(ONE) | bc)
+CC						= clang++
+CFLAGS					= -lm -Wall -o area.out
+NUM_GRAPHS				= 10
+POINTS_PER_GRAPH		= 40
+ONE						= 1
+POINTS_MINUS_ONE		= $(shell echo $(POINTS_PER_GRAPH)-$(ONE) | bc)
+NUM_GRAPHS_MINUS_ONE	= $(shell echo $(NUM_GRAPHS)-$(ONE) | bc)
+
 
 compile:
 	$(CC) area.cpp $(CFLAGS) 
@@ -18,14 +20,16 @@ compile:
 run: area.out
 	./area.out
 
-batch: area.out
-	./area.out b
+dydf: compile
+	./area.out d > temp.dat \
+	&& gnuplot -geometry 500x500 -p -e 'set size square; set xrange [-0.0015:0.0015]; set yrange [0:5]; \
+	plot for [t=0:$(NUM_GRAPHS_MINUS_ONE)] "temp.dat" using 2:1 \
+	every ::(t*$(POINTS_PER_GRAPH))::(t*$(POINTS_PER_GRAPH)+$(POINTS_MINUS_ONE)) with lines title "".t'
 
 graph: compile
-	./area.out b > temp.dat \
-	&& gnuplot -p -e 'plot for [t=0:$(NUM_GRAPHS)] "temp.dat" \
-	every ::(t*$(POINTS_PER_GRAPH))::(t*$(POINTS_PER_GRAPH)+$(POINTS_MINUS_ONE)) with lines title "".t' \
+	./area.out g > temp.dat \
+	&& gnuplot -geometry 700x700 -p -e 'set size square; set xrange [-0.006:0.006]; set yrange [-0.001:0.01]; plot  "temp.dat" using 1:2 title "" '
 
 last: temp.dat
-	gnuplot -p -e 'plot for [t=0:$(NUM_GRAPHS)] "temp.dat" \
+	gnuplot -geometry 500x500 -p -e 'plot for [t=0:$(NUM_GRAPHS_MINUS_ONE)] "temp.dat" using 2:1 \
 	every ::(t*$(POINTS_PER_GRAPH))::(t*$(POINTS_PER_GRAPH)+$(POINTS_MINUS_ONE)) with lines title "".t'

@@ -11,7 +11,7 @@ public:
 	// static const double DEFAULT_WIDTH = 0.002;	// 2mm
 	Notch(double angle)
 	{
-		this->_halfWidth = 0.002;
+		this->_halfWidth = 0.004;
 		this->_angle = angle;			// In radians
 		if(angle != 2*std::atan(1)) {	// Pi halves
 			this->_slope = std::tan(angle);
