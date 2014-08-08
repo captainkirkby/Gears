@@ -89,7 +89,7 @@ int main(int argc, char const *argv[])
 	Circle circle(0.001,Point(0,0));
 
 	// Grid Parameters
-	Grid grid(5000,circle);
+	Grid grid(1000,circle);
 
 	// Deal with command line arguments
 	if(argc > 1){
@@ -118,14 +118,18 @@ int main(int argc, char const *argv[])
 		}
 		else if(*argv[1] == 'e') MODE = ERROR_MODE;
 		else if(*argv[1] == 'n') MODE = NORMAL_MODE;
-		else if(*argv[1] == 'g') {
+		else if(*argv[1] == 's') {
 			MODE = GRAPH_MODE;
-			// Notch Parameters
-			Notch notch(deg2rad(45));
-			circle.setY(0.000);
-			circle.setX(0.000);
+			// Circle Parameters
+			Circle shapeCircle(0.006,Point(0,0));
 
-			getFractionalAreaMonteCarlo(grid,circle,notch);
+			// Grid Parameters
+			Grid shapeGrid(1000,shapeCircle);
+
+			// Notch Parameters
+			Notch notch(deg2rad(10));
+
+			getFractionalAreaMonteCarlo(shapeGrid,shapeCircle,notch);
 		} else {
 			MODE = NORMAL_MODE;
 		}
