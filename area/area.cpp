@@ -51,7 +51,7 @@ unsigned long long int64() {
     return v*2685821657736338717LL;
 }
 
-double mersenneRandom() {
+double randomDouble() {
     return 5.42101086242752217e-20*int64();
 }
 
@@ -329,8 +329,8 @@ double getFractionalAreaMonteCarlo(Grid grid, Circle circle, Notch notch)
 		Point p(0,0);
 		for (iy = 0; iy < n; ++iy)
 		{
-			p.x = x - r + mersenneRandom()*2*r;
-			p.y = y - r + mersenneRandom()*2*r;
+			p.x = x - r + randomDouble()*2*r;
+			p.y = y - r + randomDouble()*2*r;
 	
 			if(circle.inCircle(p)){
 				++areaCircle;
