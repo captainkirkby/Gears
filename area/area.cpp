@@ -23,6 +23,7 @@
 #include "Grid.h"
 #include "Circle.h"
 #include "Point.h"
+#include "Polygon.h"
 
 #define BATCH_MODE 0
 #define ERROR_MODE 1
@@ -79,6 +80,9 @@ static void catch_function(int signo);
 
 int main(int argc, char const *argv[])
 {
+	clock_t start,finish;
+	start = clock();
+
 	// Handle Signals
 	std::signal(SIGINFO, catch_function);
 
@@ -142,6 +146,8 @@ int main(int argc, char const *argv[])
 
 	}
 
+	finish = clock();
+    std::fprintf(stderr, "Time Elapsed: %.3f\n",((finish - start)/((double) CLOCKS_PER_SEC)));
 	return 0;
 }
 
