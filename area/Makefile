@@ -6,7 +6,7 @@
 # g++-4.9
 
 CC						= clang++
-CFLAGS					= -lm -Wall -o area.out
+CFLAGS					= -lm -Wall -std=c++11 -o area.out
 NUM_GRAPHS				= 10
 POINTS_PER_GRAPH		= 40
 ONE						= 1

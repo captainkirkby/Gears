@@ -78,7 +78,7 @@ void printCurve(double xstart, double xrange, double xsteps, Grid grid, Circle c
 static void catch_function(int signo);
 
 
-int main(int argc, char const *argv[])
+int main(int argc, char *argv[])
 {
 	clock_t start,finish;
 	start = clock();
