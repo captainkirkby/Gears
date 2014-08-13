@@ -16,6 +16,7 @@ public:
 		this->_notches = notches;
 		this->_halfwidth = 0.022;
 	}
+	~Fingers(){}
 
 	bool inNotch(Point p) const
 	{
