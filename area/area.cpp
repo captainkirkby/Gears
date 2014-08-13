@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
 				Notch(a,Point(-0.02,0.01)),
 				Notch(a,Point(-0.01,0.01)),
 				Notch(a,Point(0.00,0.00)),
-				Notch(a,Point(0.017,0.01),0.007)
+				Notch(a,Point(0.015,0.01),0.007)
 			};
 			Fingers fingers(v);
 
