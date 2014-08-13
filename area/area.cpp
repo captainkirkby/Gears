@@ -136,10 +136,10 @@ int main(int argc, char *argv[])
 			double a = deg2rad(90.0);
 
 			std::vector<Notch> v { 
-				Notch(a,Point(-0.02,0.01)),
-				Notch(a,Point(-0.01,0.01)),
+				Notch(a,Point(-0.016,0.01)),
+				Notch(a,Point(-0.008,0.01)),
 				Notch(a,Point(0.00,0.00)),
-				Notch(a,Point(0.017,0.01),0.007)
+				Notch(a,Point(0.012,0.01),0.006)
 			};
 			Fingers fingers(v);
 			printCurve(-0.025,0.050,200,grid,circle,fingers);
@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
 			Fingers fingers(v);
 
 			// Circle Parameters
-			Circle shapeCircle(0.030,Point(0,0));
+			Circle shapeCircle(0.043,Point(0,0));
 
 			// Grid Parameters
 			Grid shapeGrid(1000,shapeCircle);
