@@ -32,7 +32,7 @@ graph: compile
 
 shape: compile
 	./area.out s > temp.dat \
-	&& gnuplot -geometry 700x700 -p -e 'set size square; set xrange [-0.006:0.006]; set yrange [-0.001:0.01]; plot  "temp.dat" using 1:2 title "" '
+	&& gnuplot -geometry 700x700 -p -e 'set size square; set xrange [-0.025:0.025]; set yrange [-0.015:0.01]; plot  "temp.dat" using 1:2 title "" '
 
 curve: compile
 	./area.out c > temp.dat \

@@ -9,7 +9,7 @@ class Polygon
 {
 public:
 	// Subclasses are required by law to implement this method
-    virtual bool inNotch(Point p) = 0;
+    virtual bool inNotch(Point p) const = 0;
 };
 
 #endif

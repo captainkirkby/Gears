@@ -21,7 +21,7 @@ public:
 		this->_rSq = r*r;
 	}
 
-	bool inCircle(Point p)
+	bool inCircle(Point p) const
 	{
 		double center_x = this->_c.x;
 		double center_y = this->_c.y;

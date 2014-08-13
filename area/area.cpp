@@ -19,11 +19,14 @@
 #include <ctime>
 #include <csignal>
 
+#include <vector>
+
 #include "Notch.h"
 #include "Grid.h"
 #include "Circle.h"
 #include "Point.h"
 #include "Polygon.h"
+#include "Fingers.h"
 
 #define BATCH_MODE 0
 #define ERROR_MODE 1
@@ -63,17 +66,17 @@ void setSeed(unsigned long long int j) {
 }
 
 // Function prototypes
-double getFractionalArea(Grid grid, Circle circle, Notch notch);
-double getFractionalAreaGrid(Grid grid, Circle circle, Notch notch);
-double getFractionalAreaMonteCarlo(Grid grid, Circle circle, Notch notch);
+double getFractionalArea(const Grid &grid, Circle &circle, const Polygon &notch);
+double getFractionalAreaGrid(const Grid &grid, Circle &circle, const Polygon &notch);
+double getFractionalAreaMonteCarlo(const Grid &grid, Circle &circle, const Polygon &notch);
 double deg2rad(double degrees);
 
-uint8_t calculateError(Grid grid, Notch notch);
+uint8_t calculateError(const Grid &grid, const Notch &notch);
 
-void printDYDFForRange(double ystart, double yrange, double ysteps, Grid grid, Circle circle, Notch notch);
-void printCurvesForRange(double ystart, double yrange, double ysteps, Grid grid, Circle circle, Notch notch);
-void printDYDF(double y1, double y2, Grid grid, Circle circle, Notch notch);
-void printCurve(double xstart, double xrange, double xsteps, Grid grid, Circle circle, Notch notch);
+void printDYDFForRange(double ystart, double yrange, double ysteps, const Grid &grid, Circle &circle, const Polygon &notch);
+void printCurvesForRange(double ystart, double yrange, double ysteps, const Grid &grid, Circle &circle, const Polygon &notch);
+void printDYDF(double y1, double y2, const Grid &grid, Circle &circle, const Polygon &notch);
+void printCurve(double xstart, double xrange, double xsteps, const Grid &grid, Circle &circle, const Polygon &notch);
 
 static void catch_function(int signo);
 
@@ -129,17 +132,38 @@ int main(int argc, char *argv[])
 		}
 		else if(*argv[1] == 'c') {
 			MODE = BATCH_MODE;
-			printCurve(-0.002,0.004,20,grid,circle,notch);
+
+			double a = deg2rad(90.0);
+
+			std::vector<Notch> v { 
+				Notch(a,Point(-0.02,0.01)),
+				Notch(a,Point(-0.01,0.01)),
+				Notch(a,Point(0.00,0.00)),
+				Notch(a,Point(0.017,0.01),0.007)
+			};
+			Fingers fingers(v);
+			printCurve(-0.025,0.050,200,grid,circle,fingers);
 		}
 		else if(*argv[1] == 's') {
 			MODE = GRAPH_MODE;
+
+			double a = deg2rad(90.0);
+
+			std::vector<Notch> v { 
+				Notch(a,Point(-0.02,0.01)),
+				Notch(a,Point(-0.01,0.01)),
+				Notch(a,Point(0.00,0.00)),
+				Notch(a,Point(0.017,0.01),0.007)
+			};
+			Fingers fingers(v);
+
 			// Circle Parameters
-			Circle shapeCircle(0.006,Point(0,0));
+			Circle shapeCircle(0.030,Point(0,0));
 
 			// Grid Parameters
 			Grid shapeGrid(1000,shapeCircle);
 
-			getFractionalAreaMonteCarlo(shapeGrid,shapeCircle,notch);
+			getFractionalAreaMonteCarlo(shapeGrid,shapeCircle,fingers);
 		} else {
 			MODE = NORMAL_MODE;
 		}
@@ -151,7 +175,7 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-void printDYDFForRange(double ystart, double yrange, double ysteps, Grid grid, Circle circle, Notch notch)
+void printDYDFForRange(double ystart, double yrange, double ysteps, const Grid &grid, Circle &circle, const Polygon &notch)
 {
 	double iy;
 
@@ -178,7 +202,7 @@ void printDYDFForRange(double ystart, double yrange, double ysteps, Grid grid, C
 }
 
 // Prints in micrometers
-void printDYDF(double y1, double y2, Grid grid, Circle circle, Notch notch)
+void printDYDF(double y1, double y2, const Grid &grid, Circle &circle, const Polygon &notch)
 {
 	circle.setX(0);
 	circle.setY(y1);
@@ -196,7 +220,7 @@ void printDYDF(double y1, double y2, Grid grid, Circle circle, Notch notch)
 	}
 }
 
-void printCurvesForRange(double ystart, double yrange, double ysteps, Grid grid, Circle circle, Notch notch)
+void printCurvesForRange(double ystart, double yrange, double ysteps, const Grid &grid, Circle &circle, const Polygon &notch)
 {
 	double iy;
 
@@ -223,7 +247,7 @@ void printCurvesForRange(double ystart, double yrange, double ysteps, Grid grid,
 	}
 }
 
-void printCurve(double xstart, double xrange, double xsteps, Grid grid, Circle circle, Notch notch)
+void printCurve(double xstart, double xrange, double xsteps, const Grid &grid, Circle &circle, const Polygon &notch)
 {
 	double ix;
 
@@ -249,7 +273,7 @@ void printCurve(double xstart, double xrange, double xsteps, Grid grid, Circle c
 }
 
 // Assume for accuracy that theta is 10 degrees
-uint8_t calculateError(Grid grid, Notch notch)
+uint8_t calculateError(const Grid &grid, const Notch &notch)
 {
 	// Percent Error
 	Circle errorCircle(0.001);
@@ -278,12 +302,12 @@ uint8_t calculateError(Grid grid, Notch notch)
 	return 0;
 }
 
-double getFractionalArea(Grid grid, Circle circle, Notch notch)
+double getFractionalArea(const Grid &grid, Circle &circle, const Polygon &notch)
 {
 	return((monteCarlo)?(getFractionalAreaMonteCarlo(grid,circle,notch)):(getFractionalAreaGrid(grid,circle,notch)));
 }
 
-double getFractionalAreaGrid(Grid grid, Circle circle, Notch notch)
+double getFractionalAreaGrid(const Grid &grid, Circle &circle, const Polygon &notch)
 {
 	uint64_t areaCircle = 0;
 	uint64_t areaCircleAndNotch = 0;
@@ -324,7 +348,7 @@ double getFractionalAreaGrid(Grid grid, Circle circle, Notch notch)
 	}
 }
 
-double getFractionalAreaMonteCarlo(Grid grid, Circle circle, Notch notch)
+double getFractionalAreaMonteCarlo(const Grid &grid, Circle &circle, const Polygon &notch)
 {
 	uint64_t areaCircle = 0;
 	uint64_t areaCircleAndNotch = 0;

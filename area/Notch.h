@@ -50,7 +50,21 @@ public:
 		}
 	}
 
-	bool inNotch(Point p)
+	Notch(double angle, Point p, double halfwidth)
+	{
+		this->_halfWidth = halfwidth;
+		this->_angle = angle;			// In radians
+		this->_center = p;
+		if(angle != 2*std::atan(1)) {	// Pi halves
+			this->_slope = std::tan(angle);
+			this->_infSlope = false;
+		} else {
+			this->_slope = 0;
+			this->_infSlope = true;
+		}
+	}
+
+	bool inNotch(Point p) const
 	{
 		double abs_x = std::fabs(p.x);
 		// Is point within the width and inside the angle?
