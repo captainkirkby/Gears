@@ -8,7 +8,7 @@
 CC						= clang++
 CFLAGS					= -lm -Wall -std=c++11 -o area.out
 NUM_GRAPHS				= 10
-POINTS_PER_GRAPH		= 40
+POINTS_PER_GRAPH		= 200
 ONE						= 1
 POINTS_MINUS_ONE		= $(shell echo $(POINTS_PER_GRAPH)-$(ONE) | bc)
 NUM_GRAPHS_MINUS_ONE	= $(shell echo $(NUM_GRAPHS)-$(ONE) | bc)
@@ -38,6 +38,10 @@ curve: compile
 	./area.out c > temp.dat \
 	&& gnuplot -geometry 700x700 -p -e 'set size square; plot "temp.dat" using 1:2 with lines title "" '
 
-last: temp.dat
-	gnuplot -geometry 500x500 -p -e 'plot for [t=0:$(NUM_GRAPHS_MINUS_ONE)] "temp.dat" using 2:1 \
+heights: compile
+	./area.out h > temp.dat \
+	&& gnuplot -geometry 700x700 -p -e 'set size square; plot for [t=0:$(NUM_GRAPHS_MINUS_ONE)] "temp.dat" using 1:2 \
 	every ::(t*$(POINTS_PER_GRAPH))::(t*$(POINTS_PER_GRAPH)+$(POINTS_MINUS_ONE)) with lines title "".t'
+
+last: temp.dat
+	gnuplot -geometry 700x700 -p -e 'set size square; plot "temp.dat" using 1:2 with lines title "" '

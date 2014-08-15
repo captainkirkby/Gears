@@ -75,10 +75,18 @@ uint8_t calculateError(const Grid &grid, const Notch &notch);
 
 void printDYDFForRange(double ystart, double yrange, double ysteps, const Grid &grid, Circle &circle, const Polygon &notch);
 void printCurvesForRange(double ystart, double yrange, double ysteps, const Grid &grid, Circle &circle, const Polygon &notch);
+void printCurvesForRange(double ystart, double yrange, double ysteps, double xstart, double xrange, double xsteps, 
+	const Grid &grid, Circle &circle, const Polygon &notch);
 void printDYDF(double y1, double y2, const Grid &grid, Circle &circle, const Polygon &notch);
 void printCurve(double xstart, double xrange, double xsteps, const Grid &grid, Circle &circle, const Polygon &notch);
+void printCurve(uint32_t totalSamples, const Grid &grid, Circle &circle, const Polygon &notch);
 
 static void catch_function(int signo);
+
+double yForCircle(double x);
+double initialVelocity();
+double acceleration();
+
 
 
 int main(int argc, char *argv[])
@@ -142,7 +150,35 @@ int main(int argc, char *argv[])
 				Notch(a,Point(0.012,0.01),0.006)
 			};
 			Fingers fingers(v);
-			printCurve(-0.025,0.050,200,grid,circle,fingers);
+			printCurve(2048,grid,circle,fingers);
+		}
+		else if(*argv[1] == 'h') {
+			MODE = BATCH_MODE;
+
+			double a = deg2rad(90.0);
+
+			std::vector<Notch> v { 
+				Notch(a,Point(-0.016,0.01)),
+				Notch(a,Point(-0.008,0.01)),
+				Notch(a,Point(0.00,0.00)),
+				Notch(a,Point(0.012,0.01),0.006)
+			};
+			Fingers fingers(v);
+			printCurvesForRange(-0.000005,0.00001,10,-0.025,0.050,200,grid,circle,fingers);
+		}
+		else if(*argv[1] == 'v') {
+			MODE = BATCH_MODE;
+
+			double a = deg2rad(90.0);
+
+			std::vector<Notch> v { 
+				Notch(a,Point(-0.016,0.01)),
+				Notch(a,Point(-0.008,0.01)),
+				Notch(a,Point(0.00,0.00)),
+				Notch(a,Point(0.012,0.01),0.006)
+			};
+			Fingers fingers(v);
+			printCurvesForRange(-0.000005,0.00001,10,-0.025,0.050,200,grid,circle,fingers);
 		}
 		else if(*argv[1] == 's') {
 			MODE = GRAPH_MODE;
@@ -220,6 +256,35 @@ void printDYDF(double y1, double y2, const Grid &grid, Circle &circle, const Pol
 	}
 }
 
+void printCurvesForRange(double ystart, double yrange, double ysteps, double xstart, double xrange, 
+	double xsteps, const Grid &grid, Circle &circle, const Polygon &notch)
+{
+	double iy;
+
+	for (iy = 0; iy <= ysteps; ++iy)
+	{
+		double yc = ystart + yrange*(iy/ysteps);
+		circle.setY(yc);
+
+		clock_t start_s,finish_s;
+		start_s = std::clock();
+
+		++status;
+	
+		// Calculate curve
+		printCurve(xstart,xrange,xsteps,grid,circle,notch);
+
+		if(MODE == NORMAL_MODE){
+			std::printf("Finished y=%.3fmm*************************\n", yc*1000);
+
+			finish_s = std::clock();
+			std::printf("Cycles: %lu\nTime: %.3f sec\n\n", (finish_s - start_s), ((finish_s - start_s)/((double) CLOCKS_PER_SEC)));		
+		}
+
+	}
+}
+
+
 void printCurvesForRange(double ystart, double yrange, double ysteps, const Grid &grid, Circle &circle, const Polygon &notch)
 {
 	double iy;
@@ -270,6 +335,55 @@ void printCurve(double xstart, double xrange, double xsteps, const Grid &grid, C
 			std::printf("%.16f %.16f\n",xc,fractionalArea);
 		}
 	}
+}
+
+// Samples should be an even number
+void printCurve(uint32_t totalSamples, const Grid &grid, Circle &circle, const Polygon &notch)
+{
+	uint32_t ix;
+	int32_t sample;
+	double secondsPerSample = 6.400e-6;			// (10MHz/64)^-1
+	double startingY = circle.getY();
+	if(totalSamples%2)++totalSamples;		// Make sure samples is even
+
+	for (ix = 0; ix <= totalSamples; ++ix)
+	{
+		sample = (totalSamples*-0.5+ix);
+		double t = (sample*secondsPerSample);
+		double xc = initialVelocity()*t + 0.5*acceleration()*t*t; 
+		circle.setX(xc);
+		circle.setY(startingY + yForCircle(xc));
+
+		clock_t start_s,finish_s;
+		start_s = std::clock();
+
+		// Calculate area
+		double fractionalArea = getFractionalArea(grid,circle,notch);
+	
+
+		if(MODE == NORMAL_MODE){
+			finish_s = std::clock();
+			std::printf("Cycles: %lu\nTime: %.3f sec\n\n", (finish_s - start_s), ((finish_s - start_s)/((double) CLOCKS_PER_SEC)));
+		} else if(MODE == BATCH_MODE) {
+			std::printf("%i %.16f\n",ix,fractionalArea);
+		}
+	}
+}
+
+double yForCircle(double x)
+{
+	return std::sqrt(1 - x*x) - 1;
+}
+
+// In meters per second
+double initialVelocity()
+{
+	return 3.639;			// Measured: 3.639 m/s
+}
+
+double acceleration()
+{
+	return 0.0;
 }
 
 // Assume for accuracy that theta is 10 degrees
