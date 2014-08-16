@@ -372,7 +372,8 @@ void printCurve(uint32_t totalSamples, const Grid &grid, Circle &circle, const P
 
 double yForCircle(double x)
 {
-	return std::sqrt(1 - x*x) - 1;
+	// return std::sqrt(1 - x*x) - 1;
+	return 0;
 }
 
 // In meters per second
