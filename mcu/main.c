@@ -119,8 +119,8 @@ int main(void)
     dataPacket.sequenceNumber = 0;
 
     // Test point 1 accessible (Port A2)
-    DDRA |= 0B00100000;
-    PORTA &= ~0B00100000;
+    DDRA |= 0B00000100;
+    PORTA &= ~0B00000100;
 
     while(1) {
         // Store ADC run and transmit data
@@ -139,10 +139,10 @@ int main(void)
             dataPacket.thermistor = thermistorReading;
             dataPacket.humidity = humidityReading;
             
-            PORTA |= 0B00100000;    // high
+            PORTA |= 0B00000100;    // high
             // Sends binary packet data synchronously
             serialWriteUSB((const uint8_t*)&dataPacket,sizeof(dataPacket));
-            PORTA &= ~0B00100000;   // low
+            PORTA &= ~0B00000100;   // low
 
             adcStatus = ADC_STATUS_CONTINUOUS;
         }
