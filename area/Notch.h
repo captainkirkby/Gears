@@ -86,6 +86,11 @@ public:
 		return this->_center.y;
 	}
 
+	bool isInfSlope() const
+	{
+		return this->_infSlope;
+	}
+
 	void setAngle(double angle)
 	{
 		this->_angle = angle;

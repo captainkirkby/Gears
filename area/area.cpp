@@ -45,6 +45,8 @@ bool monteCarlo = true;
 uint16_t status = 0;
 uint16_t maxSteps = 0;
 
+double _velocity = 0.8;
+
 
 /* A random number generator with a period of about 2 x 10^19 */
 
@@ -178,7 +180,12 @@ int main(int argc, char *argv[])
 				Notch(a,Point(0.012,0.01),0.006)
 			};
 			Fingers fingers(v);
-			printCurvesForRange(-0.000005,0.00001,10,-0.025,0.050,200,grid,circle,fingers);
+			for (int i = 0; i < 2; ++i)
+			{
+				printCurve(2048,grid,circle,fingers);
+				// printCurve(-0.025,0.050,200,grid,circle,fingers);
+				_velocity+=0.2;
+			}
 		}
 		else if(*argv[1] == 's') {
 			MODE = GRAPH_MODE;
@@ -318,8 +325,9 @@ void printCurve(double xstart, double xrange, double xsteps, const Grid &grid, C
 
 	for (ix = 0; ix <= xsteps; ++ix)
 	{
-		double xc = xstart + xrange*(ix/xsteps);
+		double xc = xstart + initialVelocity()*xrange*(ix/xsteps);
 		circle.setX(xc);
+		circle.setY(yForCircle(xc));
 
 		clock_t start_s,finish_s;
 		start_s = std::clock();
@@ -332,7 +340,7 @@ void printCurve(double xstart, double xrange, double xsteps, const Grid &grid, C
 			finish_s = std::clock();
 			std::printf("Cycles: %lu\nTime: %.3f sec\n\n", (finish_s - start_s), ((finish_s - start_s)/((double) CLOCKS_PER_SEC)));
 		} else if(MODE == BATCH_MODE) {
-			std::printf("%.16f %.16f\n",xc,fractionalArea);
+			std::printf("%.16f %.16f\n",ix,fractionalArea);
 		}
 	}
 }
@@ -343,7 +351,6 @@ void printCurve(uint32_t totalSamples, const Grid &grid, Circle &circle, const P
 	uint32_t ix;
 	int32_t sample;
 	double secondsPerSample = 6.400e-6;			// (10MHz/64)^-1
-	double startingY = circle.getY();
 	if(totalSamples%2)++totalSamples;		// Make sure samples is even
 
 	for (ix = 0; ix <= totalSamples; ++ix)
@@ -352,7 +359,7 @@ void printCurve(uint32_t totalSamples, const Grid &grid, Circle &circle, const P
 		double t = (sample*secondsPerSample);
 		double xc = initialVelocity()*t + 0.5*acceleration()*t*t; 
 		circle.setX(xc);
-		circle.setY(startingY + yForCircle(xc));
+		circle.setY(yForCircle(xc));
 
 		clock_t start_s,finish_s;
 		start_s = std::clock();
@@ -370,16 +377,17 @@ void printCurve(uint32_t totalSamples, const Grid &grid, Circle &circle, const P
 	}
 }
 
+double r = 1.0;
 double yForCircle(double x)
 {
-	// return std::sqrt(1 - x*x) - 1;
+	return r-std::sqrt(r*r - x*x);
 	return 0;
 }
 
 // In meters per second
 double initialVelocity()
 {
-	return 3.639;			// Measured: 3.639 m/s
+	return _velocity;			// Measured: 3.639 m/s
 }
 
 double acceleration()
