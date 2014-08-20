@@ -33,7 +33,7 @@ PROGRAMMER = bootloader
 # Select serial port format
 # ubuntu ........./dev/ttyUSB*
 # OS X .........../dev/tty.usbserial*
-PORT = /dev/ttyUSB*
+PORT = /dev/tty.usbserial*
 
 ##FUSES      = -U hfuse:w:0xd9:m -U lfuse:w:0x24:m
 
