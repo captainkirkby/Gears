@@ -120,7 +120,7 @@ $(function() {
 		// Figure out if we already have the data we need in our cache and make the modified request
 
 		if(from === undefined){
-			from = "DEFAULT";			// Use server default
+			from = "";			// Use server default
 		}
 
 		if(to === undefined){

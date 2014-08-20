@@ -66,7 +66,7 @@ db.once('open', function() {
 
 	process.on('message', function(message) {
 		if(debug) console.log("Starting Fetch");
-		fetch(message.query, dataPacketModel);
+		fetch(message.query, dataPacketModel, bootPacketModel);
 	});
 
 });
@@ -74,36 +74,33 @@ db.once('open', function() {
 // Maximum number of results to return from a query (don't exceed number of pixels on graph!)
 var MAX_QUERY_RESULTS = 1000;
 
+// Default time to fetch is 2 minutes (120 seconds)
+var DEFAULT_FETCH = 120;
+
 // Responds to a request to fetch data.
-function fetch(query, dataPacketModel) {
+function fetch(query, dataPacketModel, bootPacketModel) {
 	// Gets the date range to fetch.
 	var from = ('from' in query) ? query.from : '-120';
 	var to = ('to' in query) ? query.to : 'now';
 
-	// Converts end date into a javascript Date object.
+
+	// Tries to interpret to as a date string
 	to = new Date(Date.parse(to));
 	if(to == 'Invalid Date') to = new Date();
 
-	// Converts begin date into a javascript Date object.
-	var relativeSeconds = parseInt(from, 10);
-	if(!isNaN(relativeSeconds) && relativeSeconds < 0) {
-		// Interprets from as number of seconds to fetch before end date.
-		from = new Date(to.getTime() + 1000*relativeSeconds);
-	}
-	else {
-		// Tries to interpret from as start keyword
-		if(from == 'start' && latestDate !== null){
-			from = latestDate;
-		// Tries to interpret from as a date string
-		} else {
-			from = new Date(Date.parse(from));
-			if(from == 'Invalid Date') {
-				// Defaults to fetching 120 seconds.
-				from = new Date(to.getTime() - 120000);
-			}
+
+	// Tries to interpret from as start keyword
+	if(from == 'start' && latestDate !== null){
+		from = latestDate;
+	// Tries to interpret from as a date string
+	} else {
+		from = new Date(Date.parse(from));
+		if(from == 'Invalid Date') {
+			// Defaults to fetching DEFAULT_FETCH seconds.
+			from = new Date(to.getTime() - DEFAULT_FETCH*1000);
 		}
 	}
-	if(debug) console.log('query',from,to);
+	if(debug) console.log('query', query);
 
 	// TODO: expand fetch to natural borders
 
