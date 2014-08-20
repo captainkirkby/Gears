@@ -47,7 +47,7 @@ var fit = spawn('../fit/fit.py', pythonFlags, { cwd : "../fit", stdio : 'pipe'})
 // fit.stdout.pipe(process.stdout);
 
 // Make sure to kill the fit process when node is about to exit
-process.on('exit', function(){
+process.on('SIGINT', function(){
 	gracefulExit();
 });
 
@@ -55,6 +55,8 @@ function gracefulExit()
 {
 	console.log("Stopping Python");
 	fit.kill();
+	console.log("Stopping Logger " + __filename);
+	process.exit();
 }
 
 async.parallel({

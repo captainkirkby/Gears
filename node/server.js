@@ -28,9 +28,6 @@ if(!noSerial){
 	
 	// Make sure to kill the fit process when node is about to exit
 	process.on('SIGINT', function(){
-		process.exit();
-	});
-	process.on('exit', function(){
 		gracefulExit();
 	});
 }
@@ -38,8 +35,9 @@ if(!noSerial){
 function gracefulExit()
 {
 	console.log("Stopping Data Logger");
-	logger.kill();
+	logger.kill('SIGINT');
 	console.log("Stopping Server " + __filename);
+	process.exit();
 }
 
 console.log(__filename + ' connecting to the database...');
