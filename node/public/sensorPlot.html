@@ -4,7 +4,7 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 	<title>Plot</title>
 	<link href="examples.css" rel="stylesheet" type="text/css">
-	<!--[if lte IE 8]><script language="javascript" type="text/javascript" src="../../excanvas.min.js"></script><![endif]-->
+	<!--[if lte IE 8]><script language="javascript" type="text/javascript" src="excanvas.min.js"></script><![endif]-->
 	<script language="javascript" type="text/javascript" src="jquery-1.10.2.min.js"></script>
 	<script language="javascript" type="text/javascript" src="jquery.flot.min.js"></script>
 	<script language="javascript" type="text/javascript" src="jquery.flot.time.min.js"></script>
@@ -13,7 +13,11 @@
 <body>
 
 	<div id="header">
-		<h2>Sensor Data</h2>
+		<h2 class="loadingDiv" style="display: inline-block">Sensor Data</h2>
+		<span class="loading" style="display: none">
+			<!-- <img src="http://www.notabasement.com/images/loading.gif" /> -->
+			<img src="http://www.twillusa.com/images/loading_icon.gif"/>
+		</span>
 	</div>
 
 	<div id="content">
@@ -24,8 +28,10 @@
 
 		<input type="button" id="fetch" value="Get me my data!"></input>
 		<input type="button" id="continuousMode" value="Start Real Time Updates"></input>
-		<input type="button" id="toggleSmoothing" value="Use Smoothing"></input>
-		<input type="button" id="showDots" value="Don't Show Dots"></input>
+		<span class="checkboxes">
+			<input type="checkbox" id="toggleSmoothing">Smoothing</input>
+			<input type="checkbox" id="showDots" checked>Show Dots</input>
+		</span>
 
 
 		<br/> From:

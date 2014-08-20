@@ -88,7 +88,7 @@ $(function() {
 							"crudePeriod"	: "Period (samples)",
 							"thermistor"	: "Thermistor (°C)",
 							"humidity"		: "Humidity (%)",
-							"refinedPeriod"	: "Period (s)",
+							"refinedPeriod"	: "Period (ppm)",
 							"angle"			: "Angle (degrees)"};
 		
 		var result = lookUpTable[name];
@@ -236,7 +236,11 @@ $(function() {
 				legend: { show : true, position : "nw", sorted : "ascending"}
 			});
 
+			stopSpinner();
+
 		}
+
+		startSpinner();
 
 		$.ajax({
 			url:dataURL,
@@ -244,6 +248,8 @@ $(function() {
 			dataType:"json",
 			success:onDataRecieved
 		});
+
+		
 	}
 
 	function continuousUpdate(length){
@@ -258,6 +264,16 @@ $(function() {
 		$("#from").prop('disabled', !enabled);
 		$("#to").prop('disabled', !enabled);
 		$("#length").prop('disabled', !enabled);
+	}
+
+	function startSpinner(){
+		$(".loading").show();
+		setManualFetchEnabled(false);
+	}
+
+	function stopSpinner(){
+		$(".loading").hide();
+		setManualFetchEnabled(true);
 	}
 
 	$("#placeholder").on("click", ".legendColorBox",function(){
@@ -327,23 +343,19 @@ $(function() {
 		continuousUpdate(length);
 	});
 
-	$("#toggleSmoothing").click(function(){
-		if(smoothing){
-			$(this).val("Use Smoothing");
-			smoothing = false;
-		} else {
-			$(this).val("Don't Use Smoothing");
+	$("#toggleSmoothing").change(function(){
+		if($(this).is(":checked")) {
 			smoothing = true;
+		} else {
+			smoothing = false;
 		}
 	});
 
-	$("#showDots").click(function(){
-		if(showDots){
-			$(this).val("Show Dots");
-			showDots = false;
-		} else {
-			$(this).val("Don't Show Dots");
+	$("#showDots").change(function(){
+		if($(this).is(":checked")) {
 			showDots = true;
+		} else {
+			showDots = false;
 		}
 	});
 
