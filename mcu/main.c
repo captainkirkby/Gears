@@ -108,7 +108,6 @@ int main(void)
     // Sends our boot packet
     LED_ON(GREEN);
     serialWriteUSB((const uint8_t*)&bootPacket,sizeof(bootPacket));
-    _delay_ms(500);
     LED_OFF(GREEN);
 
     // Initializes the constant header of our data packet
