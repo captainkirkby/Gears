@@ -104,7 +104,7 @@ function fetch(query, dataPacketModel, bootPacketModel) {
 	}
 	if(debug) console.log('query', query);
 
-	// Only fetch most recent
+	// Only fetch most recent (raw)
 	if(mostRecent){
 		dataPacketModel.find().limit(1).sort([['timestamp', -1]]).exec(function(err,results) {
 			// Send message to parent
@@ -113,7 +113,7 @@ function fetch(query, dataPacketModel, bootPacketModel) {
 				"results"	: results
 			});
 		});
-	// Fetch many
+	// Fetch many (not raw)
 	} else {
 		// TODO: expand fetch to natural borders
 		var visibleSets = getVisibleSets(query);
@@ -180,7 +180,7 @@ function getVisibleSets(query) {
 	var visibleSets = [];
 	for(var k in query.series) {
 		if(query.series[k].visible == 'true'){
-			visibleSets.push(k);
+			if(k != 'raw') visibleSets.push(k);
 		}
 	}
 	return visibleSets;
