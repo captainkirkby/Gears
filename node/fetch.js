@@ -12,12 +12,19 @@ var noDatabase = false;
 var debug = false;
 var pythonFlags = ["--load-template", "template2048.dat"];
 process.argv.forEach(function(val,index,array) {
-	if(debug) console.log(val);
 	if(val == '--no-serial') noSerial = true;
 	else if(val == '--no-database') noDatabase = true;
 	else if(val == '--debug') debug = true;
 	else if(val == '--physical')  pythonFlags = ["--physical"];
 });
+
+process.on('exit', function(){
+	gracefulExit();
+});
+function gracefulExit()
+{
+	console.log("Stopping Fetch");
+}
 
 if(debug) console.log("Worker Starting!");
 console.log(__filename + ' connecting to the database...');

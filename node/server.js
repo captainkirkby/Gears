@@ -16,7 +16,6 @@ var noDatabase = false;
 var debug = false;
 var pythonFlags = ["--load-template", "template2048.dat"];
 process.argv.forEach(function(val,index,array) {
-	if(debug) console.log(val);
 	if(val == '--no-serial') noSerial = true;
 	else if(val == '--no-database') noDatabase = true;
 	else if(val == '--debug') debug = true;
@@ -28,10 +27,19 @@ if(!noSerial){
 	var logger = fork('logger.js', process.argv.slice(2,process.argv.length), { stdio : 'inherit'});
 	
 	// Make sure to kill the fit process when node is about to exit
-	process.on('exit', function(){
-		console.log("Stopping Data Logger " + __filename);
-		logger.kill();
+	process.on('SIGINT', function(){
+		process.exit();
 	});
+	process.on('exit', function(){
+		gracefulExit();
+	});
+}
+
+function gracefulExit()
+{
+	console.log("Stopping Data Logger");
+	logger.kill();
+	console.log("Stopping Server " + __filename);
 }
 
 console.log(__filename + ' connecting to the database...');

@@ -24,9 +24,9 @@ var datesBeingProcessed = [];
 var noSerial = false;
 var noDatabase = false;
 var debug = false;
+var debugLevel2 = false;
 var pythonFlags = ["--load-template", "template2048.dat"];
 process.argv.forEach(function(val,index,array) {
-	if(debug) console.log(val);
 	if(val == '--no-serial') noSerial = true;
 	else if(val == '--no-database') noDatabase = true;
 	else if(val == '--debug') debug = true;
@@ -48,9 +48,14 @@ var fit = spawn('../fit/fit.py', pythonFlags, { cwd : "../fit", stdio : 'pipe'})
 
 // Make sure to kill the fit process when node is about to exit
 process.on('exit', function(){
+	gracefulExit();
+});
+
+function gracefulExit()
+{
 	console.log("Stopping Python");
 	fit.kill();
-});
+}
 
 async.parallel({
 	// Opens a serial port connection to the TickTock device.
@@ -59,11 +64,11 @@ async.parallel({
 		async.waterfall([
 			// Finds the tty device name of the serial port to open.
 			function(portCallback) {
-				console.log('Looking for the tty device...');
+				if(debug) console.log('Looking for the tty device...');
 				serial.list(function(err,ports) {
 					// Looks for the first port with 'FTDI' as the manufacturer
 					async.detectSeries(ports,function(port,ttyCallback) {
-						console.log('scanning port',port);
+						if(debugLevel2) console.log('scanning port',port);
 						ttyCallback(port.manufacturer == 'FTDI' || port.pnpId.indexOf('FTDI') > -1);
 					},
 					// Forwards the corresponding tty device name.
@@ -81,7 +86,7 @@ async.parallel({
 			},
 			// Opens the serial port.
 			function(ttyName,portCallback) {
-				console.log('Opening device %s...',ttyName);
+				if(debug) console.log('Opening device %s...',ttyName);
 				var port = new serial.SerialPort(ttyName, {
 					baudrate: 57600,
 					buffersize: 255,
@@ -89,7 +94,7 @@ async.parallel({
 				});
 				port.on('open',function(err) {
 					if(err) return portCallback(err);
-					console.log('Port open');
+					if(debug) console.log('Port open');
 					portCallback(null,port);
 				});
 			}],
@@ -153,7 +158,7 @@ async.parallel({
 		config.startupTime = new Date();
 		if(config.db && config.port) {
 			// Logs TickTock packets from the serial port into the database.
-			if(debug) console.log('starting data logger with',config);
+			if(debugLevel2) console.log('starting data logger with',config);
 			// Initializes our binary packet assembler to initially only accept a boot packet.
 			// NB: the maximum and boot packet sizes are hardcoded here!
 			var assembler = new packet.Assembler(0xFE,3,MAX_PACKET_SIZE,{0x00:32},0);
