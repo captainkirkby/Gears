@@ -26,6 +26,7 @@ var noDatabase = false;
 var debug = false;
 var pythonFlags = ["--load-template", "template2048.dat"];
 process.argv.forEach(function(val,index,array) {
+	if(debug) console.log(val);
 	if(val == '--no-serial') noSerial = true;
 	else if(val == '--no-database') noDatabase = true;
 	else if(val == '--debug') debug = true;
@@ -102,7 +103,7 @@ async.parallel({
 	// Connects to the database where packets from TickTock are logged.
 	db: function(callback) {
 		if(noDatabase) return callback(null,null);
-		console.log(__filename + ' connecting to the database...2');
+		console.log(__filename + ' connecting to the database...');
 		mongoose.connect('mongodb://localhost:27017/ticktockDemoTest3');
 		var db = mongoose.connection;
 		db.on('error', console.error.bind(console, 'db connection error:'));

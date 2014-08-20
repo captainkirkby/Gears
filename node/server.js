@@ -16,6 +16,7 @@ var noDatabase = false;
 var debug = false;
 var pythonFlags = ["--load-template", "template2048.dat"];
 process.argv.forEach(function(val,index,array) {
+	if(debug) console.log(val);
 	if(val == '--no-serial') noSerial = true;
 	else if(val == '--no-database') noDatabase = true;
 	else if(val == '--debug') debug = true;

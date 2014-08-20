@@ -12,6 +12,7 @@ var noDatabase = false;
 var debug = false;
 var pythonFlags = ["--load-template", "template2048.dat"];
 process.argv.forEach(function(val,index,array) {
+	if(debug) console.log(val);
 	if(val == '--no-serial') noSerial = true;
 	else if(val == '--no-database') noDatabase = true;
 	else if(val == '--debug') debug = true;
@@ -19,7 +20,7 @@ process.argv.forEach(function(val,index,array) {
 });
 
 if(debug) console.log("Worker Starting!");
-if(debug) console.log('Connecting to the database...');
+console.log(__filename + ' connecting to the database...');
 mongoose.connect('mongodb://localhost:27017/ticktockDemoTest3');
 var db = mongoose.connection;
 db.on('error', console.error.bind(console, 'db connection error:'));
