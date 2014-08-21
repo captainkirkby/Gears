@@ -9,6 +9,7 @@ var sprintf = require('sprintf').sprintf;
 var spawn = require('child_process').spawn;
 
 var packet = require('./packet');
+var connectToDB = require('./dbConnection').connectToDB;
 
 // Tracks the last seen data packet sequence number to enable sequencing errors to be detected.
 var lastDataSequenceNumber = 0;
@@ -107,50 +108,7 @@ async.parallel({
 			}
 		);
 	},
-	// Connects to the database where packets from TickTock are logged.
-	db: function(callback) {
-		if(noDatabase) return callback(null,null);
-		console.log(__filename + ' connecting to the database...');
-		mongoose.connect('mongodb://localhost:27017/ticktockDemoTest3');
-		var db = mongoose.connection;
-		db.on('error', console.error.bind(console, 'db connection error:'));
-		db.once('open', function() {
-			console.log('db connection established.');
-			// Defines the schema and model for our serial boot packets
-			var bootPacketSchema = mongoose.Schema({
-				timestamp: { type: Date, index: true },
-				serialNumber: String,
-				bmpSensorOk: Boolean,
-				gpsSerialOk: Boolean,
-				sensorBlockOK: Boolean,
-				commitTimestamp: Date,
-				commitHash: String,
-				commitStatus: Number
-			});
-			var bootPacketModel = mongoose.model('bootPacketModel',bootPacketSchema);
-			// Defines the schema and model for our serial data packets
-			var dataPacketSchema = mongoose.Schema({
-				timestamp: { type: Date, index: true },
-				crudePeriod: Number,
-				refinedPeriod: Number,
-				angle: Number,
-				sequenceNumber: Number,
-				temperature: Number,
-				pressure: Number,
-				thermistor: Number,
-				humidity: Number,
-				irLevel: Number,
-				raw: Array
-			});
-			var dataPacketModel = mongoose.model('dataPacketModel',dataPacketSchema);
-			// Propagates our database connection and db models to data logger.
-			callback(null,{
-				'connection':db,
-				'bootPacketModel':bootPacketModel,
-				'dataPacketModel':dataPacketModel
-			});
-		});
-	}},
+	db: connectToDB },
 	// Performs steps that require both an open serial port and database connection.
 	// Note that either of config.port or config.db might be null if they are disabled
 	// with command-line flags.
