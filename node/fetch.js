@@ -157,7 +157,7 @@ function fetch(query, dataPacketModel, bootPacketModel) {
 							count++;
 						}
 	
-						// Don't divide by zero!  (if its zero, average will be zero as well so we want no value so flot doesnt autoscale with the zero)
+						// Don't divide by zero!  (if its zero, we want null so flot doesnt autoscale with the zero)
 						visibleSets.forEach(function (dataSetToFill, index, arr){
 							if(averageCount[dataSetToFill] === 0) newResults[i][dataSetToFill] = null;
 							else newResults[i][dataSetToFill] = (average[dataSetToFill]/averageCount[dataSetToFill]);
