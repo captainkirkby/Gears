@@ -82,35 +82,21 @@ function fetch(query, dataPacketModel, bootPacketModel, averageDataModel) {
 		// Only fetch most recent (raw)
 		dataPacketModel.find().
 			limit(1).sort([['timestamp', -1]])
-			.exec(function(err,results) {
-				// Send message to parent
-				process.send({
-					"done"		: true,
-					"results"	: results
-				});
-			});
+			.exec(sendData);
 	} else {
 		// Fetch many (not raw)
 		var visibleSets = getVisibleSets(query);
-
 		var binSize = getBins(to-from);		//in sec
 
 		if(binSize && binSize>0){
 			// We need averaging
-			console.log("Averaging bin size: " + binSize);
+			if(debug) console.log("Averaging bin size: " + binSize);
 			averageDataModel.find()
 				.where('timestamp').gt(from).lte(to)
 				.where('averagingPeriod').equals(binSize)
 				.limit(MAX_QUERY_RESULTS).sort([['timestamp', -1]])
 				.select(('series' in query) ? 'timestamp ' + visibleSets.join(" ") : '')
-				.exec(function(err,results) {
-					if(err) throw err;
-					// Send message to parent
-					process.send({
-						"done"		: true,
-						"results"	: results
-					});
-			});
+				.exec(sendData);
 
 		} else {
 			// No averaging needed
@@ -119,20 +105,22 @@ function fetch(query, dataPacketModel, bootPacketModel, averageDataModel) {
 				.where('timestamp').gt(from).lte(to)
 				.limit(MAX_QUERY_RESULTS).sort([['timestamp', -1]])
 				.select(('series' in query) ? 'timestamp ' + visibleSets.join(" ") : '')
-				.exec(function(err,results) {
-					if(err) throw err;
-					// Send message to parent
-					process.send({
-						"done"		: true,
-						"results"	: results
-					});
-			});
+				.exec(sendData);
 		}
 
 
 	
 	}
 }
+
+var sendData = function(err,results) {
+	if(err) throw err;
+	// Send message to parent
+	process.send({
+		"done"		: true,
+		"results"	: results
+	});
+};
 
 function getVisibleSets(query) {
 	var visibleSets = [];
