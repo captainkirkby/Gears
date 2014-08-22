@@ -97,7 +97,7 @@ function fetch(query, dataPacketModel, bootPacketModel, averageDataModel) {
 
 		if(binSize && binSize>0){
 			// We need averaging
-			console.log("Averaging");
+			console.log("Averaging bin size: " + binSize);
 			averageDataModel.find()
 				.where('timestamp').gt(from).lte(to)
 				.where('averagingPeriod').equals(binSize)
@@ -149,7 +149,7 @@ function getVisibleSets(query) {
 function getBins(dt){
 	// console.log(dt);
 	if(dt/1000.0 <= MAX_QUERY_RESULTS) return null;
-	var standardBinSizes = [1,5,10,15,30,60,300,600,1800,3600,9000]; // in seconds
+	var standardBinSizes = [5,10,15,30,60,300,600,1800,3600,9000]; // in seconds
 	var smallestBinSize = standardBinSizes[standardBinSizes.length-1];
 
 	for(var i = 0; i < standardBinSizes.length; i++){
