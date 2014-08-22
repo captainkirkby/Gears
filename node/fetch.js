@@ -46,7 +46,7 @@ function dbCallbackFunction(err, config) {
 }
 
 // Maximum number of results to return from a query (don't exceed number of pixels on graph!)
-var MAX_QUERY_RESULTS = 1000;
+var MAX_QUERY_RESULTS = 120;
 
 // Default time to fetch is 2 minutes (120 seconds)
 var DEFAULT_FETCH = 120;
