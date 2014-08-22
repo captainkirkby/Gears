@@ -238,7 +238,6 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			var ttherm = 1.0/(0.000878844 + 0.000231913*logr + 7.70349e-8*logr*logr*logr) - 273.15;
 			// Prepares data packet for storing to the database.
 			// NB: the data packet layout is hardcoded here!
-			console.log(ttherm);
 			p = new dataPacketModel({
 				'timestamp': date,
 				'crudePeriod': buf.readUInt16LE(16),
