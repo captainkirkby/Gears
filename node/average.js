@@ -24,6 +24,8 @@ AveragerCollection.prototype.input = function(obj,saveCallback) {
 // Creates and averager object and initializes it with a period to average over
 function Averager(seconds){
 	this.clear();
+	this.date = null;
+	this.seconds = seconds;
 }
 
 // Inputs a JSON structure of values to average
@@ -63,12 +65,10 @@ Averager.prototype.input = function(obj,saveCallback) {
 	}
 };
 
-Averager.prototype.clear = function() {
+Averager.prototype.clear = function(seconds) {
 	this.data = {};
-	this.date = null;
 	this.lastDate = null;
 	this.count = 0;
-	this.seconds = seconds;
 };
 
 // LastDate guaranteed to be before date
