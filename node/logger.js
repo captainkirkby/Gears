@@ -60,6 +60,8 @@ function gracefulExit()
 	process.exit();
 }
 
+console.log(__filename + ' connecting to the database...');
+
 async.parallel({
 	// Opens a serial port connection to the TickTock device.
 	port: function(callback) {

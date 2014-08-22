@@ -2,6 +2,7 @@
 // Created by D & D Kirkby, Dec 2013
 
 var mongoose = require('mongoose');
+var connectToDB = require('./dbConnection').connectToDB;
 
 // Tracks the date of the first boot packet
 var latestDate = null;
@@ -21,55 +22,29 @@ process.argv.forEach(function(val,index,array) {
 process.on('exit', function(){
 	gracefulExit();
 });
+
 function gracefulExit()
 {
 	console.log("Stopping Fetch");
 }
 
+
 if(debug) console.log("Worker Starting!");
 console.log(__filename + ' connecting to the database...');
-mongoose.connect('mongodb://localhost:27017/ticktockDemoTest3');
-var db = mongoose.connection;
-db.on('error', console.error.bind(console, 'db connection error:'));
-db.once('open', function() {
-	if(debug) console.log('db connection established.');
-	// Defines the schema and model for our serial boot packets
-	var bootPacketSchema = mongoose.Schema({
-		timestamp: { type: Date, index: true },
-		serialNumber: String,
-		bmpSensorOk: Boolean,
-		gpsSerialOk: Boolean,
-		sensorBlockOK: Boolean,
-		commitTimestamp: Date,
-		commitHash: String,
-		commitStatus: Number
-	});
-	var bootPacketModel = mongoose.model('bootPacketModel',bootPacketSchema);
-	// Defines the schema and model for our serial data packets
-	var dataPacketSchema = mongoose.Schema({
-		timestamp: { type: Date, index: true },
-		crudePeriod: Number,
-		refinedPeriod: Number,
-		angle: Number,
-		sequenceNumber: Number,
-		temperature: Number,
-		pressure: Number,
-		thermistor: Number,
-		humidity: Number,
-		irLevel: Number,
-		raw: Array
-	});
-	var dataPacketModel = mongoose.model('dataPacketModel',dataPacketSchema);
 
+var dbCallback = dbCallbackFunction;
+connectToDB(dbCallback);
+
+function dbCallbackFunction(err, config) {
+	if(err) throw err;
 	// Send ready message
 	process.send({"ready" : true});
 
 	process.on('message', function(message) {
 		if(debug) console.log("Starting Fetch");
-		fetch(message.query, dataPacketModel, bootPacketModel);
+		fetch(message.query, config.dataPacketModel, config.bootPacketModel);
 	});
-
-});
+}
 
 // Maximum number of results to return from a query (don't exceed number of pixels on graph!)
 var MAX_QUERY_RESULTS = 1000;
