@@ -36,11 +36,24 @@ var connectToDB = function (callback) {
 			raw: Array
 		});
 		var dataPacketModel = mongoose.model('dataPacketModel',dataPacketSchema);
+		// Defines the schema and model for the running averages
+		var averageDataSchema = mongoose.Schema({
+			timestamp: { type: Date, index: true },
+			crudePeriod: Number,
+			refinedPeriod: Number,
+			angle: Number,
+			boardTemperature: Number,
+			pressure: Number,
+			blockTemperature: Number,
+			humidity: Number,
+		});
+		var averageDataModel = mongoose.model('averageDataModel',averageDataSchema);
 		// Propagates our database connection and db models to data logger.
 		callback(null,{
 			'connection':db,
 			'bootPacketModel':bootPacketModel,
-			'dataPacketModel':dataPacketModel
+			'dataPacketModel':dataPacketModel,
+			'averageDataModel':averageDataModel
 		});
 	});
 };
