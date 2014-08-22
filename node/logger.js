@@ -274,7 +274,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			} else{
 				saveMe = true;
 				// Write to first entry in file
-				fs.appendFileSync('runningData.dat', samplesSince + '\n');
+				// fs.appendFileSync('runningData.dat', samplesSince + '\n');
 				// Push most recent date to the top of the FIFO stack
 				datesBeingProcessed.unshift(date);
 				// Write crude period to pipe
