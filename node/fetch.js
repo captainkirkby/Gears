@@ -93,7 +93,7 @@ function fetch(query, dataPacketModel, bootPacketModel, averageDataModel) {
 		// Fetch many (not raw)
 		var visibleSets = getVisibleSets(query);
 
-		var binSize = getBins(to-from);		//in ms
+		var binSize = getBins(to-from);		//in sec
 
 		if(binSize && binSize>0){
 			// We need averaging
@@ -145,7 +145,7 @@ function getVisibleSets(query) {
 }
 
 // Find the smallest standard bin size that, when we break up the time period we're given, will result in under 1000 bins
-// Inputs delta time in miliseconds, returns standard bin size in miliseconds
+// Inputs delta time in miliseconds, returns standard bin size in seconds
 function getBins(dt){
 	// console.log(dt);
 	if(dt/1000.0 <= MAX_QUERY_RESULTS) return null;
@@ -161,5 +161,5 @@ function getBins(dt){
 		}
 	}
 
-	return smallestBinSize*1000;
+	return smallestBinSize;
 }
