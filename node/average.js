@@ -38,6 +38,7 @@ Averager.prototype.input = function(obj,saveCallback) {
 		}
 		// Append date to data packet
 		dataToSave["timestamp"] = this.date;
+		dataToSave["averagingPeriod"] = this.seconds;
 		console.log(dataToSave);
 		// Save to Database
 		saveCallback(dataToSave);
@@ -48,5 +49,5 @@ Averager.prototype.input = function(obj,saveCallback) {
 function topOfClock(date,lastDate,seconds){
 	if(!date || !lastDate) return false;
 	var sec = parseFloat(date.getTime()/1000).toFixed(0)%seconds;
-	return (sec > 0 && sec < parseFloat(lastDate.getTime()/1000).toFixed(0)%seconds);
+	return (sec >= 0 && sec < parseFloat(lastDate.getTime()/1000).toFixed(0)%seconds);
 }

@@ -125,7 +125,7 @@ async.parallel({
 			// NB: the maximum and boot packet sizes are hardcoded here!
 			var assembler = new packet.Assembler(0xFE,3,MAX_PACKET_SIZE,{0x00:32},0);
 			// Initializes averager
-			var averager = new average.Averager(60);
+			var averager = new average.Averager(5);
 			// Handles incoming chunks of binary data from the device.
 			config.port.on('data',function(data) {
 				receive(data,assembler,averager,config.db.bootPacketModel,config.db.dataPacketModel,config.db.averageDataModel);

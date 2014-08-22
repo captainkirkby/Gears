@@ -52,7 +52,7 @@ var MAX_QUERY_RESULTS = 1000;
 var DEFAULT_FETCH = 120;
 
 // Responds to a request to fetch data.
-function fetch(query, dataPacketModel, bootPacketModel) {
+function fetch(query, dataPacketModel, bootPacketModel, averageDataModel) {
 	// Gets the date range to fetch.
 	var from = ('from' in query) ? query.from : '-120';
 	var to = ('to' in query) ? query.to : 'now';
@@ -92,18 +92,45 @@ function fetch(query, dataPacketModel, bootPacketModel) {
 	} else {
 		// Fetch many (not raw)
 		var visibleSets = getVisibleSets(query);
-		dataPacketModel.find()
-			.where('timestamp').gt(from).lte(to)
-			.limit(MAX_QUERY_RESULTS*1000).sort([['timestamp', 1]])
-			.select(('series' in query) ? 'timestamp ' + visibleSets.join(" ") : '')
-			.exec(function(err,results) {
-				if(err) throw err;
-				// Send message to parent
-				process.send({
-					"done"		: true,
-					"results"	: results
-				});
+
+		var binSize = getBins(to-from);		//in ms
+
+		if(binSize && binSize>0){
+			// We need averaging
+			console.log("Averaging");
+			averageDataModel.find()
+				.where('timestamp').gt(from).lte(to)
+				.where('averagingPeriod').equals(binSize)
+				.limit(MAX_QUERY_RESULTS).sort([['timestamp', -1]])
+				.select(('series' in query) ? 'timestamp ' + visibleSets.join(" ") : '')
+				.exec(function(err,results) {
+					if(err) throw err;
+					// Send message to parent
+					process.send({
+						"done"		: true,
+						"results"	: results
+					});
 			});
+
+		} else {
+			// No averaging needed
+			console.log("Direct Fetch");
+			dataPacketModel.find()
+				.where('timestamp').gt(from).lte(to)
+				.limit(MAX_QUERY_RESULTS).sort([['timestamp', -1]])
+				.select(('series' in query) ? 'timestamp ' + visibleSets.join(" ") : '')
+				.exec(function(err,results) {
+					if(err) throw err;
+					// Send message to parent
+					process.send({
+						"done"		: true,
+						"results"	: results
+					});
+			});
+		}
+
+
+	
 	}
 }
 

@@ -46,6 +46,7 @@ var connectToDB = function (callback) {
 			pressure: Number,
 			blockTemperature: Number,
 			humidity: Number,
+			averagingPeriod : Number
 		});
 		var averageDataModel = mongoose.model('averageDataModel',averageDataSchema);
 		// Propagates our database connection and db models to data logger.
