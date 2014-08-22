@@ -2,7 +2,6 @@
 // Created by D & D Kirkby, Dec 2013
 
 
-var mongoose = require('mongoose');
 var express = require('express');
 var fork = require('child_process').fork;
 

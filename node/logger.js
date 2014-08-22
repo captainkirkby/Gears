@@ -4,7 +4,6 @@
 var fs = require('fs');
 var async = require('async');
 var serial = require('serialport');
-var mongoose = require('mongoose');
 var sprintf = require('sprintf').sprintf;
 var spawn = require('child_process').spawn;
 

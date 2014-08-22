@@ -1,7 +1,6 @@
 // Implements the Database Fetch component of the clock metrology project
 // Created by D & D Kirkby, Dec 2013
 
-var mongoose = require('mongoose');
 var connectToDB = require('./dbConnection').connectToDB;
 
 // Tracks the date of the first boot packet
