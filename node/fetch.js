@@ -78,18 +78,19 @@ function fetch(query, dataPacketModel, bootPacketModel) {
 	}
 	if(debug) console.log('query', query);
 
-	// Only fetch most recent (raw)
 	if(mostRecent){
-		dataPacketModel.find().limit(1).sort([['timestamp', -1]]).exec(function(err,results) {
-			// Send message to parent
-			process.send({
-				"done"		: true,
-				"results"	: results
+		// Only fetch most recent (raw)
+		dataPacketModel.find().
+			limit(1).sort([['timestamp', -1]])
+			.exec(function(err,results) {
+				// Send message to parent
+				process.send({
+					"done"		: true,
+					"results"	: results
+				});
 			});
-		});
-	// Fetch many (not raw)
 	} else {
-		// TODO: expand fetch to natural borders
+		// Fetch many (not raw)
 		var visibleSets = getVisibleSets(query);
 		dataPacketModel.find()
 			.where('timestamp').gt(from).lte(to)
@@ -97,50 +98,6 @@ function fetch(query, dataPacketModel, bootPacketModel) {
 			.select(('series' in query) ? 'timestamp ' + visibleSets.join(" ") : '')
 			.exec(function(err,results) {
 				if(err) throw err;
-	
-				var binSize = getBins(to-from);		//in ms
-				var numBins = (to-from)/binSize;
-	
-				if(binSize && numBins && binSize>0 && numBins>0){
-	
-					var newResults = [];
-					var count = 0;
-		
-					for (var i = 0; i < numBins; i++) {
-						var upperLimit = new Date(Date.parse(from) + binSize*(i+1));
-						newResults[i] = {'timestamp' : upperLimit};
-						var average = {};
-						var averageCount = {};
-	
-						// Prepopulate with fields
-						visibleSets.forEach(function (dataSetToPreFill, index, arr){
-							average[dataSetToPreFill] = 0;
-							averageCount[dataSetToPreFill] = 0;
-						});
-	
-						var averageData = function (dataSetToAverage, index, arr){
-							if(results[count][dataSetToAverage] !== null && results[count][dataSetToAverage] > 0){
-								average[dataSetToAverage] += results[count][dataSetToAverage];
-								averageCount[dataSetToAverage]++;
-							}
-						};
-	
-						// Average boxes out
-						while(count < results.length && results[count].timestamp < upperLimit){
-							visibleSets.forEach(averageData);
-							count++;
-						}
-	
-						// Don't divide by zero!  (if its zero, we want null so flot doesnt autoscale with the zero)
-						visibleSets.forEach(function (dataSetToFill, index, arr){
-							if(averageCount[dataSetToFill] === 0) newResults[i][dataSetToFill] = null;
-							else newResults[i][dataSetToFill] = (average[dataSetToFill]/averageCount[dataSetToFill]);
-						});
-					}
-	
-					if(debug) console.log(newResults[0]);
-					results = newResults;
-				}
 				// Send message to parent
 				process.send({
 					"done"		: true,
