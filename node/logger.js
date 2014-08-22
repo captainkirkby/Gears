@@ -193,6 +193,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			// Value to add to each reading to expand from 8 bit to 10 bit values
 			var addToRawReading = QUADRANT * 3;
 
+			// Reconstruct first part of raw ir waveform from circular buffer
 			for(var readOffsetA = initialReadOffsetWithPhase; readOffsetA < MAX_PACKET_SIZE; readOffsetA++) {
 				raw[rawFill] = buf.readUInt8(readOffsetA);
 
@@ -211,7 +212,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 				raw[rawFill] += addToRawReading;
 				rawFill = rawFill + 1;
 			}
-
+			// Reconstruct second part of raw ir waveform from circular buffer
 			for(var readOffsetB = initialReadOffset; readOffsetB < initialReadOffsetWithPhase; readOffsetB++) {
 				raw[rawFill] = buf.readUInt8(readOffsetB);
 
@@ -231,6 +232,13 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 				rawFill = rawFill + 1;
 			}
 
+			// use nominal 1st order fit from sensor datasheet to calculate RH in %
+			var humidity			= (buf.readUInt16LE(28)/65536.0 - 0.1515)/0.00636;
+			var crudePeriod			= buf.readUInt16LE(16);
+			var boardTemperature	= buf.readInt32LE(18)/160.0;
+			var pressure			= buf.readInt32LE(22);
+			var irLevel				= buf.readUInt16LE(30)/65536.0*5.0;				// convert IR level to volts
+
 			// Calculates the thermistor resistance in ohms assuming 100uA current source.
 			var rtherm = buf.readUInt16LE(26)/65536.0*5.0/100e-6;
 			// Calculates the corresponding temperature in degC using a Steinhart-Hart model.
@@ -240,17 +248,15 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			// NB: the data packet layout is hardcoded here!
 			p = new dataPacketModel({
 				'timestamp': date,
-				'crudePeriod': buf.readUInt16LE(16),
+				'crudePeriod': crudePeriod,
 				'refinedPeriod': null,
 				'angle': null,
 				'sequenceNumber': buf.readInt32LE(0),
-				'boardTemperature': buf.readInt32LE(18)/160.0,
-				'pressure': buf.readInt32LE(22),
+				'boardTemperature': boardTemperature,
+				'pressure': pressure,
 				'blockTemperature': ttherm,
-				// use nominal 1st order fit from sensor datasheet to calculate RH in %
-				'humidity': (buf.readUInt16LE(28)/65536.0 - 0.1515)/0.00636,
-				// convert IR level to volts
-				'irLevel': buf.readUInt16LE(30)/65536.0*5.0,
+				'humidity': humidity,
+				'irLevel': irLevel,
 				'raw': raw
 			});
 			//console.log(raw);
