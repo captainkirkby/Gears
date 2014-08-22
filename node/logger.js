@@ -8,6 +8,7 @@ var sprintf = require('sprintf').sprintf;
 var spawn = require('child_process').spawn;
 
 var packet = require('./packet');
+var average = require('./average');
 var connectToDB = require('./dbConnection').connectToDB;
 
 // Tracks the last seen data packet sequence number to enable sequencing errors to be detected.
@@ -123,9 +124,11 @@ async.parallel({
 			// Initializes our binary packet assembler to initially only accept a boot packet.
 			// NB: the maximum and boot packet sizes are hardcoded here!
 			var assembler = new packet.Assembler(0xFE,3,MAX_PACKET_SIZE,{0x00:32},0);
+			// Initializes averager
+			var averager = new average.Averager();
 			// Handles incoming chunks of binary data from the device.
 			config.port.on('data',function(data) {
-				receive(data,assembler,config.db.bootPacketModel,config.db.dataPacketModel);
+				receive(data,assembler,averager,config.db.bootPacketModel,config.db.dataPacketModel,config.db.averageDataModel);
 			});
 
 			fit.stdout.on('data', function(data){
@@ -137,7 +140,7 @@ async.parallel({
 
 // Receives a new chunk of binary data from the serial port and returns the
 // updated value of remaining that should be used for the next call.
-function receive(data,assembler,bootPacketModel,dataPacketModel) {
+function receive(data,assembler,averager,bootPacketModel,dataPacketModel,averageDataModel) {
 	assembler.ingest(data,function(ptype,buf) {
 		var saveMe = true;
 		if(ptype === 0x00) {
@@ -235,6 +238,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			// use nominal 1st order fit from sensor datasheet to calculate RH in %
 			var humidity			= (buf.readUInt16LE(28)/65536.0 - 0.1515)/0.00636;
 			var crudePeriod			= buf.readUInt16LE(16);
+			var sequenceNumber		= buf.readInt32LE(0);
 			var boardTemperature	= buf.readInt32LE(18)/160.0;
 			var pressure			= buf.readInt32LE(22);
 			var irLevel				= buf.readUInt16LE(30)/65536.0*5.0;				// convert IR level to volts
@@ -251,7 +255,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 				'crudePeriod': crudePeriod,
 				'refinedPeriod': null,
 				'angle': null,
-				'sequenceNumber': buf.readInt32LE(0),
+				'sequenceNumber': sequenceNumber,
 				'boardTemperature': boardTemperature,
 				'pressure': pressure,
 				'blockTemperature': ttherm,
@@ -259,6 +263,23 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 				'irLevel': irLevel,
 				'raw': raw
 			});
+
+			averager.input({
+				'timestamp': date,
+				'crudePeriod': crudePeriod,
+				'refinedPeriod': null,
+				'angle': null,
+				'boardTemperature': boardTemperature,
+				'pressure': pressure,
+				'blockTemperature': ttherm,
+				'humidity': humidity,
+			}, function (data){
+				averageDataModel.create(data,function(err,data){
+					if(err) throw err;
+					// Saved!
+				});
+			});
+
 			//console.log(raw);
 			// Checks for a packet sequence error.
 			if(p.sequenceNumber != lastDataSequenceNumber+1) {
