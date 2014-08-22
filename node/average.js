@@ -2,13 +2,16 @@
 
 exports.Averager = Averager;
 
-function Averager(){
+// Creates and averager object and initializes it with a period to average over
+function Averager(seconds){
 	this.data = {};
 	this.date = null;
 	this.lastDate = null;
 	this.count = 0;
+	this.seconds = seconds;
 }
 
+// Inputs a JSON structure of values to average
 Averager.prototype.input = function(obj,saveCallback) {
 	this.count++;
 	for(var key in obj){
@@ -27,7 +30,7 @@ Averager.prototype.input = function(obj,saveCallback) {
 			// console.log("Add to Existing Entry: " + obj[key]);
 		}
 	}
-	if(topOfTheMinute(this.date, this.lastDate)){
+	if(topOfClock(this.date, this.lastDate, this.seconds)){
 		var dataToSave = {};
 		for(var field in this.data){
 			// Average each data member
@@ -42,7 +45,8 @@ Averager.prototype.input = function(obj,saveCallback) {
 };
 
 // LastDate guaranteed to be before date
-function topOfTheMinute(date,lastDate){
+function topOfClock(date,lastDate,seconds){
 	if(!date || !lastDate) return false;
-	return (date.getSeconds() > 0 && date.getSeconds() < lastDate.getSeconds());
+	var sec = parseFloat(date.getTime()/1000).toFixed(0)%seconds;
+	return (sec > 0 && sec < parseFloat(lastDate.getTime()/1000).toFixed(0)%seconds);
 }
