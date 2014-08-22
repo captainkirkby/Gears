@@ -41,7 +41,7 @@ function dbCallbackFunction(err, config) {
 
 	process.on('message', function(message) {
 		if(debug) console.log("Starting Fetch");
-		fetch(message.query, config.dataPacketModel, config.bootPacketModel);
+		fetch(message.query, config.dataPacketModel, config.bootPacketModel, config.averageDataModel);
 	});
 }
 
