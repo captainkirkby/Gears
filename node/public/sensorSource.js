@@ -1,7 +1,7 @@
 $(function() {
 
 	// Reverse Order
-	var seriesToPlot = ["temperature", "pressure", "crudePeriod", "thermistor", "humidity", "refinedPeriod", "angle"];
+	var seriesToPlot = ["boardTemperature", "pressure", "crudePeriod", "blockTemperature", "humidity", "refinedPeriod", "angle"];
 
 	// Drawing Constants
 	var NORMAL = 2;
@@ -19,10 +19,10 @@ $(function() {
 
 	// Plot Settings
 	var dataToPlot = {
-		"temperature" : { "visible" : true, "width" : NORMAL, "color" : 0},
+		"boardTemperature" : { "visible" : true, "width" : NORMAL, "color" : 0},
 		"pressure" : { "visible" : true, "width" : NORMAL, "color" : 1},
 		"crudePeriod" : { "visible" : true, "width" : NORMAL, "color" : 2},
-		"thermistor" : { "visible" : true, "width" : NORMAL, "color" : 3},
+		"blockTemperature" : { "visible" : true, "width" : NORMAL, "color" : 3},
 		"humidity" : { "visible" : true, "width" : NORMAL, "color" : 4},
 		"refinedPeriod" : { "visible" : true, "width" : NORMAL, "color" : 6},
 		"angle" : { "visible" : true, "width" : NORMAL, "color" : 7}
@@ -33,10 +33,10 @@ $(function() {
 	var lastTo;
 
 	// Smoothing factors
-	var NUM_TEMPERATURE_SAMPLES = 11;		// o o X o o
+	var NUM_BOARD_TEMPERATURE_SAMPLES = 11;		// o o X o o
 	var NUM_PRESSURE_SAMPLES = 55;
 	var NUM_IRLEVEL_SAMPLES = 55;
-	var NUM_THERMISTOR_SAMPLES = 55;
+	var NUM_BLOCK_TEMPERATURE_SAMPLES = 55;
 	var NUM_HUMIDITY_SAMPLES = 55;
 	var NUM_CRUDE_PERIOD_SAMPLES = 0;
 	var NUM_REFINED_PERIOD_SAMPLES = 55;
@@ -51,10 +51,10 @@ $(function() {
 
 	function smoothingForSet(set){
 		var lookUpTable = {
-			"temperature" : NUM_TEMPERATURE_SAMPLES,
+			"boardTemperature" : NUM_BOARD_TEMPERATURE_SAMPLES,
 			"pressure" : NUM_PRESSURE_SAMPLES,
 			"crudePeriod" : NUM_CRUDE_PERIOD_SAMPLES,
-			"thermistor" : NUM_THERMISTOR_SAMPLES,
+			"blockTemperature" : NUM_BLOCK_TEMPERATURE_SAMPLES,
 			"humidity" : NUM_HUMIDITY_SAMPLES,
 			"refinedPeriod" : NUM_REFINED_PERIOD_SAMPLES,
 			"angle" : NUM_ANGLE_SAMPLES
@@ -83,13 +83,13 @@ $(function() {
 	}
 
 	function generateLabel(name){
-		var lookUpTable = { "temperature"	: "Temperature (°C)",
-							"pressure"		: "Pressure (Pa)",
-							"crudePeriod"	: "Period (samples)",
-							"thermistor"	: "Thermistor (°C)",
-							"humidity"		: "Humidity (%)",
-							"refinedPeriod"	: "Period (ppm)",
-							"angle"			: "Angle (degrees)"};
+		var lookUpTable = { "boardTemperature"	: "Board Temperature (°C)",
+							"pressure"			: "Pressure (Pa)",
+							"crudePeriod"		: "Period (samples)",
+							"blockTemperature"	: "Block Temperature (°C)",
+							"humidity"			: "Humidity (%)",
+							"refinedPeriod"		: "Period (ppm)",
+							"angle"				: "Angle (degrees)"};
 		
 		var result = lookUpTable[name];
 		if(!result) {

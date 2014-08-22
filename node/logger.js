@@ -238,15 +238,16 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			var ttherm = 1.0/(0.000878844 + 0.000231913*logr + 7.70349e-8*logr*logr*logr) - 273.15;
 			// Prepares data packet for storing to the database.
 			// NB: the data packet layout is hardcoded here!
+			console.log(ttherm);
 			p = new dataPacketModel({
 				'timestamp': date,
 				'crudePeriod': buf.readUInt16LE(16),
 				'refinedPeriod': null,
 				'angle': null,
 				'sequenceNumber': buf.readInt32LE(0),
-				'temperature': buf.readInt32LE(18)/160.0,
+				'boardTemperature': buf.readInt32LE(18)/160.0,
 				'pressure': buf.readInt32LE(22),
-				'thermistor': ttherm,
+				'blockTemperature': ttherm,
 				// use nominal 1st order fit from sensor datasheet to calculate RH in %
 				'humidity': (buf.readUInt16LE(28)/65536.0 - 0.1515)/0.00636,
 				// convert IR level to volts

@@ -28,9 +28,9 @@ var connectToDB = function (callback) {
 			refinedPeriod: Number,
 			angle: Number,
 			sequenceNumber: Number,
-			temperature: Number,
+			boardTemperature: Number,
 			pressure: Number,
-			thermistor: Number,
+			blockTemperature: Number,
 			humidity: Number,
 			irLevel: Number,
 			raw: Array
