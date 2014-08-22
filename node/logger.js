@@ -292,8 +292,9 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,average
 			// Never save the first packet since there is usually a startup glitch
 			// where the serial port sees a second boot packet arriving during the first
 			// data packet that still needs to be debugged...
+			// EDIT 8/22/14: I think this issue has been resolved?
 			if(lastDataSequenceNumber == 1) {
-				saveMe = false;
+				// console.log(p);
 			} else{
 				saveMe = true;
 				// Write to first entry in file
