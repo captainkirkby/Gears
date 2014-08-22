@@ -1,6 +1,25 @@
 // Averages different data fields over time
 
-exports.Averager = Averager;
+// exports.Averager = Averager;
+exports.AveragerCollection = AveragerCollection;
+
+// Creates an AveragerCollection object which is a collection of averagers
+// Inputs an array of integers
+function AveragerCollection(binSizes){
+	this.collection = [];
+	for(var i=0;i<binSizes.length;i++){
+		this.collection[i] = new Averager(binSizes[i]);
+	}
+}
+
+AveragerCollection.prototype.input = function(obj,saveCallback) {
+	for(var i=0;i<this.collection.length;i++){
+		if(this.collection[i]) {
+			// If it exists, call the input function
+			this.collection[i].input(obj,saveCallback);
+		}
+	}
+};
 
 // Creates and averager object and initializes it with a period to average over
 function Averager(seconds){

@@ -2,6 +2,7 @@
 // Created by D & D Kirkby, Dec 2013
 
 var connectToDB = require('./dbConnection').connectToDB;
+var bins = require('./bins');
 
 // Tracks the date of the first boot packet
 var latestDate = null;
@@ -97,7 +98,6 @@ function fetch(query, dataPacketModel, bootPacketModel, averageDataModel) {
 				.limit(MAX_QUERY_RESULTS).sort([['timestamp', -1]])
 				.select(('series' in query) ? 'timestamp ' + visibleSets.join(" ") : '')
 				.exec(sendData);
-
 		} else {
 			// No averaging needed
 			console.log("Direct Fetch");
@@ -107,9 +107,6 @@ function fetch(query, dataPacketModel, bootPacketModel, averageDataModel) {
 				.select(('series' in query) ? 'timestamp ' + visibleSets.join(" ") : '')
 				.exec(sendData);
 		}
-
-
-	
 	}
 }
 
@@ -137,7 +134,7 @@ function getVisibleSets(query) {
 function getBins(dt){
 	// console.log(dt);
 	if(dt/1000.0 <= MAX_QUERY_RESULTS) return null;
-	var standardBinSizes = [5,10,15,30,60,300,600,1800,3600,9000]; // in seconds
+	var standardBinSizes = bins.stdBinSizes();			// in seconds
 	var smallestBinSize = standardBinSizes[standardBinSizes.length-1];
 
 	for(var i = 0; i < standardBinSizes.length; i++){

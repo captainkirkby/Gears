@@ -9,6 +9,7 @@ var spawn = require('child_process').spawn;
 
 var packet = require('./packet');
 var average = require('./average');
+var bins = require('./bins');
 var connectToDB = require('./dbConnection').connectToDB;
 
 // Tracks the last seen data packet sequence number to enable sequencing errors to be detected.
@@ -124,11 +125,12 @@ async.parallel({
 			// Initializes our binary packet assembler to initially only accept a boot packet.
 			// NB: the maximum and boot packet sizes are hardcoded here!
 			var assembler = new packet.Assembler(0xFE,3,MAX_PACKET_SIZE,{0x00:32},0);
-			// Initializes averager
-			var averager = new average.Averager(5);
+			// Initializes averagers
+			var averagerCollection = new average.AveragerCollection(bins.stdBinSizes());
+
 			// Handles incoming chunks of binary data from the device.
 			config.port.on('data',function(data) {
-				receive(data,assembler,averager,config.db.bootPacketModel,config.db.dataPacketModel,config.db.averageDataModel);
+				receive(data,assembler,averagerCollection,config.db.bootPacketModel,config.db.dataPacketModel,config.db.averageDataModel);
 			});
 
 			fit.stdout.on('data', function(data){
