@@ -28,13 +28,16 @@ Averager.prototype.input = function(obj,saveCallback) {
 		}
 	}
 	if(topOfTheMinute(this.date, this.lastDate)){
+		var dataToSave = {};
 		for(var field in this.data){
 			// Average each data member
-			this.data[field] = this.data[field]/this.count;
+			dataToSave[field] = this.data[field]/this.count;
 		}
-		console.log(this.data);
-		// Save to Database!
-		saveCallback(this.data);
+		// Append date to data packet
+		dataToSave["timestamp"] = this.date;
+		console.log(dataToSave);
+		// Save to Database
+		saveCallback(dataToSave);
 	}
 };
 
