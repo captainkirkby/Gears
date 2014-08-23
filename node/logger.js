@@ -27,11 +27,13 @@ var noSerial = false;
 var noDatabase = false;
 var debug = false;
 var debugLevel2 = false;
+var runningData = false;
 var pythonFlags = ["--load-template", "template2048.dat"];
 process.argv.forEach(function(val,index,array) {
 	if(val == '--no-serial') noSerial = true;
 	else if(val == '--no-database') noDatabase = true;
 	else if(val == '--debug') debug = true;
+	else if(val == '--running-data') runningData = true;
 	else if(val == '--physical')  pythonFlags = ["--physical"];
 });
 
@@ -299,7 +301,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,average
 			} else{
 				saveMe = true;
 				// Write to first entry in file
-				// fs.appendFileSync('runningData.dat', samplesSince + '\n');
+				if(runningData) fs.appendFileSync('runningData.dat', samplesSince + '\n');
 				// Push most recent date to the top of the FIFO stack
 				datesBeingProcessed.unshift(date);
 				// Write crude period to pipe
