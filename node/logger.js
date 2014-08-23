@@ -329,7 +329,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,average
 
 // Write refined period and swing arc angle to database
 // Format : period angle
-function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel, averagerCollection) {
+function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel, averager) {
 	// Pop least recent date off FIFO stack
 	var storeDate = datesBeingProcessed.pop();
 
