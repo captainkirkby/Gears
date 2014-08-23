@@ -358,7 +358,7 @@ function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel, averager) {
 
 	// Note: because averager does not wait on these fields to save to the database, the average values will be OFFSET!
 	averager.input({
-		'timestamp': date,
+		'timestamp': storeDate,
 		'refinedPeriod': period,
 		'angle': angle,
 	});
