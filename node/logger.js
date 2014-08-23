@@ -133,6 +133,7 @@ async.parallel({
 				receive(data,assembler,averagerCollection,config.db.bootPacketModel,config.db.dataPacketModel,config.db.averageDataModel);
 			});
 
+			// Handles incoming data packets from pipe to fit.py
 			fit.stdout.on('data', function(data){
 				storeRefinedPeriodAndAngle(data, config.db.dataPacketModel);
 			});
@@ -145,6 +146,7 @@ async.parallel({
 function receive(data,assembler,averager,bootPacketModel,dataPacketModel,averageDataModel) {
 	assembler.ingest(data,function(ptype,buf) {
 		var saveMe = true;
+		var p = null;
 		if(ptype === 0x00) {
 			if(debug) console.log("Got Boot Packet!");
 			// Prepares boot packet for storing to the database.
@@ -269,13 +271,12 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,average
 			averager.input({
 				'timestamp': date,
 				'crudePeriod': crudePeriod,
-				'refinedPeriod': null,
-				'angle': null,
 				'boardTemperature': boardTemperature,
 				'pressure': pressure,
 				'blockTemperature': ttherm,
 				'humidity': humidity,
 			}, function (data){
+				// To be called when the average reaches its period
 				averageDataModel.create(data,function(err,data){
 					if(err) throw err;
 					// Saved!
@@ -353,5 +354,12 @@ function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel) {
 	dataPacketModel.update(conditions, update, options, function(err, numberAffected){
 		if(err) throw err;
 		// console.log("Update of " + numberAffected + " Documents Successful!")
+	});
+
+	// Note: because averager does not wait on these fields to save to the database, the average values will be OFFSET!
+	averager.input({
+		'timestamp': date,
+		'refinedPeriod': period,
+		'angle': angle,
 	});
 }
