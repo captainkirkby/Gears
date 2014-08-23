@@ -135,7 +135,11 @@ async.parallel({
 
 			// Handles incoming data packets from pipe to fit.py
 			fit.stdout.on('data', function(data){
+<<<<<<< HEAD
 				storeRefinedPeriodAndAngle(data, config.db.dataPacketModel, averagerCollection);
+=======
+				storeRefinedPeriodAndAngle(data, config.db.dataPacketModel, config.db.averageDataModel);
+>>>>>>> 27ee66c46ef71ca462a804f709a8a803dee3ba9f
 			});
 		}
 	}
