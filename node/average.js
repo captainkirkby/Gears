@@ -30,7 +30,6 @@ function Averager(seconds){
 
 // Inputs a JSON structure of values to average
 Averager.prototype.input = function(obj,saveCallback) {
-	this.count++;
 	for(var key in obj){
 		if(obj[key] instanceof Date){
 			// Set new date each time
@@ -40,10 +39,12 @@ Averager.prototype.input = function(obj,saveCallback) {
 		} else if(!this.data[key]) {
 			// Create new entry in data
 			this.data[key] = obj[key];
+			this.counts[key] = 1;
 			// console.log("New Entry: " + typeof obj[key]);
 		} else {
 			// Add to existing entry in data
 			this.data[key] += obj[key];
+			this.counts[key] += 1;
 			// console.log("Add to Existing Entry: " + obj[key]);
 		}
 	}
@@ -51,7 +52,7 @@ Averager.prototype.input = function(obj,saveCallback) {
 		var dataToSave = {};
 		for(var field in this.data){
 			// Average each data member
-			dataToSave[field] = this.data[field]/this.count;
+			dataToSave[field] = this.data[field]/this.counts[field];
 		}
 		// Append date to data packet
 		dataToSave["timestamp"] = this.date;
@@ -66,8 +67,8 @@ Averager.prototype.input = function(obj,saveCallback) {
 
 Averager.prototype.clear = function(seconds) {
 	this.data = {};
+	this.counts = {};
 	this.lastDate = null;
-	this.count = 0;
 };
 
 // LastDate guaranteed to be before date
