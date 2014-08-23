@@ -135,7 +135,7 @@ async.parallel({
 
 			// Handles incoming data packets from pipe to fit.py
 			fit.stdout.on('data', function(data){
-				storeRefinedPeriodAndAngle(data, config.db.dataPacketModel);
+				storeRefinedPeriodAndAngle(data, config.db.dataPacketModel, averagerCollection);
 			});
 		}
 	}
@@ -329,7 +329,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,average
 
 // Write refined period and swing arc angle to database
 // Format : period angle
-function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel) {
+function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel, averagerCollection) {
 	// Pop least recent date off FIFO stack
 	var storeDate = datesBeingProcessed.pop();
 
