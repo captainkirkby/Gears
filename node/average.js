@@ -57,7 +57,7 @@ Averager.prototype.input = function(obj,saveCallback) {
 		dataToSave["timestamp"] = this.date;
 		dataToSave["averagingPeriod"] = this.seconds;
 		console.log("Averaging With Period " + this.seconds);
-		// Clear data structure while saving the date and seconds fields
+		// Clear data structure while saving the date and seconds
 		this.clear();
 		// Save to Database
 		saveCallback(dataToSave);
@@ -74,5 +74,5 @@ Averager.prototype.clear = function(seconds) {
 function topOfClock(date,lastDate,seconds){
 	if(!date || !lastDate) return false;
 	var sec = parseFloat(date.getTime()/1000).toFixed(0)%seconds;
-	return (sec >= 0 && sec < parseFloat(lastDate.getTime()/1000).toFixed(0)%seconds);
+	return (date.getTime() > lastDate.getTime()+1000*seconds || sec < parseFloat(lastDate.getTime()/1000).toFixed(0)%seconds);
 }
