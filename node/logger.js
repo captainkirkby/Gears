@@ -202,7 +202,8 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,average
 			// Value to add to each reading to expand from 8 bit to 10 bit values
 			var addToRawReading = QUADRANT * 3;
 
-			// Reconstruct first part of raw ir waveform from circular buffer
+			// Assumption: The first data point is in the upper quadrant (between 75% and 100% light level)
+			// Reconstruct first part of raw IR waveform from circular buffer
 			for(var readOffsetA = initialReadOffsetWithPhase; readOffsetA < MAX_PACKET_SIZE; readOffsetA++) {
 				raw[rawFill] = buf.readUInt8(readOffsetA);
 
@@ -221,7 +222,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,average
 				raw[rawFill] += addToRawReading;
 				rawFill = rawFill + 1;
 			}
-			// Reconstruct second part of raw ir waveform from circular buffer
+			// Reconstruct second part of raw IR waveform from circular buffer
 			for(var readOffsetB = initialReadOffset; readOffsetB < initialReadOffsetWithPhase; readOffsetB++) {
 				raw[rawFill] = buf.readUInt8(readOffsetB);
 
