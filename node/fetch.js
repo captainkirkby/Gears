@@ -43,8 +43,8 @@ function gracefulExit()
 }
 
 
-if(debug) winston.info("Worker Starting!");
-winston.info(__filename + ' connecting to the database...');
+winston.verbose("Worker Starting!");
+winston.verbose(__filename + ' connecting to the database...');
 
 var dbCallback = dbCallbackFunction;
 connectToDB(dbCallback);
@@ -55,7 +55,7 @@ function dbCallbackFunction(err, config) {
 	process.send({"ready" : true});
 
 	process.on('message', function(message) {
-		if(debug) winston.info("Starting Fetch");
+		winston.verbose("Starting Fetch");
 		fetch(message.query, config.dataPacketModel, config.bootPacketModel, config.averageDataModel);
 	});
 }
@@ -91,7 +91,7 @@ function fetch(query, dataPacketModel, bootPacketModel, averageDataModel) {
 			from = new Date(to.getTime() - DEFAULT_FETCH*1000);
 		}
 	}
-	if(debug) winston.info('query', query);
+	winston.verbose('query', query);
 
 	if(mostRecent){
 		// Only fetch most recent (raw)
@@ -105,7 +105,7 @@ function fetch(query, dataPacketModel, bootPacketModel, averageDataModel) {
 
 		if(binSize && binSize>0){
 			// We need averaging
-			if(debug) winston.info("Averaging bin size: " + binSize);
+			winston.verbose("Averaging bin size: " + binSize);
 			averageDataModel.find()
 				.where('timestamp').gt(from).lte(to)
 				.where('averagingPeriod').equals(binSize)
@@ -114,7 +114,7 @@ function fetch(query, dataPacketModel, bootPacketModel, averageDataModel) {
 				.exec(sendData);
 		} else {
 			// No averaging needed
-			winston.info("Direct Fetch");
+			winston.debug("Direct Fetch");
 			dataPacketModel.find()
 				.where('timestamp').gt(from).lte(to)
 				.limit(MAX_QUERY_RESULTS).sort([['timestamp', -1]])

@@ -57,7 +57,7 @@ function gracefulExit()
 	process.exit();
 }
 
-winston.info(__filename + ' connecting to the database...');
+winston.verbose(__filename + ' connecting to the database...');
 
 var dbCallback = dbCallbackFunction;
 connectToDB(dbCallback);
@@ -88,7 +88,7 @@ function startWebApp(config)
 		app.get('/fetch', function(req,res) {
 			if(!fetchWorkerReady){
 				// Create new Worker
-				if(debug) winston.info("Offloading to new Worker");
+				winston.verbose("Offloading to new Worker");
 				fetchWorker = fork('fetch.js', process.argv.slice(2,process.argv.length), { stdio: 'inherit'});
 
 				// Listen for ready signal and done response
@@ -101,7 +101,7 @@ function startWebApp(config)
 						});
 						fetchWorker.once('message', function(message){
 							if(message.done){
-								if(debug) winston.info("Done Fetching, send to page");
+								winston.verbose("Done Fetching, send to page");
 								res.send(message.results);
 							}
 						});
@@ -109,19 +109,19 @@ function startWebApp(config)
 				});
 
 				fetchWorker.on('exit', function(code, signal){
-					if(debug) winston.info("Code : " + code);
-					if(debug) winston.info("Signal : " + signal);
+					winston.verbose("Code : " + code);
+					winston.verbose("Signal : " + signal);
 				});
 			} else {
 				// Use existing workera
-				if(debug) winston.info("Offloading to existing worker");
+				winston.verbose("Offloading to existing worker");
 				// Already ready, send the query
 				fetchWorker.send({
 					'query' : req.query,
 				});
 				fetchWorker.once('message', function(message){
 					if(message.done){
-						if(debug) winston.info("Done Fetching, send to page");
+						winston.verbose("Done Fetching, send to page");
 						res.send(message.results);
 					}
 				});

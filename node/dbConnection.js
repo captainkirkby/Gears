@@ -1,5 +1,5 @@
 var mongoose = require('mongoose');
-var winston = require('winston');
+// var winston = require('winston');
 
 // Connects to the database where packets from TickTock are logged.
 // Intended for use by the parallel function of the async package
@@ -9,7 +9,7 @@ var connectToDB = function (callback) {
 	var db = mongoose.connection;
 	db.on('error', console.error.bind(console, 'db connection error:'));
 	db.once('open', function() {
-		winston.info('db connection established.');		// Doesn't make it to the file
+		// winston.info('db connection established.');		// Doesn't make it to the file
 		// Defines the schema and model for our serial boot packets
 		var bootPacketSchema = mongoose.Schema({
 			timestamp: { type: Date, index: true },

@@ -72,7 +72,7 @@ function gracefulExit()
 	process.exit();
 }
 
-winston.info(__filename + ' connecting to the database...');
+winston.verbose(__filename + ' connecting to the database...');
 
 async.parallel({
 	// Opens a serial port connection to the TickTock device.
@@ -81,11 +81,11 @@ async.parallel({
 		async.waterfall([
 			// Finds the tty device name of the serial port to open.
 			function(portCallback) {
-				if(debug) winston.info('Looking for the tty device...');
+				winston.verbose('Looking for the tty device...');
 				serial.list(function(err,ports) {
 					// Looks for the first port with 'FTDI' as the manufacturer
 					async.detectSeries(ports,function(port,ttyCallback) {
-						if(debugLevel2) winston.info('scanning port',port);
+						winston.debug('scanning port',port);
 						ttyCallback(port.manufacturer == 'FTDI' || port.pnpId.indexOf('FTDI') > -1);
 					},
 					// Forwards the corresponding tty device name.
@@ -103,7 +103,7 @@ async.parallel({
 			},
 			// Opens the serial port.
 			function(ttyName,portCallback) {
-				if(debug) winston.info('Opening device %s...',ttyName);
+				winston.verbose('Opening device %s...',ttyName);
 				var port = new serial.SerialPort(ttyName, {
 					baudrate: 57600,
 					buffersize: 255,
@@ -111,7 +111,7 @@ async.parallel({
 				});
 				port.on('open',function(err) {
 					if(err) return portCallback(err);
-					if(debug) winston.info('Port open');
+					winston.verbose('Port open');
 					portCallback(null,port);
 				});
 			}],
@@ -132,7 +132,7 @@ async.parallel({
 		config.startupTime = new Date();
 		if(config.db && config.port) {
 			// Logs TickTock packets from the serial port into the database.
-			if(debugLevel2) winston.info('starting data logger with',config);
+			winston.debug('starting data logger');
 			// Initializes our binary packet assembler to initially only accept a boot packet.
 			// NB: the maximum and boot packet sizes are hardcoded here!
 			var assembler = new packet.Assembler(0xFE,3,MAX_PACKET_SIZE,{0x00:32},0);
@@ -159,7 +159,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,average
 		var saveMe = true;
 		var p = null;
 		if(ptype === 0x00) {
-			if(debug) winston.info("Got Boot Packet!");
+			winston.verbose("Got Boot Packet!");
 			// Prepares boot packet for storing to the database.
 			// NB: the boot packet layout is hardcoded here!
 			hash = '';
@@ -181,7 +181,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,average
 			lastDataSequenceNumber = 0;
 		}
 		else if(ptype == 0x01) {
-			if(debug) winston.info("Got Data!");
+			winston.verbose("Got Data!");
 
 			// Prepare to recieve data
 			var date = new Date();
@@ -355,7 +355,7 @@ function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel, averager) {
 		winston.warn("Bad Angle : " + angle);
 		return;
 	}
-	if(debug) winston.info(period);
+	winston.verbose(period);
 	// winston.info(storeDate);
 	// winston.info(dataPacketModel);
 
