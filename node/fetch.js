@@ -1,7 +1,7 @@
 // Implements the Database Fetch component of the clock metrology project
 // Created by D & D Kirkby, Dec 2013
 
-var winston = require('winston');
+var winston_module = require('winston');
 
 var connectToDB = require('./dbConnection').connectToDB;
 var bins = require('./bins');
@@ -10,7 +10,12 @@ var bins = require('./bins');
 var latestDate = null;
 
 // Log to file
-winston.add(winston.transports.File, { filename: 'ticktock.log' });
+var winston = new (winston_module.Logger)({
+	transports: [
+		new (winston_module.transports.Console)({ level: 'warn' }),
+		new (winston_module.transports.File)({ filename: 'ticktock.log', level: 'verbose' })
+	]
+});
 
 // Parses command-line arguments.
 var noSerial = false;
@@ -20,7 +25,11 @@ var pythonFlags = ["--load-template", "template2048.dat"];
 process.argv.forEach(function(val,index,array) {
 	if(val == '--no-serial') noSerial = true;
 	else if(val == '--no-database') noDatabase = true;
-	else if(val == '--debug') debug = true;
+	else if(val == '--debug') {
+		winston.transports.console.level = 'debug';
+		winston.transports.file.level = 'debug';
+		debug = true;
+	}
 	else if(val == '--physical')  pythonFlags = ["--physical"];
 });
 

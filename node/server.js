@@ -3,7 +3,7 @@
 
 
 var express = require('express');
-var winston = require('winston');
+var winston_module = require('winston');
 
 var fork = require('child_process').fork;
 
@@ -14,7 +14,12 @@ var fetchWorker = null;
 var fetchWorkerReady = false;
 
 // Log to file
-winston.add(winston.transports.File, { filename: 'ticktock.log' });
+var winston = new (winston_module.Logger)({
+	transports: [
+		new (winston_module.transports.Console)({ level: 'warn' }),
+		new (winston_module.transports.File)({ filename: 'ticktock.log', level: 'verbose' })
+	]
+});
 
 // Parses command-line arguments.
 var noSerial = false;
@@ -25,14 +30,16 @@ var service = false;
 process.argv.forEach(function(val,index,array) {
 	if(val == '--no-serial') noSerial = true;
 	else if(val == '--no-database') noDatabase = true;
-	else if(val == '--debug') debug = true;
-	else if(val == '--service') service = true;
+	else if(val == '--debug') {
+		winston.transports.console.level = 'debug';
+		winston.transports.file.level = 'debug';
+		debug = true;
+	}	else if(val == '--service') service = true;
 	else if(val == '--physical')  pythonFlags = ["--physical"];
 });
 
 // Assumption: this command is being called with cwd /path/to/Gears/node
 if(!noSerial && !service){
-	console.log("Hello!");
 	// Start process with data pipes
 	var logger = fork('./logger.js', process.argv.slice(2,process.argv.length), { stdio : 'inherit'});
 	

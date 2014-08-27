@@ -4,7 +4,7 @@
 var fs = require('fs');
 var async = require('async');
 var serial = require('serialport');
-var winston = require('winston');
+var winston_module = require('winston');
 
 var sprintf = require('sprintf').sprintf;
 var spawn = require('child_process').spawn;
@@ -25,7 +25,12 @@ var MAX_PACKET_SIZE = 2082;
 var datesBeingProcessed = [];
 
 // Log to file
-winston.add(winston.transports.File, { filename: 'ticktock.log' });
+var winston = new (winston_module.Logger)({
+	transports: [
+		new (winston_module.transports.Console)({ level: 'warn' }),
+		new (winston_module.transports.File)({ filename: 'ticktock.log', level: 'verbose' })
+	]
+});
 
 // Parses command-line arguments.
 var noSerial = false;
@@ -38,8 +43,11 @@ var service = false;
 process.argv.forEach(function(val,index,array) {
 	if(val == '--no-serial') noSerial = true;
 	else if(val == '--no-database') noDatabase = true;
-	else if(val == '--debug') debug = true;
-	else if(val == '--running-data') runningData = true;
+	else if(val == '--debug') {
+		winston.transports.console.level = 'debug';
+		winston.transports.file.level = 'debug';
+		debug = true;
+	}	else if(val == '--running-data') runningData = true;
 	else if(val == '--service') service = true;
 	else if(val == '--physical')  pythonFlags = ["--physical"];
 });
