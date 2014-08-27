@@ -16,14 +16,16 @@ var noSerial = false;
 var noDatabase = false;
 var debug = false;
 var pythonFlags = ["--load-template", "template2048.dat"];
+var service = true;
 process.argv.forEach(function(val,index,array) {
 	if(val == '--no-serial') noSerial = true;
 	else if(val == '--no-database') noDatabase = true;
 	else if(val == '--debug') debug = true;
+	else if(val == '--service') service = true;
 	else if(val == '--physical')  pythonFlags = ["--physical"];
 });
 
-if(!noSerial){
+if(!noSerial && !service){
 	// Start process with data pipes
 	var logger = fork('logger.js', process.argv.slice(2,process.argv.length), { stdio : 'inherit'});
 	

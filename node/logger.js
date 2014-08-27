@@ -29,11 +29,13 @@ var debug = false;
 var debugLevel2 = false;
 var runningData = false;
 var pythonFlags = ["--load-template", "template2048.dat"];
+var service = true;
 process.argv.forEach(function(val,index,array) {
 	if(val == '--no-serial') noSerial = true;
 	else if(val == '--no-database') noDatabase = true;
 	else if(val == '--debug') debug = true;
 	else if(val == '--running-data') runningData = true;
+	else if(val == '--service') service = true;
 	else if(val == '--physical')  pythonFlags = ["--physical"];
 });
 
