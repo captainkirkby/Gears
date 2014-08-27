@@ -48,7 +48,7 @@ process.argv.forEach(function(val,index,array) {
 // process.stderr.pipe(error);
 
 // Start process with data pipes
-var fit = spawn('../fit/fit.py', pythonFlags, { cwd : "../fit", stdio : 'pipe'});
+var fit = spawn('/home/dylan/Gears/fit/fit.py', pythonFlags, { cwd : "/home/dylan/Gears/fit", stdio : 'pipe'});
 // Send all output to node stdout (readable.pipe(writable))
 // fit.stdout.pipe(process.stdout);
 
