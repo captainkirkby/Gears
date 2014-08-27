@@ -39,16 +39,10 @@ process.argv.forEach(function(val,index,array) {
 	else if(val == '--physical')  pythonFlags = ["--physical"];
 });
 
-// // Log to file
-// var access = fs.createWriteStream('node.access.log', { flags: 'a' });
-// var error = fs.createWriteStream('node.error.log', { flags: 'a' });
-
-// // redirect stdout and stderr
-// process.stdout.pipe(access);
-// process.stderr.pipe(error);
+var GEARS_DIR = "/Users/Dylan/Developer/Gears/";
 
 // Start process with data pipes
-var fit = spawn('/home/dylan/Gears/fit/fit.py', pythonFlags, { cwd : "/home/dylan/Gears/fit", stdio : 'pipe'});
+var fit = spawn(GEARS_DIR + "fit/fit.py", pythonFlags, { cwd : GEARS_DIR + "fit", stdio : 'pipe'});
 // Send all output to node stdout (readable.pipe(writable))
 // fit.stdout.pipe(process.stdout);
 

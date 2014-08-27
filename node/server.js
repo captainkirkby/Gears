@@ -25,9 +25,11 @@ process.argv.forEach(function(val,index,array) {
 	else if(val == '--physical')  pythonFlags = ["--physical"];
 });
 
+var GEARS_DIR = "/Users/Dylan/Developer/Gears/";
+
 if(!noSerial && !service){
 	// Start process with data pipes
-	var logger = fork('logger.js', process.argv.slice(2,process.argv.length), { stdio : 'inherit'});
+	var logger = fork(GEARS_DIR + 'node/logger.js', process.argv.slice(2,process.argv.length), { stdio : 'inherit'});
 	
 	// Make sure to kill the fit process when node is about to exit
 	process.on('SIGINT', function(){
