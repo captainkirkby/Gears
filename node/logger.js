@@ -344,6 +344,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,average
 function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel, averager) {
 	// Pop least recent date off FIFO stack
 	var storeDate = datesBeingProcessed.pop();
+	winston.info("Length :" + datesBeingProcessed.length, datesBeingProcessed);
 
 	var period = Number(periodAndAngle.toString().split(" ")[0].toString());
 	var angle = Number(periodAndAngle.toString()
