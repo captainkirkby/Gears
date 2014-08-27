@@ -24,7 +24,7 @@ def isoParse(isoString):
     return (when - tzero).total_seconds()
 
 # Load the database dump to analyze.
-inputName = '/Volumes/Data/clock/clockData.csv'
+inputName = '/Volumes/Data/clock/sampleData.csv'
 dump = np.genfromtxt(inputName,names=True,delimiter=',',
     converters={7:isoParse})
 

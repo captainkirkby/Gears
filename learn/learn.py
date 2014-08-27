@@ -2,6 +2,7 @@
 
 import math
 import numpy as np
+import pandas as pd
 import scipy.interpolate
 import matplotlib.pyplot as plt
 
@@ -40,7 +41,7 @@ def analyze(args):
     amplitudeVariation = 60.*(dump['angle'][rng] - meanAmplitude)
 
     # Calculate mean-subtracted variations of environmental parameters.
-    temp = dump['thermistor'][rng]
+    temp = dump['blockTemperature'][rng]
     meanTemp = np.mean(temp)
     rmsTemp = np.std(temp)
     tempVariation = temp - meanTemp
@@ -62,6 +63,11 @@ def analyze(args):
     what = periodVariation
     ##what = amplitudeVariation
 
+    # Calculate filtered signal, to remove most of the gear train errors.
+    print 'filtering...'
+    series = pd.Series(what,index=sampleDays)
+    filtered = pd.rolling_mean(series,window=60*60,center=True)
+
     # Use a periodogram to find the dominant periodic frequencies in the signal.
     freq,psd = signal.periodogram(what,nfft=3*60*60,detrend='linear')
     maxPsd = np.max(psd)
@@ -70,7 +76,7 @@ def analyze(args):
     print 1./freq[dominant]
 
     # Initialize plotting.
-    fig = plt.figure(figsize=(12,16))
+    fig = plt.figure(figsize=(12,12))
     fig.set_facecolor('white')
 
     '''
@@ -104,8 +110,10 @@ def analyze(args):
     model = linear_model.LinearRegression()
     ##model = linear_model.Ridge(alpha=0.5)
     ##model = linear_model.RidgeCV(alphas=[0.1, 1.0, 10.0])
+    ##model = gaussian_process.GaussianProcess(theta0=1e-1,nugget=1e-3,storage_mode = 'light')
     model.fit(X,what)
     bestFit = model.predict(X)
+    ##bestFit,fitErrors = model.predict(x, eval_MSE=False)
 
     # Look up the environmental coefficients.
     tempCoef,presCoef,humidCoef,tempCoef2 = model.coef_[-nenv:]
@@ -132,7 +140,8 @@ def analyze(args):
     plt.subplot(3,1,2)
     plt.xlabel('Elapsed Time (days)')
     plt.ylabel('Environmental Variations (ppm)')
-    plt.plot(sampleDays,envFit)
+    plt.plot(sampleDays,filtered,label='data')
+    plt.plot(sampleDays,envFit,label='all')
     plt.plot(sampleDays,tempCoef*tempVariation,label='temp')
     plt.plot(sampleDays,presCoef*presVariation,label='pres')
     plt.plot(sampleDays,humidCoef*humidVariation,label='humid')
@@ -155,11 +164,11 @@ def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--verbose', action = 'store_true',
         help = 'generate verbose output')
-    parser.add_argument('-i','--input', type=str, default='/Volumes/Data/clock/clockData.npy',
+    parser.add_argument('-i','--input', type=str, default='/Volumes/Data/clock/sampleData.npy',
         help = 'name of converted database dump file to read')
-    parser.add_argument('-n','--nsamples', type=int, default=430000,
+    parser.add_argument('-n','--nsamples', type=int, default=0,
         help = 'number of samples to analyze (or zero for all)')
-    parser.add_argument('--nskip', type = int, default = 2,
+    parser.add_argument('--nskip', type = int, default = 0,
         help = 'number of initial samples to skip')
     parser.add_argument('--nominal-period', type = float, default = 2.0,
         help = 'nominal pendulum period in seconds')
