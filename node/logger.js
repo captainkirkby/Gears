@@ -24,6 +24,9 @@ var MAX_PACKET_SIZE = 2082;
 // FIFO : unshift on, then pop off
 var datesBeingProcessed = [];
 
+// Log to file
+winston.add(winston.transports.File, { filename: 'ticktock.log' });
+
 // Parses command-line arguments.
 var noSerial = false;
 var noDatabase = false;
@@ -31,7 +34,7 @@ var debug = false;
 var debugLevel2 = false;
 var runningData = false;
 var pythonFlags = ["--load-template", "template2048.dat"];
-var service = true;
+var service = false;
 process.argv.forEach(function(val,index,array) {
 	if(val == '--no-serial') noSerial = true;
 	else if(val == '--no-database') noDatabase = true;

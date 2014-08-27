@@ -13,12 +13,15 @@ var connectToDB = require('./dbConnection').connectToDB;
 var fetchWorker = null;
 var fetchWorkerReady = false;
 
+// Log to file
+winston.add(winston.transports.File, { filename: 'ticktock.log' });
+
 // Parses command-line arguments.
 var noSerial = false;
 var noDatabase = false;
 var debug = false;
 var pythonFlags = ["--load-template", "template2048.dat"];
-var service = true;
+var service = false;
 process.argv.forEach(function(val,index,array) {
 	if(val == '--no-serial') noSerial = true;
 	else if(val == '--no-database') noDatabase = true;
@@ -28,10 +31,10 @@ process.argv.forEach(function(val,index,array) {
 });
 
 // Assumption: this command is being called with cwd /path/to/Gears/node
-
 if(!noSerial && !service){
+	console.log("Hello!");
 	// Start process with data pipes
-	var logger = fork('node/logger.js', process.argv.slice(2,process.argv.length), { stdio : 'inherit'});
+	var logger = fork('./logger.js', process.argv.slice(2,process.argv.length), { stdio : 'inherit'});
 	
 	// Make sure to kill the fit process when node is about to exit
 	process.on('SIGINT', function(){

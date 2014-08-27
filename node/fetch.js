@@ -9,6 +9,9 @@ var bins = require('./bins');
 // Tracks the date of the first boot packet
 var latestDate = null;
 
+// Log to file
+winston.add(winston.transports.File, { filename: 'ticktock.log' });
+
 // Parses command-line arguments.
 var noSerial = false;
 var noDatabase = false;
