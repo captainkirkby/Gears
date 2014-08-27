@@ -4,6 +4,8 @@
 var fs = require('fs');
 var async = require('async');
 var serial = require('serialport');
+
+
 var sprintf = require('sprintf').sprintf;
 var spawn = require('child_process').spawn;
 
@@ -39,10 +41,10 @@ process.argv.forEach(function(val,index,array) {
 	else if(val == '--physical')  pythonFlags = ["--physical"];
 });
 
-var GEARS_DIR = "/Users/Dylan/Developer/Gears/";
+// Assumption: this command is being called with cwd /path/to/Gears/node
 
 // Start process with data pipes
-var fit = spawn(GEARS_DIR + "fit/fit.py", pythonFlags, { cwd : GEARS_DIR + "fit", stdio : 'pipe'});
+var fit = spawn("../fit/fit.py", pythonFlags, { cwd : "../fit", stdio : 'pipe'});
 // Send all output to node stdout (readable.pipe(writable))
 // fit.stdout.pipe(process.stdout);
 

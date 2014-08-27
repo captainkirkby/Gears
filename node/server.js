@@ -5,7 +5,7 @@
 var express = require('express');
 var fork = require('child_process').fork;
 
-var connectToDB = require('./dbConnection').connectToDB;
+var connectToDB = require('dbConnection').connectToDB;
 
 // Global status for fetchWorker
 var fetchWorker = null;
@@ -25,11 +25,11 @@ process.argv.forEach(function(val,index,array) {
 	else if(val == '--physical')  pythonFlags = ["--physical"];
 });
 
-var GEARS_DIR = "/Users/Dylan/Developer/Gears/";
+// Assumption: this command is being called with cwd /path/to/Gears/node
 
 if(!noSerial && !service){
 	// Start process with data pipes
-	var logger = fork(GEARS_DIR + 'node/logger.js', process.argv.slice(2,process.argv.length), { stdio : 'inherit'});
+	var logger = fork('node/logger.js', process.argv.slice(2,process.argv.length), { stdio : 'inherit'});
 	
 	// Make sure to kill the fit process when node is about to exit
 	process.on('SIGINT', function(){
