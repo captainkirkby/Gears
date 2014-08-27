@@ -39,13 +39,13 @@ process.argv.forEach(function(val,index,array) {
 	else if(val == '--physical')  pythonFlags = ["--physical"];
 });
 
-// Log to file
-var access = fs.createWriteStream('node.access.log', { flags: 'a' });
-var error = fs.createWriteStream('node.error.log', { flags: 'a' });
+// // Log to file
+// var access = fs.createWriteStream('node.access.log', { flags: 'a' });
+// var error = fs.createWriteStream('node.error.log', { flags: 'a' });
 
-// redirect stdout and stderr
-process.stdout.pipe(access);
-process.stderr.pipe(error);
+// // redirect stdout and stderr
+// process.stdout.pipe(access);
+// process.stderr.pipe(error);
 
 // Start process with data pipes
 var fit = spawn('../fit/fit.py', pythonFlags, { cwd : "../fit", stdio : 'pipe'});
