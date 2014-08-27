@@ -1,6 +1,8 @@
 // Implements the Database Fetch component of the clock metrology project
 // Created by D & D Kirkby, Dec 2013
 
+var winston = require('winston');
+
 var connectToDB = require('./dbConnection').connectToDB;
 var bins = require('./bins');
 
@@ -25,12 +27,12 @@ process.on('exit', function(){
 
 function gracefulExit()
 {
-	console.log("Stopping Fetch");
+	winston.info("Stopping Fetch");
 }
 
 
-if(debug) console.log("Worker Starting!");
-console.log(__filename + ' connecting to the database...');
+if(debug) winston.info("Worker Starting!");
+winston.info(__filename + ' connecting to the database...');
 
 var dbCallback = dbCallbackFunction;
 connectToDB(dbCallback);
@@ -41,7 +43,7 @@ function dbCallbackFunction(err, config) {
 	process.send({"ready" : true});
 
 	process.on('message', function(message) {
-		if(debug) console.log("Starting Fetch");
+		if(debug) winston.info("Starting Fetch");
 		fetch(message.query, config.dataPacketModel, config.bootPacketModel, config.averageDataModel);
 	});
 }
@@ -77,7 +79,7 @@ function fetch(query, dataPacketModel, bootPacketModel, averageDataModel) {
 			from = new Date(to.getTime() - DEFAULT_FETCH*1000);
 		}
 	}
-	if(debug) console.log('query', query);
+	if(debug) winston.info('query', query);
 
 	if(mostRecent){
 		// Only fetch most recent (raw)
@@ -91,7 +93,7 @@ function fetch(query, dataPacketModel, bootPacketModel, averageDataModel) {
 
 		if(binSize && binSize>0){
 			// We need averaging
-			if(debug) console.log("Averaging bin size: " + binSize);
+			if(debug) winston.info("Averaging bin size: " + binSize);
 			averageDataModel.find()
 				.where('timestamp').gt(from).lte(to)
 				.where('averagingPeriod').equals(binSize)
@@ -100,7 +102,7 @@ function fetch(query, dataPacketModel, bootPacketModel, averageDataModel) {
 				.exec(sendData);
 		} else {
 			// No averaging needed
-			console.log("Direct Fetch");
+			winston.info("Direct Fetch");
 			dataPacketModel.find()
 				.where('timestamp').gt(from).lte(to)
 				.limit(MAX_QUERY_RESULTS).sort([['timestamp', -1]])
@@ -132,14 +134,14 @@ function getVisibleSets(query) {
 // Find the smallest standard bin size that, when we break up the time period we're given, will result in under 1000 bins
 // Inputs delta time in miliseconds, returns standard bin size in seconds
 function getBins(dt){
-	// console.log(dt);
+	// winston.info(dt);
 	if(dt/1000.0 <= MAX_QUERY_RESULTS) return null;
 	var standardBinSizes = bins.stdBinSizes();			// in seconds
 	var smallestBinSize = standardBinSizes[standardBinSizes.length-1];
 
 	for(var i = 0; i < standardBinSizes.length; i++){
 		var numBins = (dt/1000)/standardBinSizes[i];		// dt ms -> s
-		// console.log("Trying bin size " + standardBinSizes[i] + ".  Results in this many bins: " + numBins);
+		// winston.info("Trying bin size " + standardBinSizes[i] + ".  Results in this many bins: " + numBins);
 		if(numBins <= MAX_QUERY_RESULTS && standardBinSizes[i] < smallestBinSize){
 			// get largest bin size
 			smallestBinSize = standardBinSizes[i];

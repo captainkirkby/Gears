@@ -3,6 +3,8 @@
 
 
 var express = require('express');
+var winston = require('winston');
+
 var fork = require('child_process').fork;
 
 var connectToDB = require('./dbConnection').connectToDB;
@@ -39,13 +41,13 @@ if(!noSerial && !service){
 
 function gracefulExit()
 {
-	console.log("Stopping Data Logger");
+	winston.info("Stopping Data Logger");
 	logger.kill('SIGINT');
-	console.log("Stopping Server " + __filename);
+	winston.info("Stopping Server " + __filename);
 	process.exit();
 }
 
-console.log(__filename + ' connecting to the database...');
+winston.info(__filename + ' connecting to the database...');
 
 var dbCallback = dbCallbackFunction;
 connectToDB(dbCallback);
@@ -76,7 +78,7 @@ function startWebApp(config)
 		app.get('/fetch', function(req,res) {
 			if(!fetchWorkerReady){
 				// Create new Worker
-				if(debug) console.log("Offloading to new Worker");
+				if(debug) winston.info("Offloading to new Worker");
 				fetchWorker = fork('fetch.js', process.argv.slice(2,process.argv.length), { stdio: 'inherit'});
 
 				// Listen for ready signal and done response
@@ -89,7 +91,7 @@ function startWebApp(config)
 						});
 						fetchWorker.once('message', function(message){
 							if(message.done){
-								if(debug) console.log("Done Fetching, send to page");
+								if(debug) winston.info("Done Fetching, send to page");
 								res.send(message.results);
 							}
 						});
@@ -97,19 +99,19 @@ function startWebApp(config)
 				});
 
 				fetchWorker.on('exit', function(code, signal){
-					if(debug) console.log("Code : " + code);
-					if(debug) console.log("Signal : " + signal);
+					if(debug) winston.info("Code : " + code);
+					if(debug) winston.info("Signal : " + signal);
 				});
 			} else {
 				// Use existing workera
-				if(debug) console.log("Offloading to existing worker");
+				if(debug) winston.info("Offloading to existing worker");
 				// Already ready, send the query
 				fetchWorker.send({
 					'query' : req.query,
 				});
 				fetchWorker.once('message', function(message){
 					if(message.done){
-						if(debug) console.log("Done Fetching, send to page");
+						if(debug) winston.info("Done Fetching, send to page");
 						res.send(message.results);
 					}
 				});
@@ -118,7 +120,7 @@ function startWebApp(config)
 
 	}
 	// Starts our webapp.
-	console.log('starting web server on port 3000');
+	winston.info('starting web server on port 3000');
 	app.listen(3000);
 }
 

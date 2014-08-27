@@ -4,7 +4,7 @@
 var fs = require('fs');
 var async = require('async');
 var serial = require('serialport');
-
+var winston = require('winston');
 
 var sprintf = require('sprintf').sprintf;
 var spawn = require('child_process').spawn;
@@ -55,13 +55,13 @@ process.on('SIGINT', function(){
 
 function gracefulExit()
 {
-	console.log("Stopping Python");
+	winston.info("Stopping Python");
 	fit.kill();
-	console.log("Stopping Logger " + __filename);
+	winston.info("Stopping Logger " + __filename);
 	process.exit();
 }
 
-console.log(__filename + ' connecting to the database...');
+winston.info(__filename + ' connecting to the database...');
 
 async.parallel({
 	// Opens a serial port connection to the TickTock device.
@@ -70,11 +70,11 @@ async.parallel({
 		async.waterfall([
 			// Finds the tty device name of the serial port to open.
 			function(portCallback) {
-				if(debug) console.log('Looking for the tty device...');
+				if(debug) winston.info('Looking for the tty device...');
 				serial.list(function(err,ports) {
 					// Looks for the first port with 'FTDI' as the manufacturer
 					async.detectSeries(ports,function(port,ttyCallback) {
-						if(debugLevel2) console.log('scanning port',port);
+						if(debugLevel2) winston.info('scanning port',port);
 						ttyCallback(port.manufacturer == 'FTDI' || port.pnpId.indexOf('FTDI') > -1);
 					},
 					// Forwards the corresponding tty device name.
@@ -92,7 +92,7 @@ async.parallel({
 			},
 			// Opens the serial port.
 			function(ttyName,portCallback) {
-				if(debug) console.log('Opening device %s...',ttyName);
+				if(debug) winston.info('Opening device %s...',ttyName);
 				var port = new serial.SerialPort(ttyName, {
 					baudrate: 57600,
 					buffersize: 255,
@@ -100,13 +100,13 @@ async.parallel({
 				});
 				port.on('open',function(err) {
 					if(err) return portCallback(err);
-					if(debug) console.log('Port open');
+					if(debug) winston.info('Port open');
 					portCallback(null,port);
 				});
 			}],
 			// Propagates our device info to data logger.
 			function(err,port) {
-				if(!err) console.log('serial port is ready');
+				if(!err) winston.info('serial port is ready');
 				callback(err,port);
 			}
 		);
@@ -121,7 +121,7 @@ async.parallel({
 		config.startupTime = new Date();
 		if(config.db && config.port) {
 			// Logs TickTock packets from the serial port into the database.
-			if(debugLevel2) console.log('starting data logger with',config);
+			if(debugLevel2) winston.info('starting data logger with',config);
 			// Initializes our binary packet assembler to initially only accept a boot packet.
 			// NB: the maximum and boot packet sizes are hardcoded here!
 			var assembler = new packet.Assembler(0xFE,3,MAX_PACKET_SIZE,{0x00:32},0);
@@ -148,7 +148,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,average
 		var saveMe = true;
 		var p = null;
 		if(ptype === 0x00) {
-			if(debug) console.log("Got Boot Packet!");
+			if(debug) winston.info("Got Boot Packet!");
 			// Prepares boot packet for storing to the database.
 			// NB: the boot packet layout is hardcoded here!
 			hash = '';
@@ -170,7 +170,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,average
 			lastDataSequenceNumber = 0;
 		}
 		else if(ptype == 0x01) {
-			if(debug) console.log("Got Data!");
+			if(debug) winston.info("Got Data!");
 
 			// Prepare to recieve data
 			var date = new Date();
@@ -181,12 +181,12 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,average
 			var raw = [];
 			var rawFill = 0;
 			var rawPhase = buf.readUInt16LE(32);
-			// console.log(rawPhase);
+			// winston.info(rawPhase);
 			var initialReadOffset = 34;
 			var initialReadOffsetWithPhase = initialReadOffset+(rawPhase);
 
 			if(initialReadOffsetWithPhase >= MAX_PACKET_SIZE || initialReadOffsetWithPhase < 0){
-				console.log("PROBLEMS!! Phase is " + initialReadOffsetWithPhase);
+				winston.warn("PROBLEMS!! Phase is " + initialReadOffsetWithPhase);
 				// Probably shouldn't send next packet to fit.py
 				return;
 			}
@@ -284,10 +284,10 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,average
 				});
 			});
 
-			//console.log(raw);
+			//winston.info(raw);
 			// Checks for a packet sequence error.
 			if(p.sequenceNumber != lastDataSequenceNumber+1) {
-				console.log('Got packet #%d when expecting packet #%d',
+				winston.warn('Got packet #%d when expecting packet #%d',
 					p.sequenceNumber,lastDataSequenceNumber+1);
 			}
 			lastDataSequenceNumber = p.sequenceNumber;
@@ -296,7 +296,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,average
 			// data packet that still needs to be debugged...
 			// EDIT 8/22/14: I think this issue has been resolved?
 			if(lastDataSequenceNumber == 1) {
-				// console.log(p);
+				// winston.info(p);
 			} else{
 				saveMe = true;
 				// Write to first entry in file
@@ -314,16 +314,16 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,average
 			}
 		}
 		else {
-			console.log('Got unexpected packet type',ptype);
+			winston.warn('Got unexpected packet type',ptype);
 			return;
 		}
 		if(saveMe) {
 			p.save(function(err,p) {
-				if(err) console.log('Error saving data packet',p);
+				if(err) winston.warn('Error saving data packet',p);
 			});
 		}
 		else {
-			console.log('Packet not saved to db.');
+			winston.warn('Packet not saved to db.');
 		}
 	});
 }
@@ -338,15 +338,15 @@ function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel, averager) {
 	var angle = Number(periodAndAngle.toString()
 		.split(" ")[1].toString());
 	if(period <= 0 || isNaN(period)){
-		console.log("Bad Period : " + period);
+		winston.warn("Bad Period : " + period);
 		return;
 	} else if(angle <= 0 || isNaN(angle)){
-		console.log("Bad Angle : " + angle);
+		winston.warn("Bad Angle : " + angle);
 		return;
 	}
-	if(debug) console.log(period);
-	// console.log(storeDate);
-	// console.log(dataPacketModel);
+	if(debug) winston.info(period);
+	// winston.info(storeDate);
+	// winston.info(dataPacketModel);
 
 	var conditions	= { timestamp : storeDate };
 	var update		= { $set : { refinedPeriod : period , angle : angle}};
@@ -354,7 +354,7 @@ function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel, averager) {
 
 	dataPacketModel.update(conditions, update, options, function(err, numberAffected){
 		if(err) throw err;
-		// console.log("Update of " + numberAffected + " Documents Successful!")
+		// winston.info("Update of " + numberAffected + " Documents Successful!")
 	});
 
 	// Note: because averager does not wait on these fields to save to the database, the average values will be OFFSET!
