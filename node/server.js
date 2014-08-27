@@ -5,7 +5,7 @@
 var express = require('express');
 var fork = require('child_process').fork;
 
-var connectToDB = require('dbConnection').connectToDB;
+var connectToDB = require('./dbConnection').connectToDB;
 
 // Global status for fetchWorker
 var fetchWorker = null;
