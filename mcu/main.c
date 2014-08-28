@@ -102,6 +102,14 @@ int main(void)
     // Non-zero if sensor block is OK
     bootPacket.sensorBlockOK = !(adcStatus == ADC_STATUS_ERROR);
 
+    // Create TSIP Packet
+    tsipPacket tsipPacket;
+
+    // Talk to GPS
+    LED_ON(GREEN);
+    serialWriteGPS((const uint8_t*)&tsipPacket,sizeof(tsipPacket));
+    LED_OFF(GREEN);
+
     // Copies our serial number from EEPROM address 0x10 into the boot packet
     bootPacket.serialNumber = eeprom_read_dword((uint32_t*)0x10);
 

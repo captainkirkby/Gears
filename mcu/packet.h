@@ -56,4 +56,8 @@ typedef struct {
 	volatile uint8_t raw[PACKET_LENGTH];	// (34)
 } DataPacket;
 
+typedef struct {
+	// Struct elements
+} tsipPacket;
+
 #endif
