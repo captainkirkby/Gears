@@ -10,6 +10,8 @@
 
 #include "packet.h"
 
+void readResponse(uint8_t numRxBytes, uint8_t *rxBytes);
+
 int main(void) {
 	initLEDs();
 	initUARTs();
@@ -35,29 +37,7 @@ int main(void) {
 	// Read back 9 bytes of response
 	uint8_t numRxBytes = 9;
 	uint8_t rxBytes[numRxBytes];
-	int ch;
-	uint8_t c = 0;
-	uint8_t startReading = 0;
-	while(c < numRxBytes){
-		ch = getc1();
-		if(ch > -1){			// Got Data
-			uint8_t byte = (ch & 0xff);
-			// Don't advance count until we see the start sequence
-			if(byte == TSIP_START_BYTE){
-				startReading = 1;
-			} 
-			if(startReading){
-				LED_ON(GREEN);
-				putc0(byte);
-				rxBytes[c] = byte;
-				c++;
-			}
-		} else if(ch == -2){	// Framing Error
-			LED_ON(YELLOW);
-		} else if(ch == -3){	// Data Overrun
-			LED_ON(RED);
-		}
-	}
+	readResponse(numRxBytes, rxBytes);
 
 	// Confirm response
 	uint8_t expectedRxBytes[] = {TSIP_START_BYTE,0x8F,manualFetchPacket.packetSubType,0,0,0,0,TSIP_STOP_BYTE1,TSIP_STOP_BYTE2};
@@ -66,8 +46,6 @@ int main(void) {
 			LED_ON(RED);
 		}
 	}
-
-
 
 	// Declare and define a TSIP command packet that asks for the GPS time
 	TsipCommandPacket commandPacket;
@@ -82,3 +60,32 @@ int main(void) {
 	// Infinite Loop
 	while(1);
 }
+
+// RxBytes is a pointer to a PRE-ALLOCATED array of length numRxBytes
+void readResponse(uint8_t numRxBytes, uint8_t rxBytes[]) {
+	int ch;
+	uint8_t c = 0;
+	uint8_t startReading = 1;
+	// Read the given number of bytes
+	while(c < numRxBytes){
+		ch = getc1();
+		if(ch > -1){			// Got Data
+			uint8_t byte = (ch & 0xff);
+			// // Don't advance count until we see the start sequence
+			// if(byte == TSIP_START_BYTE){
+			// 	startReading = 1;
+			// } 
+			if(startReading){
+				LED_ON(GREEN);
+				putc0(byte);
+				rxBytes[c] = byte;
+				c++;
+			}
+		} else if(ch == -2){	// Framing Error
+			LED_ON(YELLOW);
+		} else if(ch == -3){	// Data Overrun
+			LED_ON(RED);
+		}
+	}
+}
+
