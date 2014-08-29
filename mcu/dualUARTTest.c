@@ -15,35 +15,43 @@ int main(void) {
 	initUARTs();
 
 	// Declare and define a TSIP Packet to stop automatic packet transmission
-    TsipPacket tsipPacket;
-    tsipPacket.header = TSIP_START_BYTE;
+    TsipAutoManualPacket manualFetchPacket;
+    manualFetchPacket.header = TSIP_START_BYTE;
     
-    tsipPacket.packetType = 0x8E;
-    tsipPacket.packetSubType = 0xA5;
+    manualFetchPacket.packetType = 0x8E;
+    manualFetchPacket.packetSubType = 0xA5;
 
-    tsipPacket.data[0] = 0x00; 
-    tsipPacket.data[1] = 0x00;
-    tsipPacket.data[2] = 0x00;
-    tsipPacket.data[3] = 0x00;
+    manualFetchPacket.data[0] = 0x00; 
+    manualFetchPacket.data[1] = 0x00;
+    manualFetchPacket.data[2] = 0x00;
+    manualFetchPacket.data[3] = 0x00;
 
-    tsipPacket.stop[0] = TSIP_STOP_BYTE1;
-    tsipPacket.stop[1] = TSIP_STOP_BYTE2;
+    manualFetchPacket.stop[0] = TSIP_STOP_BYTE1;
+    manualFetchPacket.stop[1] = TSIP_STOP_BYTE2;
 
-	// uint32_t msg = 0xDEADBEEF;
-	serialWriteGPS((const uint8_t*)&tsipPacket,sizeof(tsipPacket));
-	// flush1();
-	// serialWriteGPS((const uint8_t*)&tsipPacket,sizeof(tsipPacket));
+    // Send Packet
+	serialWriteGPS((const uint8_t*)&manualFetchPacket,sizeof(manualFetchPacket));
 
-
+	// Read back 9 bytes of response
+	uint8_t numRxBytes = 9;
+	uint8_t rxBytes[numRxBytes];
 	int ch;
 	uint8_t c = 0;
-	while(c < 9){
+	uint8_t startReading = 0;
+	while(c < numRxBytes){
 		ch = getc1();
 		if(ch > -1){			// Got Data
-			LED_ON(GREEN);
 			uint8_t byte = (ch & 0xff);
-			putc0(byte);
-			c++;
+			// Don't advance count until we see the start sequence
+			if(byte == TSIP_START_BYTE){
+				startReading = 1;
+			} 
+			if(startReading){
+				LED_ON(GREEN);
+				putc0(byte);
+				rxBytes[c] = byte;
+				c++;
+			}
 		} else if(ch == -2){	// Framing Error
 			LED_ON(YELLOW);
 		} else if(ch == -3){	// Data Overrun
@@ -51,5 +59,14 @@ int main(void) {
 		}
 	}
 
+	// Confirm response
+	uint8_t expectedRxBytes[] = {TSIP_START_BYTE,0x8F,manualFetchPacket.packetSubType,0,0,0,0,TSIP_STOP_BYTE1,TSIP_STOP_BYTE2};
+	for (int i = 0; i < numRxBytes; ++i) {
+		if(expectedRxBytes[i] != rxBytes[i]) {
+			LED_ON(RED);
+		}
+	}
+
+	// Infinite Loop
 	while(1);
 }

@@ -68,6 +68,6 @@ typedef struct {
 	uint8_t data[4];
 	// Stop sequence
 	uint8_t stop[2];
-} TsipPacket;
+} TsipAutoManualPacket;
 
 #endif
