@@ -111,19 +111,21 @@ int main(void)
     LED_OFF(GREEN);
 
     // Declare and define a TSIP Packet to stop automatic packet transmission
-    tsipPacket tsipPacket;
+    TsipPacket tsipPacket;
     tsipPacket.header = TSIP_START_BYTE;
     
     tsipPacket.packetType = 0x8E;
     tsipPacket.packetSubType = 0xA5;
 
     tsipPacket.data[0] = 0x00; 
-    tsipPacket.data[1] = 0x00;
+    tsipPacket.data[1] = 0x05;
     tsipPacket.data[2] = 0x00;
     tsipPacket.data[3] = 0x00;
 
     tsipPacket.stop[0] = TSIP_STOP_BYTE1;
     tsipPacket.stop[1] = TSIP_STOP_BYTE2;
+
+    serialWriteUSB((const uint8_t*)&tsipPacket,sizeof(tsipPacket));
 
     // Talk to GPS
     LED_ON(GREEN);
