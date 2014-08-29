@@ -59,6 +59,12 @@ input[type=checkbox] {
 	float:right;
 }
 
+.back {
+	float: right;
+	display: inline-block;
+	margin: 15px;
+}
+
 #header {
 	position: relative;
 	width: 900px;
@@ -72,6 +78,7 @@ input[type=checkbox] {
 	font-weight: bold;
 	text-decoration: none;
 	color: #000;
+	display: inline-block;
 }
 
 #content {

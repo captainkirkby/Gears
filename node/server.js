@@ -2,91 +2,74 @@
 // Created by D & D Kirkby, Dec 2013
 
 
-var mongoose = require('mongoose');
 var express = require('express');
+var winston_module = require('winston');
+
 var fork = require('child_process').fork;
+
+var connectToDB = require('./dbConnection').connectToDB;
 
 // Global status for fetchWorker
 var fetchWorker = null;
 var fetchWorkerReady = false;
+
+// Log to file
+var winston = new (winston_module.Logger)({
+	transports: [
+		new (winston_module.transports.Console)({ level: 'warn' }),
+		new (winston_module.transports.File)({ filename: 'ticktock.log', level: 'verbose' })
+	]
+});
 
 // Parses command-line arguments.
 var noSerial = false;
 var noDatabase = false;
 var debug = false;
 var pythonFlags = ["--load-template", "template2048.dat"];
+var service = false;
 process.argv.forEach(function(val,index,array) {
 	if(val == '--no-serial') noSerial = true;
 	else if(val == '--no-database') noDatabase = true;
-	else if(val == '--debug') debug = true;
+	else if(val == '--debug') {
+		winston.transports.console.level = 'debug';
+		winston.transports.file.level = 'debug';
+		debug = true;
+	}	else if(val == '--service') service = true;
 	else if(val == '--physical')  pythonFlags = ["--physical"];
 });
 
-if(!noSerial){
+// Assumption: this command is being called with cwd /path/to/Gears/node
+if(!noSerial && !service){
 	// Start process with data pipes
-	var logger = fork('logger.js', process.argv.slice(2,process.argv.length), { stdio : 'inherit'});
+	var logger = fork('./logger.js', process.argv.slice(2,process.argv.length), { stdio : 'inherit'});
 	
 	// Make sure to kill the fit process when node is about to exit
 	process.on('SIGINT', function(){
-		process.exit();
-	});
-	process.on('exit', function(){
 		gracefulExit();
 	});
 }
 
 function gracefulExit()
 {
-	console.log("Stopping Data Logger");
-	logger.kill();
-	console.log("Stopping Server " + __filename);
+	winston.info("Stopping Data Logger");
+	logger.kill('SIGINT');
+	winston.info("Stopping Server " + __filename);
+	process.exit();
 }
 
-console.log(__filename + ' connecting to the database...');
-mongoose.connect('mongodb://localhost:27017/ticktockDemoTest3');
-var db = mongoose.connection;
-db.on('error', console.error.bind(console, 'db connection error:'));
-db.once('open', function() {
-	console.log('db connection established.');
-	// Defines the schema and model for our serial boot packets
-	var bootPacketSchema = mongoose.Schema({
-		timestamp: { type: Date, index: true },
-		serialNumber: String,
-		bmpSensorOk: Boolean,
-		gpsSerialOk: Boolean,
-		sensorBlockOK: Boolean,
-		commitTimestamp: Date,
-		commitHash: String,
-		commitStatus: Number
-	});
-	var bootPacketModel = mongoose.model('bootPacketModel',bootPacketSchema);
-	// Defines the schema and model for our serial data packets
-	var dataPacketSchema = mongoose.Schema({
-		timestamp: { type: Date, index: true },
-		crudePeriod: Number,
-		refinedPeriod: Number,
-		angle: Number,
-		sequenceNumber: Number,
-		temperature: Number,
-		pressure: Number,
-		thermistor: Number,
-		humidity: Number,
-		irLevel: Number,
-		raw: Array
-	});
-	var dataPacketModel = mongoose.model('dataPacketModel',dataPacketSchema);
+winston.verbose(__filename + ' connecting to the database...');
 
-	var config = {};
-	config.db = {};
-	config.port = null;
+var dbCallback = dbCallbackFunction;
+connectToDB(dbCallback);
 
-	config.db.connection = db;
-	config.db.bootPacketModel = bootPacketModel;
-	config.db.dataPacketModel = dataPacketModel;
-
-	startWebApp(config);	//createconfig
-});
-
+function dbCallbackFunction(err, config) {
+	if(err) throw err;
+	newConfig = {};
+	newConfig.port = null;			// Fix Me... probably not true
+	newConfig.db = config;
+	newConfig.startupTime = new Date();
+	startWebApp(newConfig);
+}
 
 function startWebApp(config)
 {
@@ -105,7 +88,7 @@ function startWebApp(config)
 		app.get('/fetch', function(req,res) {
 			if(!fetchWorkerReady){
 				// Create new Worker
-				if(debug) console.log("Offloading to new Worker");
+				winston.verbose("Offloading to new Worker");
 				fetchWorker = fork('fetch.js', process.argv.slice(2,process.argv.length), { stdio: 'inherit'});
 
 				// Listen for ready signal and done response
@@ -118,7 +101,7 @@ function startWebApp(config)
 						});
 						fetchWorker.once('message', function(message){
 							if(message.done){
-								if(debug) console.log("Done Fetching, send to page");
+								winston.verbose("Done Fetching, send to page");
 								res.send(message.results);
 							}
 						});
@@ -126,19 +109,19 @@ function startWebApp(config)
 				});
 
 				fetchWorker.on('exit', function(code, signal){
-					if(debug) console.log("Code : " + code);
-					if(debug) console.log("Signal : " + signal);
+					winston.verbose("Code : " + code);
+					winston.verbose("Signal : " + signal);
 				});
 			} else {
 				// Use existing workera
-				if(debug) console.log("Offloading to existing worker");
+				winston.verbose("Offloading to existing worker");
 				// Already ready, send the query
 				fetchWorker.send({
 					'query' : req.query,
 				});
 				fetchWorker.once('message', function(message){
 					if(message.done){
-						if(debug) console.log("Done Fetching, send to page");
+						winston.verbose("Done Fetching, send to page");
 						res.send(message.results);
 					}
 				});
@@ -147,7 +130,7 @@ function startWebApp(config)
 
 	}
 	// Starts our webapp.
-	console.log('starting web server on port 3000');
+	winston.info('starting web server on port 3000');
 	app.listen(3000);
 }
 

@@ -4,11 +4,15 @@
 var fs = require('fs');
 var async = require('async');
 var serial = require('serialport');
-var mongoose = require('mongoose');
+var winston_module = require('winston');
+
 var sprintf = require('sprintf').sprintf;
 var spawn = require('child_process').spawn;
 
 var packet = require('./packet');
+var average = require('./average');
+var bins = require('./bins');
+var connectToDB = require('./dbConnection').connectToDB;
 
 // Tracks the last seen data packet sequence number to enable sequencing errors to be detected.
 var lastDataSequenceNumber = 0;
@@ -20,42 +24,55 @@ var MAX_PACKET_SIZE = 2082;
 // FIFO : unshift on, then pop off
 var datesBeingProcessed = [];
 
+// Log to file
+var winston = new (winston_module.Logger)({
+	transports: [
+		new (winston_module.transports.Console)({ level: 'warn' }),
+		new (winston_module.transports.File)({ filename: 'ticktock.log', level: 'verbose' })
+	]
+});
+
 // Parses command-line arguments.
 var noSerial = false;
 var noDatabase = false;
 var debug = false;
 var debugLevel2 = false;
+var runningData = false;
 var pythonFlags = ["--load-template", "template2048.dat"];
+var service = false;
 process.argv.forEach(function(val,index,array) {
 	if(val == '--no-serial') noSerial = true;
 	else if(val == '--no-database') noDatabase = true;
-	else if(val == '--debug') debug = true;
+	else if(val == '--debug') {
+		winston.transports.console.level = 'debug';
+		winston.transports.file.level = 'debug';
+		debug = true;
+	}	else if(val == '--running-data') runningData = true;
+	else if(val == '--service') service = true;
 	else if(val == '--physical')  pythonFlags = ["--physical"];
 });
 
-// Log to file
-var access = fs.createWriteStream('node.access.log', { flags: 'a' });
-var error = fs.createWriteStream('node.error.log', { flags: 'a' });
-
-// redirect stdout and stderr
-process.stdout.pipe(access);
-process.stderr.pipe(error);
+// Assumption: this command is being called with cwd /path/to/Gears/node
 
 // Start process with data pipes
-var fit = spawn('../fit/fit.py', pythonFlags, { cwd : "../fit", stdio : 'pipe'});
+var fit = spawn("../fit/fit.py", pythonFlags, { cwd : "../fit", stdio : 'pipe'});
 // Send all output to node stdout (readable.pipe(writable))
 // fit.stdout.pipe(process.stdout);
 
 // Make sure to kill the fit process when node is about to exit
-process.on('exit', function(){
+process.on('SIGINT', function(){
 	gracefulExit();
 });
 
 function gracefulExit()
 {
-	console.log("Stopping Python");
+	winston.info("Stopping Python");
 	fit.kill();
+	winston.info("Stopping Logger " + __filename);
+	process.exit();
 }
+
+winston.verbose(__filename + ' connecting to the database...');
 
 async.parallel({
 	// Opens a serial port connection to the TickTock device.
@@ -64,11 +81,11 @@ async.parallel({
 		async.waterfall([
 			// Finds the tty device name of the serial port to open.
 			function(portCallback) {
-				if(debug) console.log('Looking for the tty device...');
+				winston.verbose('Looking for the tty device...');
 				serial.list(function(err,ports) {
 					// Looks for the first port with 'FTDI' as the manufacturer
 					async.detectSeries(ports,function(port,ttyCallback) {
-						if(debugLevel2) console.log('scanning port',port);
+						winston.debug('scanning port',port);
 						ttyCallback(port.manufacturer == 'FTDI' || port.pnpId.indexOf('FTDI') > -1);
 					},
 					// Forwards the corresponding tty device name.
@@ -86,7 +103,7 @@ async.parallel({
 			},
 			// Opens the serial port.
 			function(ttyName,portCallback) {
-				if(debug) console.log('Opening device %s...',ttyName);
+				winston.verbose('Opening device %s...',ttyName);
 				var port = new serial.SerialPort(ttyName, {
 					baudrate: 57600,
 					buffersize: 255,
@@ -94,61 +111,18 @@ async.parallel({
 				});
 				port.on('open',function(err) {
 					if(err) return portCallback(err);
-					if(debug) console.log('Port open');
+					winston.verbose('Port open');
 					portCallback(null,port);
 				});
 			}],
 			// Propagates our device info to data logger.
 			function(err,port) {
-				if(!err) console.log('serial port is ready');
+				if(!err) winston.info('serial port is ready');
 				callback(err,port);
 			}
 		);
 	},
-	// Connects to the database where packets from TickTock are logged.
-	db: function(callback) {
-		if(noDatabase) return callback(null,null);
-		console.log(__filename + ' connecting to the database...');
-		mongoose.connect('mongodb://localhost:27017/ticktockDemoTest3');
-		var db = mongoose.connection;
-		db.on('error', console.error.bind(console, 'db connection error:'));
-		db.once('open', function() {
-			console.log('db connection established.');
-			// Defines the schema and model for our serial boot packets
-			var bootPacketSchema = mongoose.Schema({
-				timestamp: { type: Date, index: true },
-				serialNumber: String,
-				bmpSensorOk: Boolean,
-				gpsSerialOk: Boolean,
-				sensorBlockOK: Boolean,
-				commitTimestamp: Date,
-				commitHash: String,
-				commitStatus: Number
-			});
-			var bootPacketModel = mongoose.model('bootPacketModel',bootPacketSchema);
-			// Defines the schema and model for our serial data packets
-			var dataPacketSchema = mongoose.Schema({
-				timestamp: { type: Date, index: true },
-				crudePeriod: Number,
-				refinedPeriod: Number,
-				angle: Number,
-				sequenceNumber: Number,
-				temperature: Number,
-				pressure: Number,
-				thermistor: Number,
-				humidity: Number,
-				irLevel: Number,
-				raw: Array
-			});
-			var dataPacketModel = mongoose.model('dataPacketModel',dataPacketSchema);
-			// Propagates our database connection and db models to data logger.
-			callback(null,{
-				'connection':db,
-				'bootPacketModel':bootPacketModel,
-				'dataPacketModel':dataPacketModel
-			});
-		});
-	}},
+	db: connectToDB },
 	// Performs steps that require both an open serial port and database connection.
 	// Note that either of config.port or config.db might be null if they are disabled
 	// with command-line flags.
@@ -158,17 +132,21 @@ async.parallel({
 		config.startupTime = new Date();
 		if(config.db && config.port) {
 			// Logs TickTock packets from the serial port into the database.
-			if(debugLevel2) console.log('starting data logger with',config);
+			winston.debug('starting data logger');
 			// Initializes our binary packet assembler to initially only accept a boot packet.
 			// NB: the maximum and boot packet sizes are hardcoded here!
 			var assembler = new packet.Assembler(0xFE,3,MAX_PACKET_SIZE,{0x00:32},0);
+			// Initializes averagers
+			var averagerCollection = new average.AveragerCollection(bins.stdBinSizes());
+
 			// Handles incoming chunks of binary data from the device.
 			config.port.on('data',function(data) {
-				receive(data,assembler,config.db.bootPacketModel,config.db.dataPacketModel);
+				receive(data,assembler,averagerCollection,config.db.bootPacketModel,config.db.dataPacketModel,config.db.averageDataModel);
 			});
 
+			// Handles incoming data packets from pipe to fit.py
 			fit.stdout.on('data', function(data){
-				storeRefinedPeriodAndAngle(data, config.db.dataPacketModel);
+				storeRefinedPeriodAndAngle(data, config.db.dataPacketModel, averagerCollection);
 			});
 		}
 	}
@@ -176,11 +154,12 @@ async.parallel({
 
 // Receives a new chunk of binary data from the serial port and returns the
 // updated value of remaining that should be used for the next call.
-function receive(data,assembler,bootPacketModel,dataPacketModel) {
+function receive(data,assembler,averager,bootPacketModel,dataPacketModel,averageDataModel) {
 	assembler.ingest(data,function(ptype,buf) {
 		var saveMe = true;
+		var p = null;
 		if(ptype === 0x00) {
-			if(debug) console.log("Got Boot Packet!");
+			winston.verbose("Got Boot Packet!");
 			// Prepares boot packet for storing to the database.
 			// NB: the boot packet layout is hardcoded here!
 			hash = '';
@@ -202,7 +181,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			lastDataSequenceNumber = 0;
 		}
 		else if(ptype == 0x01) {
-			if(debug) console.log("Got Data!");
+			winston.verbose("Got Data!");
 
 			// Prepare to recieve data
 			var date = new Date();
@@ -213,12 +192,12 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			var raw = [];
 			var rawFill = 0;
 			var rawPhase = buf.readUInt16LE(32);
-			// console.log(rawPhase);
+			// winston.info(rawPhase);
 			var initialReadOffset = 34;
 			var initialReadOffsetWithPhase = initialReadOffset+(rawPhase);
 
 			if(initialReadOffsetWithPhase >= MAX_PACKET_SIZE || initialReadOffsetWithPhase < 0){
-				console.log("PROBLEMS!! Phase is " + initialReadOffsetWithPhase);
+				winston.warn("PROBLEMS!! Phase is " + initialReadOffsetWithPhase);
 				// Probably shouldn't send next packet to fit.py
 				return;
 			}
@@ -232,6 +211,8 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			// Value to add to each reading to expand from 8 bit to 10 bit values
 			var addToRawReading = QUADRANT * 3;
 
+			// Assumption: The first data point is in the upper quadrant (between 75% and 100% light level)
+			// Reconstruct first part of raw IR waveform from circular buffer
 			for(var readOffsetA = initialReadOffsetWithPhase; readOffsetA < MAX_PACKET_SIZE; readOffsetA++) {
 				raw[rawFill] = buf.readUInt8(readOffsetA);
 
@@ -250,7 +231,7 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 				raw[rawFill] += addToRawReading;
 				rawFill = rawFill + 1;
 			}
-
+			// Reconstruct second part of raw IR waveform from circular buffer
 			for(var readOffsetB = initialReadOffset; readOffsetB < initialReadOffsetWithPhase; readOffsetB++) {
 				raw[rawFill] = buf.readUInt8(readOffsetB);
 
@@ -270,6 +251,14 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 				rawFill = rawFill + 1;
 			}
 
+			// use nominal 1st order fit from sensor datasheet to calculate RH in %
+			var humidity			= (buf.readUInt16LE(28)/65536.0 - 0.1515)/0.00636;
+			var crudePeriod			= buf.readUInt16LE(16);
+			var sequenceNumber		= buf.readInt32LE(0);
+			var boardTemperature	= buf.readInt32LE(18)/160.0;
+			var pressure			= buf.readInt32LE(22);
+			var irLevel				= buf.readUInt16LE(30)/65536.0*5.0;				// convert IR level to volts
+
 			// Calculates the thermistor resistance in ohms assuming 100uA current source.
 			var rtherm = buf.readUInt16LE(26)/65536.0*5.0/100e-6;
 			// Calculates the corresponding temperature in degC using a Steinhart-Hart model.
@@ -279,35 +268,50 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 			// NB: the data packet layout is hardcoded here!
 			p = new dataPacketModel({
 				'timestamp': date,
-				'crudePeriod': buf.readUInt16LE(16),
+				'crudePeriod': crudePeriod,
 				'refinedPeriod': null,
 				'angle': null,
-				'sequenceNumber': buf.readInt32LE(0),
-				'temperature': buf.readInt32LE(18)/160.0,
-				'pressure': buf.readInt32LE(22),
-				'thermistor': ttherm,
-				// use nominal 1st order fit from sensor datasheet to calculate RH in %
-				'humidity': (buf.readUInt16LE(28)/65536.0 - 0.1515)/0.00636,
-				// convert IR level to volts
-				'irLevel': buf.readUInt16LE(30)/65536.0*5.0,
+				'sequenceNumber': sequenceNumber,
+				'boardTemperature': boardTemperature,
+				'pressure': pressure,
+				'blockTemperature': ttherm,
+				'humidity': humidity,
+				'irLevel': irLevel,
 				'raw': raw
 			});
-			//console.log(raw);
+
+			averager.input({
+				'timestamp': date,
+				'crudePeriod': crudePeriod,
+				'boardTemperature': boardTemperature,
+				'pressure': pressure,
+				'blockTemperature': ttherm,
+				'humidity': humidity,
+			}, function (data){
+				// To be called when the average reaches its period
+				averageDataModel.create(data,function(err,data){
+					if(err) throw err;
+					// Saved!
+				});
+			});
+
+			//winston.info(raw);
 			// Checks for a packet sequence error.
 			if(p.sequenceNumber != lastDataSequenceNumber+1) {
-				console.log('Got packet #%d when expecting packet #%d',
+				winston.warn('Got packet #%d when expecting packet #%d',
 					p.sequenceNumber,lastDataSequenceNumber+1);
 			}
 			lastDataSequenceNumber = p.sequenceNumber;
 			// Never save the first packet since there is usually a startup glitch
 			// where the serial port sees a second boot packet arriving during the first
 			// data packet that still needs to be debugged...
+			// EDIT 8/22/14: I think this issue has been resolved?
 			if(lastDataSequenceNumber == 1) {
-				saveMe = false;
+				// winston.info(p);
 			} else{
 				saveMe = true;
 				// Write to first entry in file
-				fs.appendFileSync('runningData.dat', samplesSince + '\n');
+				if(runningData) fs.appendFileSync('runningData.dat', samplesSince + '\n');
 				// Push most recent date to the top of the FIFO stack
 				datesBeingProcessed.unshift(date);
 				// Write crude period to pipe
@@ -316,44 +320,45 @@ function receive(data,assembler,bootPacketModel,dataPacketModel) {
 				// Iterate through samples writing them to the fit pipe
 				for(var i = 0; i < 2048; i++){
 					fit.stdin.write(raw[i] + '\n');
-					fs.appendFileSync('runningData.dat', raw[i] + '\n');
+					if(runningData) fs.appendFileSync('runningData.dat', raw[i] + '\n');
 				}
 			}
 		}
 		else {
-			console.log('Got unexpected packet type',ptype);
+			winston.warn('Got unexpected packet type',ptype);
 			return;
 		}
 		if(saveMe) {
 			p.save(function(err,p) {
-				if(err) console.log('Error saving data packet',p);
+				if(err) winston.warn('Error saving data packet',p);
 			});
 		}
 		else {
-			console.log('Packet not saved to db.');
+			winston.warn('Packet not saved to db.');
 		}
 	});
 }
 
 // Write refined period and swing arc angle to database
 // Format : period angle
-function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel) {
+function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel, averager) {
 	// Pop least recent date off FIFO stack
 	var storeDate = datesBeingProcessed.pop();
+	winston.info("Length :" + datesBeingProcessed.length, datesBeingProcessed);
 
 	var period = Number(periodAndAngle.toString().split(" ")[0].toString());
 	var angle = Number(periodAndAngle.toString()
 		.split(" ")[1].toString());
 	if(period <= 0 || isNaN(period)){
-		console.log("Bad Period : " + period);
+		winston.warn("Bad Period : " + period);
 		return;
 	} else if(angle <= 0 || isNaN(angle)){
-		console.log("Bad Angle : " + angle);
+		winston.warn("Bad Angle : " + angle);
 		return;
 	}
-	if(debug) console.log(period);
-	// console.log(storeDate);
-	// console.log(dataPacketModel);
+	winston.verbose(period);
+	// winston.info(storeDate);
+	// winston.info(dataPacketModel);
 
 	var conditions	= { timestamp : storeDate };
 	var update		= { $set : { refinedPeriod : period , angle : angle}};
@@ -361,6 +366,13 @@ function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel) {
 
 	dataPacketModel.update(conditions, update, options, function(err, numberAffected){
 		if(err) throw err;
-		// console.log("Update of " + numberAffected + " Documents Successful!")
+		// winston.info("Update of " + numberAffected + " Documents Successful!")
+	});
+
+	// Note: because averager does not wait on these fields to save to the database, the average values will be OFFSET!
+	averager.input({
+		'timestamp': storeDate,
+		'refinedPeriod': period,
+		'angle': angle,
 	});
 }

@@ -124,10 +124,10 @@ $(function() {
 		});
 	}
 
-	function continuousUpdate(length){
+	function continuousUpdate(){
 		if(realTimeUpdates){
-			displayData(length);
-			setTimeout(continuousUpdate, TIMEOUT_VALUE, length);
+			displayData();
+			setTimeout(continuousUpdate, TIMEOUT_VALUE);
 		}
 	}
 
@@ -169,11 +169,6 @@ $(function() {
 			// Real Time On
 			realTimeUpdates = true;
 			$(this).val("Stop Real Time Updates");
-			// Get value of length field
-			var lengthValue = $("#length").val();
-			if(!isNaN(parseInt(lengthValue,10))){
-				length = Math.abs(parseInt(lengthValue,10)) * -1;		//ensure a negative number
-			}
 			// disable manual fetch
 			setManualFetchEnabled(false);
 		} else {
@@ -184,7 +179,7 @@ $(function() {
 			setManualFetchEnabled(true);
 		}
 
-		continuousUpdate(length);
+		continuousUpdate();
 	});
 
 	displayData();

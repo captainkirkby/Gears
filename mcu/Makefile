@@ -33,7 +33,7 @@ PROGRAMMER = bootloader
 # Select serial port format
 # ubuntu ........./dev/ttyUSB*
 # OS X .........../dev/tty.usbserial*
-PORT = /dev/ttyUSB*
+PORT = /dev/tty.usbserial*
 
 ##FUSES      = -U hfuse:w:0xd9:m -U lfuse:w:0x24:m
 
@@ -51,7 +51,7 @@ endif
 AVRDUDE = avrdude $(PROGRAMMER_ARGS) -p $(UPLOAD_DEVICE)
 COMPILE = avr-gcc -Wall -Os -std=c99 -DF_CPU=$(CLOCK) -mmcu=$(DEVICE)
 
-SOURCES = main.c
+SOURCES = dualUARTTest.c
 OBJECTS = $(addprefix build/, $(SOURCES:%.c=%.o))
 ASSEMS = $(addprefix build/, $(SOURCES:%.c=%.s))
 TARGET = build/firmware

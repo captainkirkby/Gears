@@ -7,6 +7,9 @@
 #define BOOT_PACKET 0x00
 #define DATA_PACKET 0x01
 #define PACKET_LENGTH 2048
+#define TSIP_START_BYTE 0x10
+#define TSIP_STOP_BYTE1 0x10
+#define TSIP_STOP_BYTE2 0x03
 
 // Defines the boot packet structure
 typedef struct {
@@ -55,5 +58,16 @@ typedef struct {
 	uint16_t rawPhase;				// (32)
 	volatile uint8_t raw[PACKET_LENGTH];	// (34)
 } DataPacket;
+
+typedef struct {
+	// Header
+	uint8_t header;
+	uint8_t packetType;
+	uint8_t packetSubType;
+	// Payload
+	uint8_t data[4];
+	// Stop sequence
+	uint8_t stop[2];
+} TsipPacket;
 
 #endif

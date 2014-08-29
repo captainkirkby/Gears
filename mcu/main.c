@@ -110,6 +110,37 @@ int main(void)
     serialWriteUSB((const uint8_t*)&bootPacket,sizeof(bootPacket));
     LED_OFF(GREEN);
 
+    // Declare and define a TSIP Packet to stop automatic packet transmission
+    TsipPacket tsipPacket;
+    tsipPacket.header = TSIP_START_BYTE;
+    
+    tsipPacket.packetType = 0x8E;
+    tsipPacket.packetSubType = 0xA5;
+
+    tsipPacket.data[0] = 0x00; 
+    tsipPacket.data[1] = 0x05;
+    tsipPacket.data[2] = 0x00;
+    tsipPacket.data[3] = 0x00;
+
+    tsipPacket.stop[0] = TSIP_STOP_BYTE1;
+    tsipPacket.stop[1] = TSIP_STOP_BYTE2;
+
+    serialWriteUSB((const uint8_t*)&tsipPacket,sizeof(tsipPacket));
+
+    // Talk to GPS
+    LED_ON(GREEN);
+    serialWriteGPS((const uint8_t*)&tsipPacket,sizeof(tsipPacket));
+    LED_OFF(GREEN);
+
+    int rx;
+    while(1){
+        rx = getc1();
+        if(rx > -1) {
+            LED_ON(YELLOW);
+            serialWriteUSB((const uint8_t*)&rx,sizeof(rx));
+        }
+    }
+
     // Initializes the constant header of our data packet
     dataPacket.start[0] = START_BYTE;
     dataPacket.start[1] = START_BYTE;
