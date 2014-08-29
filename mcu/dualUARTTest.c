@@ -36,16 +36,20 @@ int main(void) {
 
 
 	int ch;
-	while(1){
+	uint8_t c = 0;
+	while(c < 9){
 		ch = getc1();
 		if(ch > -1){			// Got Data
 			LED_ON(GREEN);
 			uint8_t byte = (ch & 0xff);
 			putc0(byte);
+			c++;
 		} else if(ch == -2){	// Framing Error
 			LED_ON(YELLOW);
 		} else if(ch == -3){	// Data Overrun
 			LED_ON(RED);
 		}
 	}
+
+	while(1);
 }
