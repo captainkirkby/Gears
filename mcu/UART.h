@@ -40,6 +40,14 @@ inline int getc1() {
 	}
 }
 
+void flush0(){
+	while(UCSR0A & _BV(RXC0));
+}
+
+void flush1(){
+	while(UCSR0A & _BV(RXC1));
+}
+
 void initUARTs() {
 	#define BAUD FTDI_BAUD_RATE
 	#include <util/setbaud.h>

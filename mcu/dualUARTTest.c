@@ -30,16 +30,21 @@ int main(void) {
     tsipPacket.stop[1] = TSIP_STOP_BYTE2;
 
 	// uint32_t msg = 0xDEADBEEF;
-	LED_ON(GREEN);
 	serialWriteGPS((const uint8_t*)&tsipPacket,sizeof(tsipPacket));
+	// flush1();
+	// serialWriteGPS((const uint8_t*)&tsipPacket,sizeof(tsipPacket));
+
 
 	int ch;
 	while(1){
 		ch = getc1();
-		if(ch > -2){
-			LED_ON(YELLOW)
-			putc0(ch);
-		} else {
+		if(ch > -1){			// Got Data
+			LED_ON(GREEN);
+			uint8_t byte = (ch & 0xff);
+			putc0(byte);
+		} else if(ch == -2){	// Framing Error
+			LED_ON(YELLOW);
+		} else if(ch == -3){	// Data Overrun
 			LED_ON(RED);
 		}
 	}
