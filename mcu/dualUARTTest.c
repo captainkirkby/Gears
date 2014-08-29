@@ -67,6 +67,18 @@ int main(void) {
 		}
 	}
 
+
+
+	// Declare and define a TSIP command packet that asks for the GPS time
+	TsipCommandPacket commandPacket;
+	commandPacket.header = TSIP_START_BYTE;
+
+	commandPacket.command = 0x21;
+
+    commandPacket.stop[0] = TSIP_STOP_BYTE1;
+    commandPacket.stop[1] = TSIP_STOP_BYTE2;
+
+
 	// Infinite Loop
 	while(1);
 }

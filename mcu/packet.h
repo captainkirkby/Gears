@@ -70,4 +70,13 @@ typedef struct {
 	uint8_t stop[2];
 } TsipAutoManualPacket;
 
+typedef struct {
+	// Header
+	uint8_t header;
+	// Payload
+	uint8_t command;
+	// Stop sequence
+	uint8_t stop[2];
+} TsipCommandPacket;
+
 #endif
