@@ -68,7 +68,7 @@ volatile uint8_t currentMuxChannel;
 
 int main(void)
 {
-    uint8_t bmpError;
+    uint8_t bmpError,gpsError;
 
     // Initializes low-level hardware
     initLEDs();
@@ -80,7 +80,7 @@ int main(void)
     bmpError = initBMP180();
     if(bmpError) {
         // A non-zero status indicates a problem, so flash an bmpError code
-        flashNumber(100+bootPacket.bmpSensorStatus);
+        flashNumber(100+bmpError);
         bootPacket.bmpSensorStatus = bmpError;
     }
 
@@ -104,11 +104,15 @@ int main(void)
 
 
 
-    // Turn off GPS Auto packets
-    if(!turnOffGPSAutoPackets()) LED_ON(RED);
+    // Turn off GPS Auto packets and store status in boot packet
+    bootPacket.gpsSerialOk = turnOffGPSAutoPackets();
 
     // Readout GPS health (and position?)
-    // if(!getHealth()) LED_ON(RED);
+    TsipHealthResponsePacket health;
+    getGPSHealth(&health);
+    bootPacket.latitude = health.latitude;
+    bootPacket.longitude = health.longitude;
+    bootPacket.altitude = health.altitude;
 
 
 

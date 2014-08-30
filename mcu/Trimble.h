@@ -74,4 +74,77 @@ uint8_t turnOffGPSAutoPackets(){
     return 1;
 }
 
+uint8_t getGPSHealth(TsipHealthResponsePacket *packet){
+    // Declare and define an (loosely) documented TSIP command packet that gets reciever health
+    TsipHealthPacket healthPacket;
+    healthPacket.header = TSIP_START_BYTE;
+    healthPacket.packetType = 0x8E;
+    healthPacket.packetSubType = 0xAC;
+    healthPacket.data = 0;                          // This byte determines when the packet is sent.  0 = immediately
+    healthPacket.stop[0] = TSIP_STOP_BYTE1;
+    healthPacket.stop[1] = TSIP_STOP_BYTE2;
+
+    // Send Packet
+    serialWriteGPS((const uint8_t*)&healthPacket,sizeof(healthPacket));
+
+    // Read back 72 bytes of response
+    uint8_t healthNumRxBytes = 72;
+    uint8_t healthRxBytes[healthNumRxBytes];
+    readResponse(healthNumRxBytes, healthRxBytes);
+
+    // Confirm response
+    uint8_t expectedHealthRxBytes[] = {
+        TSIP_START_BYTE,
+        0x8F,                       // Packet Type
+        0xAC,                       // Subtype
+        WILD,                       // Reciever Mode
+        WILD,                       // Disciplining Mode
+        WILD,                       // Self Survey Progress
+        WILD,WILD,WILD,WILD,        // Holdover Duration
+        WILD,WILD,                  // Critical Alarms
+        WILD,WILD,                  // Minor Alarms
+        WILD,                       // GPS Decoding Status
+        WILD,                       // Disciplining Activity
+        WILD,                       // Spare 1
+        WILD,                       // Spare 2
+        WILD,WILD,WILD,WILD,        // PPS Offset (float) in ns
+        WILD,WILD,WILD,WILD,        // Clock Offset (float) in ppb
+        WILD,WILD,WILD,WILD,        // DAC Value (uint32_t)
+        WILD,WILD,WILD,WILD,        // DAC Voltage (float)
+        WILD,WILD,WILD,WILD,        // Temperature (float)
+        WILD,WILD,WILD,WILD,        // Temperature (float)
+        WILD,WILD,WILD,WILD,        // Latitude (double)
+        WILD,WILD,WILD,WILD,        
+        WILD,WILD,WILD,WILD,        // Longitude (double)
+        WILD,WILD,WILD,WILD,       
+        WILD,WILD,WILD,WILD,        // Altitude (double)
+        WILD,WILD,WILD,WILD,       
+        WILD,WILD,WILD,WILD,        // PPS Quantization Error (float)
+        WILD,WILD,WILD,WILD,        // Spare 3-6
+        TSIP_STOP_BYTE1,TSIP_STOP_BYTE2
+    };
+
+    // Cast to struct type
+    packet = (TsipHealthResponsePacket *)&healthRxBytes;
+
+    // // Cast to struct type
+    // TsipHealthResponsePacket health = *((TsipHealthResponsePacket *)healthRxBytes);
+    // uint64_t latitude = health.latitude;
+    // uint64_t longitude = health.longitude;
+    // uint64_t altitude = health.altitude;
+
+
+    // serialWriteUSB((const uint8_t*)&latitude,sizeof(latitude));
+    // serialWriteUSB((const uint8_t*)&longitude,sizeof(longitude));
+    // serialWriteUSB((const uint8_t*)&altitude,sizeof(altitude));
+
+
+    for (int i = 0; i < healthNumRxBytes; ++i) {
+        if(expectedHealthRxBytes[i] != healthRxBytes[i] && expectedHealthRxBytes[i] != WILD) {     // WILD is the arbitrary wildcard
+            return 0;
+        }
+    }
+    return 1;
+}
+
 #endif
