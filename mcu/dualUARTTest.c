@@ -26,7 +26,7 @@ int main(void) {
     manualFetchPacket.packetSubType = 0xA5;
 
     manualFetchPacket.data[0] = 0x00; 
-    manualFetchPacket.data[1] = 0x00;
+    manualFetchPacket.data[1] = 0x05;
     manualFetchPacket.data[2] = 0x00;
     manualFetchPacket.data[3] = 0x00;
 
@@ -42,7 +42,13 @@ int main(void) {
     readResponse(manualNumRxBytes, manualRxBytes);
 
     // Confirm response
-    uint8_t expectedManualRxBytes[] = {TSIP_START_BYTE,0x8F,manualFetchPacket.packetSubType,0,0,0,0,TSIP_STOP_BYTE1,TSIP_STOP_BYTE2};
+    uint8_t expectedManualRxBytes[] = {
+        TSIP_START_BYTE,
+        0x8F,                               // Packet Type
+        0xA5,                               // Subpacket
+        0x00,0x05,0x00,0x00,                // Echo settings
+        TSIP_STOP_BYTE1,TSIP_STOP_BYTE2
+    };
     for (int i = 0; i < manualNumRxBytes; ++i) {
         if(expectedManualRxBytes[i] != manualRxBytes[i] && expectedManualRxBytes[i] != WILD) {      // WILD is the arbitrary wildcard
             LED_ON(RED);
@@ -76,7 +82,7 @@ int main(void) {
     // Confirm response
     uint8_t expectedCommandRxBytes[] = {
         TSIP_START_BYTE,
-        0x41,
+        0x41,                       // Packet Type
         WILD,WILD,WILD,WILD,        // Time of week (float)
         0x07,WILD,                  // Week number (uint16_t)       // should be 1807 (as of now...)
         0x41,0x80,0x00,0x00,        // GPS-UTC offset (float)       // should be 16.00 ms
