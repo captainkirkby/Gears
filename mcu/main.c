@@ -17,8 +17,9 @@
 #include "TWI.h"
 #include "BMP180.h"
 #include "FreeRunningADC.h"
-
+#include "Trimble.h"
 #include "packet.h"
+
 
 // Declares and initializes our boot info packet
 BootPacket bootPacket = {
@@ -104,10 +105,10 @@ int main(void)
 
 
     // Turn off GPS Auto packets
-    if(turnOffGPSAutoPackets()) LED_ON(RED);
+    if(!turnOffGPSAutoPackets()) LED_ON(RED);
 
     // Readout GPS health (and position?)
-    if(getHealth()) LED_ON(RED);
+    // if(!getHealth()) LED_ON(RED);
 
 
 

@@ -8,6 +8,8 @@
 #include "UART.h"
 #include "packet.h"
 
+#define WILD 0xBE
+
 // RxBytes is a pointer to a PRE-ALLOCATED array of length numRxBytes
 void readResponse(uint8_t numRxBytes, uint8_t rxBytes[]) {
     int ch;
