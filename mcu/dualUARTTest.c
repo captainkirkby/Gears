@@ -73,8 +73,8 @@ int main(void) {
         TSIP_START_BYTE,
         0x41,
         0xBE,0xBE,0xBE,0xBE,        // Time of week (float)
-        0x07,0x0F,                  // Week number
-        0x41,0x80,0x00,0x00,        // GPS-UTC offset (float)
+        0x07,0xBE,                  // Week number                  // should be 1807 (as of now...)
+        0x41,0x80,0x00,0x00,        // GPS-UTC offset (float)       // should be 16.00 ms
         TSIP_STOP_BYTE1,TSIP_STOP_BYTE2
     };
     for (int i = 0; i < commandNumRxBytes; ++i) {
@@ -83,9 +83,15 @@ int main(void) {
         }
     }
 
-    if(commandRxBytes[6] == 0x07) LED_ON(YELLOW);
+    uint16_t week = (commandRxBytes[6] << 8) | commandRxBytes[7];
 
-    serialWriteUSB((const uint8_t*)&commandRxBytes,sizeof(commandRxBytes));
+    week = week/2;
+
+    serialWriteUSB((const uint8_t*)&week,sizeof(week));
+
+
+
+    // Declare and define an undocumented (ooh) TSIP command packet that gets reciever health
 
     // Infinite Loop
     while(1);
