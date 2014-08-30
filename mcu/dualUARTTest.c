@@ -52,16 +52,16 @@ int main(void) {
 
 
     // Declare and define a TSIP command packet that asks for the GPS time
-    TsipCommandPacket commandPacket;
-    commandPacket.header = TSIP_START_BYTE;
+    TsipCommandPacket timePacket;
+    timePacket.header = TSIP_START_BYTE;
 
-    commandPacket.command = 0x21;
+    timePacket.command = 0x21;
 
-    commandPacket.stop[0] = TSIP_STOP_BYTE1;
-    commandPacket.stop[1] = TSIP_STOP_BYTE2;
+    timePacket.stop[0] = TSIP_STOP_BYTE1;
+    timePacket.stop[1] = TSIP_STOP_BYTE2;
 
     // Send Packet
-    serialWriteGPS((const uint8_t*)&commandPacket,sizeof(commandPacket));
+    serialWriteGPS((const uint8_t*)&timePacket,sizeof(timePacket));
 
     // Read back 14 bytes of response
     uint8_t commandNumRxBytes = 14;
@@ -84,14 +84,70 @@ int main(void) {
     }
 
     uint16_t week = (commandRxBytes[6] << 8) | commandRxBytes[7];
-
     week = week/2;
-
     serialWriteUSB((const uint8_t*)&week,sizeof(week));
 
 
 
-    // Declare and define an undocumented (ooh) TSIP command packet that gets reciever health
+
+
+
+    // Declare and define an (loosely) documented TSIP command packet that gets reciever health
+    TsipHealthPacket healthPacket;
+    healthPacket.header = TSIP_START_BYTE;
+    healthPacket.packetType = 0x8E;
+    healthPacket.packetSubType = 0xAC;
+    healthPacket.data = 0;                          // This byte determines when the packet is sent.  0 = immediately
+    healthPacket.stop[0] = TSIP_STOP_BYTE1;
+    healthPacket.stop[1] = TSIP_STOP_BYTE2;
+
+    // Send Packet
+    serialWriteGPS((const uint8_t*)&healthPacket,sizeof(healthPacket));
+
+    // Read back 72 bytes of response
+    uint8_t healthNumRxBytes = 72;
+    uint8_t healthRxBytes[healthNumRxBytes];
+    readResponse(healthNumRxBytes, healthRxBytes);
+
+    // Confirm response
+    uint8_t expectedHealthRxBytes[] = {
+        TSIP_START_BYTE,
+        0x8F,                       // Packet Type
+        0xAC,                       // Subtype
+        0xBE,                       // Reciever Mode
+        0xBE,                       // Disciplining Mode
+        0xBE,                       // Self Survey Progress
+        0xBE,0xBE,0xBE,             // Holdover Duration
+        0xBE,0xBE,                  // Critical Alarms
+        0xBE,0xBE,                  // Minor Alarms
+        0xBE,                       // GPS Decoding Status
+        0xBE,                       // Disciplining Activity
+        0xBE,                       // Spare 1
+        0xBE,                       // Spare 2
+        0xBE,0xBE,0xBE,0xBE,        // PPS Offset (float) in ns
+        0xBE,0xBE,0xBE,0xBE,        // Clock Offset (float) in ppb
+        0xBE,0xBE,0xBE,0xBE,        // DAC Value (uint32_t)
+        0xBE,0xBE,0xBE,0xBE,        // DAC Voltage (float)
+        0xBE,0xBE,0xBE,0xBE,        // Temperature (float)
+        0xBE,0xBE,0xBE,0xBE,        // Temperature (float)
+        0xBE,0xBE,0xBE,0xBE,        // Latitude (double)
+        0xBE,0xBE,0xBE,0xBE,        
+        0xBE,0xBE,0xBE,0xBE,        // Longitude (double)
+        0xBE,0xBE,0xBE,0xBE,       
+        0xBE,0xBE,0xBE,0xBE,        // Altitude (double)
+        0xBE,0xBE,0xBE,0xBE,       
+        0xBE,0xBE,0xBE,0xBE,        // PPS Quantization Error (float)
+        0xBE,0xBE,0xBE,0xBE,        // Spare 3-6
+        TSIP_STOP_BYTE1,TSIP_STOP_BYTE2
+    };
+
+    serialWriteUSB((const uint8_t*)&healthRxBytes,sizeof(healthRxBytes));
+
+    for (int i = 0; i < healthNumRxBytes; ++i) {
+        if(expectedHealthRxBytes[i] != healthRxBytes[i] && expectedHealthRxBytes[i] != 0xBE) {     // 0xBE is the arbitrary wildcard
+            LED_ON(RED);
+        }
+    }
 
     // Infinite Loop
     while(1);

@@ -79,4 +79,15 @@ typedef struct {
 	uint8_t stop[2];
 } TsipCommandPacket;
 
+typedef struct {
+	// Header
+	uint8_t header;
+	// Payload
+	uint8_t packetType;
+	uint8_t packetSubType;
+	uint8_t data;
+	// Stop sequence
+	uint8_t stop[2];
+} TsipHealthPacket;
+
 #endif
