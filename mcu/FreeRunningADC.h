@@ -7,6 +7,7 @@
 #define ADC_STATUS_ONE_SHOT 3
 #define ADC_STATUS_DONE 4
 #define ADC_STATUS_TESTING 5
+#define ADC_STATUS_IDLE 6
 #define ADC_STATUS_ERROR 255
 
 // ADC test constants

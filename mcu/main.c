@@ -95,8 +95,7 @@ int main(void)
     startFreeRunningADC(analogSensors[currentSensorIndex]);
 
     // Wait for test to finish
-    // At the end, the ADC will either be running in Free Running Mode or
-    // be disabled.
+    // At the end, the ADC will either be running in error or idle mode
     while(adcStatus == ADC_STATUS_TESTING);
 
     // Non-zero if sensor block is OK
@@ -107,39 +106,11 @@ int main(void)
 
     // Sends our boot packet
     LED_ON(GREEN);
+    _delay_ms(2000);
     serialWriteUSB((const uint8_t*)&bootPacket,sizeof(bootPacket));
     LED_OFF(GREEN);
 
-    // Declare and define a TSIP Packet to stop automatic packet transmission
-    TsipPacket tsipPacket;
-    tsipPacket.header = TSIP_START_BYTE;
-    
-    tsipPacket.packetType = 0x8E;
-    tsipPacket.packetSubType = 0xA5;
-
-    tsipPacket.data[0] = 0x00; 
-    tsipPacket.data[1] = 0x05;
-    tsipPacket.data[2] = 0x00;
-    tsipPacket.data[3] = 0x00;
-
-    tsipPacket.stop[0] = TSIP_STOP_BYTE1;
-    tsipPacket.stop[1] = TSIP_STOP_BYTE2;
-
-    serialWriteUSB((const uint8_t*)&tsipPacket,sizeof(tsipPacket));
-
-    // Talk to GPS
-    LED_ON(GREEN);
-    serialWriteGPS((const uint8_t*)&tsipPacket,sizeof(tsipPacket));
-    LED_OFF(GREEN);
-
-    int rx;
-    while(1){
-        rx = getc1();
-        if(rx > -1) {
-            LED_ON(YELLOW);
-            serialWriteUSB((const uint8_t*)&rx,sizeof(rx));
-        }
-    }
+    adcStatus = ADC_STATUS_CONTINUOUS;
 
     // Initializes the constant header of our data packet
     dataPacket.start[0] = START_BYTE;
@@ -187,7 +158,7 @@ ISR(ADC_vect){
     if(adcStatus >= ADC_STATUS_TESTING){
         if(adcValue > THRESHOLD){
             // Not covered, leave testing mode
-            adcStatus = ADC_STATUS_CONTINUOUS;
+            adcStatus = ADC_STATUS_IDLE;
         } else {
             if(adcTestTries < ADC_MAX_TEST_TRIES){
                 // Keep incrementing the ADC Status until we hit ADC_STATUS_ERROR
@@ -283,5 +254,5 @@ ISR(ADC_vect){
             // Set ADC channel
             switchADCMuxChannel(analogSensors[currentSensorIndex]);
         }
-    }
+    } // Do nothing if adc status is ADC_STATUS_IDLE or ADC_STATUS_ERROR
 }
