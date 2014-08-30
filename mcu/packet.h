@@ -59,6 +59,7 @@ typedef struct {
 	volatile uint8_t raw[PACKET_LENGTH];	// (34)
 } DataPacket;
 
+// Command packet for turning auto messages off
 typedef struct {
 	// Header
 	uint8_t header;
@@ -70,6 +71,7 @@ typedef struct {
 	uint8_t stop[2];
 } TsipAutoManualPacket;
 
+// Command packet for requesting time
 typedef struct {
 	// Header
 	uint8_t header;
@@ -79,6 +81,7 @@ typedef struct {
 	uint8_t stop[2];
 } TsipCommandPacket;
 
+// Command packet for requesting health
 typedef struct {
 	// Header
 	uint8_t header;
@@ -89,5 +92,62 @@ typedef struct {
 	// Stop sequence
 	uint8_t stop[2];
 } TsipHealthPacket;
+
+// Response packet for auto messages
+typedef struct {
+	// Header
+	uint8_t header;
+	// Payload
+	uint8_t packetType;
+	uint8_t packetSubType;
+	uint8_t data;
+	// Stop sequence
+	uint8_t stop[2];
+} TsipAutoManualResponsePacket;
+
+// Response packet for time
+typedef struct {
+	// Header
+	uint8_t header;
+	// Payload
+	uint8_t responseCode;
+	float timeOfWeek;
+	uint16_t weekNumber;
+	float gpsOffset;
+	// Stop sequence
+	uint8_t stop[2];
+} TsipCommandResponsePacket;
+
+
+// Response packet for health
+typedef struct {
+	// Header
+	uint8_t header;
+	// Payload
+	uint8_t packetType;
+	uint8_t packetSubType;
+	uint8_t recieverMode;
+	uint8_t discipliningMode;
+	uint8_t selfSurveyProgress;
+	uint32_t holdoverDuration;
+	uint16_t criticalAlarms;
+	uint16_t minorAlarms;
+	uint8_t gpsDecodingStatus;
+	uint8_t discipliningActivity;
+	uint8_t spare1;
+	uint8_t spare2;
+	float ppsOffset;
+	float clockOffset;
+	uint32_t dacValue;
+	float dacVoltage;
+	float temperature;
+	uint64_t latitude;			// double
+	uint64_t longitude;			// double
+	uint64_t altitude;			// double
+	float ppsError;
+	uint32_t spare3;
+	// Stop sequence
+	uint8_t stop[2];
+} TsipHealthResponsePacket;
 
 #endif
