@@ -68,12 +68,15 @@ int main(void) {
     uint8_t commandRxBytes[commandNumRxBytes];
     readResponse(commandNumRxBytes, commandRxBytes);
 
+    serialWriteUSB((const uint8_t*)&commandRxBytes,sizeof(commandRxBytes));
+
+
     // Confirm response
     uint8_t expectedCommandRxBytes[] = {
         TSIP_START_BYTE,
         0x41,
         0xBE,0xBE,0xBE,0xBE,        // Time of week (float)
-        0x07,0xBE,                  // Week number                  // should be 1807 (as of now...)
+        0x07,0xBE,                  // Week number (uint16_t)       // should be 1807 (as of now...)
         0x41,0x80,0x00,0x00,        // GPS-UTC offset (float)       // should be 16.00 ms
         TSIP_STOP_BYTE1,TSIP_STOP_BYTE2
     };
@@ -84,8 +87,13 @@ int main(void) {
     }
 
     uint16_t week = (commandRxBytes[6] << 8) | commandRxBytes[7];
+    uint16_t weekCopy = week;
     week = week/2;
+    // week = week+1;
+    // serialWriteUSB((const uint8_t*)&week,sizeof(week));
+    week = weekCopy+1;
     serialWriteUSB((const uint8_t*)&week,sizeof(week));
+    // serialWriteUSB((const uint8_t*)&weekCopy,sizeof(weekCopy));
 
 
 
@@ -141,7 +149,7 @@ int main(void) {
         TSIP_STOP_BYTE1,TSIP_STOP_BYTE2
     };
 
-    serialWriteUSB((const uint8_t*)&healthRxBytes,sizeof(healthRxBytes));
+    //serialWriteUSB((const uint8_t*)&healthRxBytes,sizeof(healthRxBytes));
 
     for (int i = 0; i < healthNumRxBytes; ++i) {
         if(expectedHealthRxBytes[i] != healthRxBytes[i] && expectedHealthRxBytes[i] != 0xBE) {     // 0xBE is the arbitrary wildcard
@@ -172,7 +180,7 @@ void readResponse(uint8_t numRxBytes, uint8_t rxBytes[]) {
             // }
             if(startReading){
                 LED_ON(GREEN);
-                putc0(byte);
+                // putc0(byte);
                 rxBytes[c] = byte;
                 c++;
             }
