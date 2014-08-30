@@ -101,12 +101,22 @@ int main(void)
     // Non-zero if sensor block is OK
     bootPacket.sensorBlockOK = !(adcStatus == ADC_STATUS_ERROR);
 
+
+
+    // Turn off GPS Auto packets
+    if(turnOffGPSAutoPackets()) LED_ON(RED);
+
+    // Readout GPS health (and position?)
+    if(getHealth()) LED_ON(RED);
+
+
+
     // Copies our serial number from EEPROM address 0x10 into the boot packet
     bootPacket.serialNumber = eeprom_read_dword((uint32_t*)0x10);
 
     // Sends our boot packet
     LED_ON(GREEN);
-    _delay_ms(2000);
+    // _delay_ms(2000);
     serialWriteUSB((const uint8_t*)&bootPacket,sizeof(bootPacket));
     LED_OFF(GREEN);
 
