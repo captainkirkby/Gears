@@ -135,7 +135,7 @@ async.parallel({
 			winston.debug('starting data logger');
 			// Initializes our binary packet assembler to initially only accept a boot packet.
 			// NB: the maximum and boot packet sizes are hardcoded here!
-			var assembler = new packet.Assembler(0xFE,3,MAX_PACKET_SIZE,{0x00:32},0);
+			var assembler = new packet.Assembler(0xFE,3,MAX_PACKET_SIZE,{0x00:56},0);
 			// Initializes averagers
 			var averagerCollection = new average.AveragerCollection(bins.stdBinSizes());
 
@@ -172,8 +172,13 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,average
 				'sensorBlockOK': buf.readUInt8(6),
 				'commitTimestamp': new Date(buf.readUInt32LE(7)*1000),
 				'commitHash': hash,
-				'commitStatus': buf.readUInt8(31)
+				'commitStatus': buf.readUInt8(31),
+				'latitude': buf.readDoubleBE(32),
+				'longitude': buf.readDoubleBE(40),
+				'altitude': buf.readDoubleBE(48)
 			});
+			winston.info("Latitude: " + buf.readDoubleBE(32));
+			// winston.info("Should be around 34m?");
 			// After seeing a boot packet, we accept data packets.
 			// NB: the data packet size is hardcoded here!
 			assembler.addPacketType(0x01,MAX_PACKET_SIZE);

@@ -19,7 +19,10 @@ var connectToDB = function (callback) {
 			sensorBlockOK: Boolean,
 			commitTimestamp: Date,
 			commitHash: String,
-			commitStatus: Number
+			commitStatus: Number,
+			latitude: Number,
+			longitude: Number,
+			altitude: Number
 		});
 		var bootPacketModel = mongoose.model('bootPacketModel',bootPacketSchema);
 		// Defines the schema and model for our serial data packets

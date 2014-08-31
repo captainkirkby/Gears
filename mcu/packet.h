@@ -17,21 +17,21 @@ typedef struct {
     uint8_t start[3];
     uint8_t type;
     // Serial number read from EEPROM at startup
-    uint32_t serialNumber;
+    uint32_t serialNumber;          // Read offset  (0)
     // Stores the status code returned by initBMP180()
-    uint8_t bmpSensorStatus;
+    uint8_t bmpSensorStatus;        //              (4)
     // Non-zero if our GPS serial communication was successfully initialized
-    uint8_t gpsSerialOk;
+    uint8_t gpsSerialOk;            //              (5)
     // Non-zero if our IR Sensor block is plugged in and working
-    uint8_t sensorBlockOK;
-    // Position information
-    uint64_t latitude;          // double
-    uint64_t longitude;         // double
-    uint64_t altitude;          // double
+    uint8_t sensorBlockOK;          //              (6)
     // Git info about the code we are running.
-    uint32_t commitTimestamp;
-    uint8_t commitID[20];
-    uint8_t commitStatus;
+    uint32_t commitTimestamp;       //              (7)
+    uint8_t commitID[20];           //              (11)
+    uint8_t commitStatus;           //              (31)
+    // Position information
+    uint64_t latitude;          // double           (32)
+    uint64_t longitude;         // double           (40)
+    uint64_t altitude;          // double           (48)
 } BootPacket;
 
 // Defines the data packet structure
