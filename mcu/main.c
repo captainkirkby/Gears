@@ -108,8 +108,7 @@ int main(void)
     bootPacket.gpsSerialOk = turnOffGPSAutoPackets();
 
     // Readout GPS health (and position?)
-    TsipHealthResponsePacket health;
-    getGPSHealth(&health);
+    TsipHealthResponsePacket health = getGPSHealth();
     bootPacket.latitude = health.latitude;
     bootPacket.longitude = health.longitude;
     bootPacket.altitude = health.altitude;
@@ -149,6 +148,17 @@ int main(void)
             dataPacket.rawPhase = (currentElementIndex + 1) % CIRCULAR_BUFFER_LENGTH;
             dataPacket.thermistor = thermistorReading;
             dataPacket.humidity = humidityReading;
+
+            // Readout GPS health
+            health = getGPSHealth();
+
+            dataPacket.recieverMode = health.recieverMode;
+            dataPacket.discipliningMode = health.discipliningMode;
+            dataPacket.criticalAlarms = health.criticalAlarms;
+            dataPacket.minorAlarms = health.minorAlarms;
+            dataPacket.gpsDecodingStatus = health.gpsDecodingStatus;
+            dataPacket.discipliningActivity = health.discipliningActivity;
+            dataPacket.clockOffset = health.clockOffset;
             
             // Sends binary packet data synchronously
             serialWriteUSB((const uint8_t*)&dataPacket,sizeof(dataPacket));

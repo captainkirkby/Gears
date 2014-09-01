@@ -37,6 +37,13 @@ var connectToDB = function (callback) {
 			blockTemperature: Number,
 			humidity: Number,
 			irLevel: Number,
+			recieverMode: Number,
+			discipliningMode: Number,
+			criticalAlarms: Number,
+			minorAlarms: Number,
+			gpsDecodingStatus: Number,
+			discipliningActivity: Number,
+			clockOffset: Number,
 			raw: Array
 		});
 		var dataPacketModel = mongoose.model('dataPacketModel',dataPacketSchema);

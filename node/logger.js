@@ -18,7 +18,7 @@ var connectToDB = require('./dbConnection').connectToDB;
 var lastDataSequenceNumber = 0;
 
 // Maximum packet size : change this when you want to modify the number of samples
-var MAX_PACKET_SIZE = 2082;
+var MAX_PACKET_SIZE = 2094;
 
 // Keep track of the dates we are waiting on a fit to process
 // FIFO : unshift on, then pop off
@@ -199,7 +199,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,average
 			var rawFill = 0;
 			var rawPhase = buf.readUInt16LE(32);
 			// winston.info(rawPhase);
-			var initialReadOffset = 34;
+			var initialReadOffset = 46;
 			var initialReadOffsetWithPhase = initialReadOffset+(rawPhase);
 
 			if(initialReadOffsetWithPhase >= MAX_PACKET_SIZE || initialReadOffsetWithPhase < 0){
@@ -264,6 +264,16 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,average
 			var boardTemperature	= buf.readInt32LE(18)/160.0;
 			var pressure			= buf.readInt32LE(22);
 			var irLevel				= buf.readUInt16LE(30)/65536.0*5.0;				// convert IR level to volts
+			// GPS status
+			var recieverMode		= buf.readUInt8(34);
+			var discipliningMode	= buf.readUInt8(35);
+			var criticalAlarms		= buf.readUInt16LE(36);
+			var minorAlarms			= buf.readUInt16LE(38);
+			var gpsDecodingStatus	= buf.readUInt8(40);
+			var discipliningActivity= buf.readUInt8(41);
+			var clockOffset			= buf.readFloatBE(42);
+
+			winston.debug("Clock Offset: " + clockOffset + " ppb");
 
 			// Calculates the thermistor resistance in ohms assuming 100uA current source.
 			var rtherm = buf.readUInt16LE(26)/65536.0*5.0/100e-6;

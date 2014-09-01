@@ -60,7 +60,15 @@ typedef struct {
     uint16_t irLevel;               // (30)
     // IR sensor raw ADC readings
     uint16_t rawPhase;              // (32)
-    volatile uint8_t raw[PACKET_LENGTH];    // (34)
+    // GPS status updates
+    uint8_t recieverMode;           // (34)
+    uint8_t discipliningMode;       // (35)
+    uint16_t criticalAlarms;        // (36)
+    uint16_t minorAlarms;           // (38)
+    uint8_t gpsDecodingStatus;      // (40)
+    uint8_t discipliningActivity;   // (41)
+    uint32_t clockOffset;           // (42)     // 4 byte float
+    volatile uint8_t raw[PACKET_LENGTH];    // (46)
 } DataPacket;
 
 // Command packet for turning auto messages off
@@ -115,9 +123,9 @@ typedef struct {
     uint8_t header;
     // Payload
     uint8_t responseCode;
-    float timeOfWeek;
+    uint32_t timeOfWeek;
     uint16_t weekNumber;
-    float gpsOffset;
+    uint32_t gpsOffset;
     // Stop sequence
     uint8_t stop[2];
 } TsipCommandResponsePacket;
@@ -140,15 +148,15 @@ typedef struct {
     uint8_t discipliningActivity;
     uint8_t spare1;
     uint8_t spare2;
-    float ppsOffset;
-    float clockOffset;
+    uint32_t ppsOffset;         // float
+    uint32_t clockOffset;       // float
     uint32_t dacValue;
-    float dacVoltage;
-    float temperature;
+    uint32_t dacVoltage;        // float
+    uint32_t temperature;       // float
     uint64_t latitude;          // double
     uint64_t longitude;         // double
     uint64_t altitude;          // double
-    float ppsError;
+    uint32_t ppsError;
     uint32_t spare3;
     // Stop sequence
     uint8_t stop[2];

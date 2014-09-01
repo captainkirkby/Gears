@@ -40,8 +40,6 @@ inline int getc1() {
 	}
 }
 
-
-
 void initUARTs() {
 	#define BAUD FTDI_BAUD_RATE
 	#include <util/setbaud.h>

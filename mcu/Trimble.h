@@ -82,7 +82,7 @@ uint8_t turnOffGPSAutoPackets(){
     return 1;
 }
 
-uint8_t getGPSHealth(TsipHealthResponsePacket *packet){
+TsipHealthResponsePacket getGPSHealth(){
     // Declare and define an (loosely) documented TSIP command packet that gets reciever health
     TsipHealthPacket healthPacket;
     healthPacket.header = TSIP_START_BYTE;
@@ -133,15 +133,16 @@ uint8_t getGPSHealth(TsipHealthResponsePacket *packet){
     };
 
     // Cast to pointer to struct type
-    packet = (TsipHealthResponsePacket *)healthRxBytes;
+    // packet = (TsipHealthResponsePacket *)healthRxBytes;
 
     // // Cast to struct type
-    // TsipHealthResponsePacket health = *((TsipHealthResponsePacket *)healthRxBytes);
+    TsipHealthResponsePacket health = *((TsipHealthResponsePacket *)&healthRxBytes[0]);
     // uint64_t latitude = health.latitude;
     // uint64_t longitude = health.longitude;
     // uint64_t altitude = health.altitude;
 
 
+    // serialWriteUSB((const uint8_t*)&healthRxBytes,sizeof(healthRxBytes));
     // serialWriteUSB((const uint8_t*)&latitude,sizeof(latitude));
     // serialWriteUSB((const uint8_t*)&longitude,sizeof(longitude));
     // serialWriteUSB((const uint8_t*)&altitude,sizeof(altitude));
@@ -149,10 +150,10 @@ uint8_t getGPSHealth(TsipHealthResponsePacket *packet){
 
     for (int i = 0; i < healthNumRxBytes; ++i) {
         if(expectedHealthRxBytes[i] != healthRxBytes[i] && expectedHealthRxBytes[i] != WILD) {     // WILD is the arbitrary wildcard
-            return 0;
+            // BAD!
         }
     }
-    return 1;
+    return health;
 }
 
 #endif
