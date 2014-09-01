@@ -51,7 +51,7 @@ endif
 AVRDUDE = avrdude $(PROGRAMMER_ARGS) -p $(UPLOAD_DEVICE)
 COMPILE = avr-gcc -Wall -Os -std=c99 -DF_CPU=$(CLOCK) -mmcu=$(DEVICE)
 
-SOURCES = dualUARTTest.c
+SOURCES = main.c
 OBJECTS = $(addprefix build/, $(SOURCES:%.c=%.o))
 ASSEMS = $(addprefix build/, $(SOURCES:%.c=%.s))
 TARGET = build/firmware

@@ -8,24 +8,32 @@
 #include "UART.h"
 #include "packet.h"
 
+#define DLE 0x10
 #define WILD 0xDB
 
 // RxBytes is a pointer to a PRE-ALLOCATED array of length numRxBytes
 void readResponse(uint8_t numRxBytes, uint8_t rxBytes[]) {
     int ch;
     uint8_t c = 0;
-    uint8_t startReading = 1;
+    uint8_t escapeFlag = 0;
     // Read the given number of bytes
     while(c < numRxBytes){
         ch = getc1();
         if(ch > -1){            // Got Data
-            uint8_t byte = (ch & 0xff);     // Lower Byte
-            if(startReading){
-                LED_ON(GREEN);
-                // putc0(byte);
-                rxBytes[c] = byte;
-                c++;
+            uint8_t byte = (ch & 0xff);
+            if(escapeFlag){
+                escapeFlag = 0;
+                // If two DLE's in a row, only record one
+                if(byte == DLE) continue;
             }
+            // Handle special DLE character
+            if(!escapeFlag && byte == DLE) escapeFlag = 1;
+            
+            // Write to array
+            // LED_ON(GREEN);
+            // putc0(byte);
+            rxBytes[c] = byte;
+            c++;
         } else if(ch == -2){    // Framing Error
             LED_ON(YELLOW);
         } else if(ch == -3){    // Data Overrun
@@ -124,8 +132,8 @@ uint8_t getGPSHealth(TsipHealthResponsePacket *packet){
         TSIP_STOP_BYTE1,TSIP_STOP_BYTE2
     };
 
-    // Cast to struct type
-    packet = (TsipHealthResponsePacket *)&healthRxBytes;
+    // Cast to pointer to struct type
+    packet = (TsipHealthResponsePacket *)healthRxBytes;
 
     // // Cast to struct type
     // TsipHealthResponsePacket health = *((TsipHealthResponsePacket *)healthRxBytes);

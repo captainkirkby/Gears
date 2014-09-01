@@ -177,8 +177,9 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,average
 				'longitude': buf.readDoubleBE(40),
 				'altitude': buf.readDoubleBE(48)
 			});
-			winston.info("Latitude: " + buf.readDoubleBE(32));
-			// winston.info("Should be around 34m?");
+			winston.debug("Latitude, Longitude: " + 180/Math.PI*buf.readDoubleBE(32) + ", " + 180/Math.PI*buf.readDoubleBE(40));
+			winston.debug("Altitude: " + buf.readDoubleBE(48));
+			winston.debug("Sanity Check: should be around 34m?");
 			// After seeing a boot packet, we accept data packets.
 			// NB: the data packet size is hardcoded here!
 			assembler.addPacketType(0x01,MAX_PACKET_SIZE);
