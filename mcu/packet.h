@@ -83,6 +83,17 @@ typedef struct {
     uint8_t stop[2];
 } TsipAutoManualPacket;
 
+// Command packet for turning auto messages off
+typedef struct {
+    // Header
+    uint8_t header;
+    uint8_t packetType;
+    // Payload
+    uint8_t data[4];
+    // Stop sequence
+    uint8_t stop[2];
+} TsipAutoManualPacketNoSubType;
+
 // Command packet for requesting time
 typedef struct {
     // Header

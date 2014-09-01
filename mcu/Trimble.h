@@ -43,6 +43,7 @@ void readResponse(uint8_t numRxBytes, uint8_t rxBytes[]) {
 }
 
 uint8_t turnOffGPSAutoPackets(){
+    uint8_t returnValue = 1;
     // Declare and define a TSIP Packet to stop automatic packet transmission
     TsipAutoManualPacket manualFetchPacket;
     manualFetchPacket.header = TSIP_START_BYTE;
@@ -76,10 +77,46 @@ uint8_t turnOffGPSAutoPackets(){
     };
     for (int i = 0; i < manualNumRxBytes; ++i) {
         if(expectedManualRxBytes[i] != manualRxBytes[i] && expectedManualRxBytes[i] != WILD) {      // WILD is the arbitrary wildcard
-            return 0;           // error
+            returnValue=0;           // error
         }
     }
-    return 1;
+
+    // Mask packet 35 to all zero too
+    TsipAutoManualPacketNoSubType manualFetchPacket2;
+    manualFetchPacket2.header = TSIP_START_BYTE;
+
+    manualFetchPacket2.packetType = 0x35;
+
+    manualFetchPacket2.data[0] = 0x00; 
+    manualFetchPacket2.data[1] = 0x00;
+    manualFetchPacket2.data[2] = 0x00;
+    manualFetchPacket2.data[3] = 0x00;
+
+    manualFetchPacket2.stop[0] = TSIP_STOP_BYTE1;
+    manualFetchPacket2.stop[1] = TSIP_STOP_BYTE2;
+
+    // Send Packet
+    serialWriteGPS((const uint8_t*)&manualFetchPacket2,sizeof(manualFetchPacket2));
+
+    // Read back 8 bytes of response
+    uint8_t manualNumRxBytes2 = 8;
+    uint8_t manualRxBytes2[manualNumRxBytes2];
+    readResponse(manualNumRxBytes2, manualRxBytes2);
+
+    // Confirm response
+    uint8_t expectedManualRxBytes2[] = {
+        TSIP_START_BYTE,
+        0x55,                               // Packet Type
+        0x00,0x00,0x00,0x00,                // Echo settings
+        TSIP_STOP_BYTE1,TSIP_STOP_BYTE2
+    };
+    for (int i = 0; i < manualNumRxBytes2; ++i) {
+        if(expectedManualRxBytes2[i] != manualRxBytes2[i] && expectedManualRxBytes2[i] != WILD) {      // WILD is the arbitrary wildcard
+            returnValue=0;           // error
+        }
+    }
+
+    return returnValue;
 }
 
 TsipHealthResponsePacket getGPSHealth(){
