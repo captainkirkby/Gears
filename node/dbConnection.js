@@ -22,7 +22,10 @@ var connectToDB = function (callback) {
 			commitStatus: Number,
 			latitude: Number,
 			longitude: Number,
-			altitude: Number
+			altitude: Number,
+			initialWeekNumber: Number,
+			initialTimeOfWeek: Number,
+			initialUTCOffset: Number
 		});
 		var bootPacketModel = mongoose.model('bootPacketModel',bootPacketSchema);
 		// Defines the schema and model for our serial data packets

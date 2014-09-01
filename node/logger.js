@@ -135,10 +135,9 @@ async.parallel({
 			winston.debug('starting data logger');
 			// Initializes our binary packet assembler to initially only accept a boot packet.
 			// NB: the maximum and boot packet sizes are hardcoded here!
-			var assembler = new packet.Assembler(0xFE,3,MAX_PACKET_SIZE,{0x00:56},0);
+			var assembler = new packet.Assembler(0xFE,3,MAX_PACKET_SIZE,{0x00:66},0);
 			// Initializes averagers
 			var averagerCollection = new average.AveragerCollection(bins.stdBinSizes());
-
 			// Handles incoming chunks of binary data from the device.
 			config.port.on('data',function(data) {
 				receive(data,assembler,averagerCollection,config.db.bootPacketModel,config.db.dataPacketModel,
@@ -162,6 +161,14 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 		if(ptype === 0x00) {
 			winston.verbose("Got Boot Packet!");
 			// Prepares boot packet for storing to the database.
+			// GPS Time
+			var utcOffset			= buf.readFloatBE(56);
+			var weekNumber			= buf.readUInt16BE(60);
+			var timeOfWeek			= buf.readFloatBE(62);
+
+			winston.debug("Week Number: " + weekNumber);
+			winston.debug("Time of Week: " + timeOfWeek);
+			winston.debug("UTC Offset: " + utcOffset);
 			// NB: the boot packet layout is hardcoded here!
 			hash = '';
 			for(var offset = 11; offset < 31; offset++) hash += sprintf("%02x",buf.readUInt8(offset));
@@ -176,7 +183,10 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 				'commitStatus': buf.readUInt8(31),
 				'latitude': buf.readDoubleBE(32),
 				'longitude': buf.readDoubleBE(40),
-				'altitude': buf.readDoubleBE(48)
+				'altitude': buf.readDoubleBE(48),
+				'initialWeekNumber': weekNumber,
+				'initialTimeOfWeek': timeOfWeek,
+				'initialUTCOffset': utcOffset
 			});
 			winston.debug("Latitude, Longitude: " + 180/Math.PI*buf.readDoubleBE(32) + ", " + 180/Math.PI*buf.readDoubleBE(40));
 			winston.debug("Altitude: " + buf.readDoubleBE(48));
