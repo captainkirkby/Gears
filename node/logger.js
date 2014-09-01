@@ -138,6 +138,8 @@ async.parallel({
 			var assembler = new packet.Assembler(0xFE,3,MAX_PACKET_SIZE,{0x00:66},0);
 			// Initializes averagers
 			var averagerCollection = new average.AveragerCollection(bins.stdBinSizes());
+			// Flush serial port of any old data before accepting new data
+			config.port.flush();
 			// Handles incoming chunks of binary data from the device.
 			config.port.on('data',function(data) {
 				receive(data,assembler,averagerCollection,config.db.bootPacketModel,config.db.dataPacketModel,
