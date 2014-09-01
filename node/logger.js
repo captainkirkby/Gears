@@ -141,7 +141,8 @@ async.parallel({
 
 			// Handles incoming chunks of binary data from the device.
 			config.port.on('data',function(data) {
-				receive(data,assembler,averagerCollection,config.db.bootPacketModel,config.db.dataPacketModel,config.db.averageDataModel);
+				receive(data,assembler,averagerCollection,config.db.bootPacketModel,config.db.dataPacketModel,
+					config.db.gpsStatusModel,config.db.averageDataModel);
 			});
 
 			// Handles incoming data packets from pipe to fit.py
@@ -154,7 +155,7 @@ async.parallel({
 
 // Receives a new chunk of binary data from the serial port and returns the
 // updated value of remaining that should be used for the next call.
-function receive(data,assembler,averager,bootPacketModel,dataPacketModel,averageDataModel) {
+function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStatusModel,averageDataModel) {
 	assembler.ingest(data,function(ptype,buf) {
 		var saveMe = true;
 		var p = null;
@@ -265,15 +266,42 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,average
 			var pressure			= buf.readInt32LE(22);
 			var irLevel				= buf.readUInt16LE(30)/65536.0*5.0;				// convert IR level to volts
 			// GPS status
-			var recieverMode		= buf.readUInt8(34);
-			var discipliningMode	= buf.readUInt8(35);
-			var criticalAlarms		= buf.readUInt16LE(36);
-			var minorAlarms			= buf.readUInt16LE(38);
-			var gpsDecodingStatus	= buf.readUInt8(40);
-			var discipliningActivity= buf.readUInt8(41);
-			var clockOffset			= buf.readFloatBE(42);
+			var gpsStatusValues = {
+				recieverMode		: buf.readUInt8(34),
+				discipliningMode	: buf.readUInt8(35),
+				criticalAlarms		: buf.readUInt16LE(36),
+				minorAlarms			: buf.readUInt16LE(38),
+				gpsDecodingStatus	: buf.readUInt8(40),
+				discipliningActivity: buf.readUInt8(41),
+				clockOffset			: buf.readFloatBE(42)
+			};
 
-			winston.debug("Clock Offset: " + clockOffset + " ppb");
+			var expectedValues = {
+				recieverMode		: 0x07,
+				discipliningMode	: 0,
+				criticalAlarms		: 0,
+				minorAlarms			: 0,
+				gpsDecodingStatus	: 0,
+				discipliningActivity: 0,
+				clockOffset			: 0
+			};
+
+			var unexpectedValues = {};
+
+			for(var value in gpsStatusValues){
+				if(gpsStatusValues[value] != expectedValues[value]){
+					unexpectedValues[value] = gpsStatusValues[value];
+					winston.debug(expectedValues[value] + " != " + gpsStatusValues[value]);
+				} else {
+					winston.debug(expectedValues[value] + " = " + gpsStatusValues[value]);
+				}
+			}
+
+			winston.debug(unexpectedValues);
+
+			gpsStatusModel.create(unexpectedValues);
+
+			winston.debug("Clock Offset: " + gpsStatusValues.clockOffset + " ppb");
 
 			// Calculates the thermistor resistance in ohms assuming 100uA current source.
 			var rtherm = buf.readUInt16LE(26)/65536.0*5.0/100e-6;

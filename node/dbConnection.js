@@ -60,11 +60,23 @@ var connectToDB = function (callback) {
 			averagingPeriod : Number
 		});
 		var averageDataModel = mongoose.model('averageDataModel',averageDataSchema);
+		// Define the schema and model for the gps status schema
+		var gpsStatusSchema = mongoose.Schema({
+			recieverMode: Number,
+			discipliningMode: Number,
+			criticalAlarms: Number,
+			minorAlarms: Number,
+			gpsDecodingStatus: Number,
+			discipliningActivity: Number,
+			clockOffset: Number
+		});
+		var gpsStatusModel = mongoose.model('gpsStatusModel',gpsStatusSchema);
 		// Propagates our database connection and db models to data logger.
 		callback(null,{
 			'connection':db,
 			'bootPacketModel':bootPacketModel,
 			'dataPacketModel':dataPacketModel,
+			'gpsStatusModel':gpsStatusModel,
 			'averageDataModel':averageDataModel
 		});
 	});
