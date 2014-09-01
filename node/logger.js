@@ -291,13 +291,13 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			for(var value in gpsStatusValues){
 				if(gpsStatusValues[value] != expectedValues[value]){
 					unexpectedValues[value] = gpsStatusValues[value];
-					winston.debug(expectedValues[value] + " != " + gpsStatusValues[value]);
+					// winston.debug(expectedValues[value] + " != " + gpsStatusValues[value]);
 				} else {
-					winston.debug(expectedValues[value] + " = " + gpsStatusValues[value]);
+					// winston.debug(expectedValues[value] + " = " + gpsStatusValues[value]);
 				}
 			}
 
-			winston.debug(unexpectedValues);
+			// winston.debug(unexpectedValues);
 
 			gpsStatusModel.create(unexpectedValues);
 
