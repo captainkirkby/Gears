@@ -116,6 +116,12 @@ int main(void)
     // Copies our serial number from EEPROM address 0x10 into the boot packet
     bootPacket.serialNumber = eeprom_read_dword((uint32_t*)0x10);
 
+    // Get Time
+    TsipCommandResponsePacket time = getTime();
+    bootPacket.utcOffset = time.gpsOffset;
+    bootPacket.weekNumber = time.weekNumber;
+    bootPacket.timeOfWeek = time.timeOfWeek;
+
     // Sends our boot packet
     LED_ON(GREEN);
     // _delay_ms(2000);
@@ -130,10 +136,6 @@ int main(void)
     dataPacket.start[2] = START_BYTE;
     dataPacket.type = DATA_PACKET;
     dataPacket.sequenceNumber = 0;
-
-    // Get Time
-    TsipCommandResponsePacket time = getTime();
-    // serialWriteUSB((const uint8_t*)&time,sizeof(time));
 
 
     while(1) {

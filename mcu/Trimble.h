@@ -208,7 +208,7 @@ TsipCommandResponsePacket getTime(){
     uint8_t commandRxBytes[commandNumRxBytes];
     readResponse(commandNumRxBytes, commandRxBytes);
 
-    serialWriteUSB((const uint8_t*)&commandRxBytes,sizeof(commandRxBytes));
+    // serialWriteUSB((const uint8_t*)&commandRxBytes,sizeof(commandRxBytes));
 
 
     // Confirm response

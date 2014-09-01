@@ -32,6 +32,9 @@ typedef struct {
     uint64_t latitude;          // double           (32)
     uint64_t longitude;         // double           (40)
     uint64_t altitude;          // double           (48)
+    int32_t utcOffset;          // float            (56)
+    uint16_t weekNumber;        //                  (60)
+    uint32_t timeOfWeek;        // float            (62)
 } BootPacket;
 
 // Defines the data packet structure
@@ -47,7 +50,7 @@ typedef struct {
     int16_t utcOffset;              // (8)
     uint16_t weekNumber;            // (10)
     uint32_t timeOfWeek;            // (12)
-    // Relative timing info (in ADC conversions (128*13/10MHz = 1.664e-4 s)
+    // Relative timing info (in ADC conversions (64*13/10MHz = 8.32e-5 s)
     uint16_t timeSinceLastReading;  // (16) 
     // BMP180 sensor measurements
     int32_t temperature;            // (18) divide by 160 to get degrees C
