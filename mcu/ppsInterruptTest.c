@@ -20,6 +20,10 @@ int main(void) {
     // Initialize LEDs
     initLEDs();
 
+    // Configure PD6 as input (pulled up)
+    DDRD |= 0B01000000;
+    PORTD |= 0B01000000;
+
     // Select Pin to listen to
     PCMSK3 |= (1 << PCINT30);
 
@@ -30,6 +34,7 @@ int main(void) {
     sei();
 
     while(1);
+    return 0;
 }
 
 ISR(PCI3_vect){
