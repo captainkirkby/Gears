@@ -28,6 +28,8 @@ int main(void) {
 
     // Enable Global Interrupts
     sei();
+
+    while(1);
 }
 
 ISR(PCI3_vect){
