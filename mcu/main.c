@@ -131,6 +131,10 @@ int main(void)
     dataPacket.type = DATA_PACKET;
     dataPacket.sequenceNumber = 0;
 
+    // Get Time
+    TsipCommandResponsePacket time = getTime();
+    // serialWriteUSB((const uint8_t*)&time,sizeof(time));
+
 
     while(1) {
         // Store ADC run and transmit data
