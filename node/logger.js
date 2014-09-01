@@ -171,11 +171,17 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			winston.debug("Week Number: " + weekNumber);
 			winston.debug("Time of Week: " + timeOfWeek);
 			winston.debug("UTC Offset: " + utcOffset);
+
+			var GPS_EPOCH_IN_MS = 315964800000;			// January 6, 1980 UTC
+			var MS_PER_WEEK = 7*24*60*60*1000;
+			var timestamp = new Date(GPS_EPOCH_IN_MS + weekNumber*MS_PER_WEEK + timeOfWeek*1000);		// GPS time!!! 16 leap seconds ahead of UTC
+			winston.debug("Date: " + timestamp);
+
 			// NB: the boot packet layout is hardcoded here!
 			hash = '';
 			for(var offset = 11; offset < 31; offset++) hash += sprintf("%02x",buf.readUInt8(offset));
 			p = new bootPacketModel({
-				'timestamp': new Date(),
+				'timestamp': timestamp,
 				'serialNumber': sprintf("%08x",buf.readUInt32LE(0)),
 				'bmpSensorOk': buf.readUInt8(4),
 				'gpsSerialOk': buf.readUInt8(5),
