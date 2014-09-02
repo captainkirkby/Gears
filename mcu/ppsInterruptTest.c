@@ -34,8 +34,11 @@ int main(void) {
 }
 
 ISR(PCINT3_vect){
-    // Disable Interrupts on selected pin
-    PCICR &= ~0B00001000;
-
-    LED_TOGGLE(GREEN);
+    if(PIND & 0B01000000)
+    {
+        /* LOW to HIGH pin change */
+        LED_TOGGLE(GREEN);
+        // Disable Interrupts on selected pin
+        PCICR &= ~0B00001000;
+    }
 }
