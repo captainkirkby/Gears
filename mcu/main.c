@@ -84,6 +84,7 @@ int main(void)
         bootPacket.bmpSensorStatus = bmpError;
     }
 
+    // ADC Interrupt configuration
     // Setup circular buffer and timer
     currentElementIndex = 0;
     timer = 0;
@@ -92,8 +93,19 @@ int main(void)
     currentSensorIndex = 0;
     // Set the number of tries for sensor to be unobstructed
     adcTestTries = 0;
-    // currentMuxChannel = analogSensors[currentSensorIndex];
-    startFreeRunningADC(analogSensors[currentSensorIndex]);
+
+    // PPS Interrupt Configuration
+    // Set pin as input
+    DDRD &= ~0B01000000;
+    // Enable internal pull-up resistor
+    PORTD |= 0B01000000;
+    // Enable Interrupts on selected pin
+    PCICR |= 0B00001000;
+    // Select Pin to listen to
+    PCMSK3 |= 0B01000000;
+    // Enable Global Interrupts
+    // When interrupt is called, Free Running ADC is started
+    sei();
 
     // Wait for test to finish
     // At the end, the ADC will either be running in error or idle mode
@@ -101,8 +113,6 @@ int main(void)
 
     // Non-zero if sensor block is OK
     bootPacket.sensorBlockOK = !(adcStatus == ADC_STATUS_ERROR);
-
-
 
     // Turn off GPS Auto packets and store status in boot packet
     bootPacket.gpsSerialOk = turnOffGPSAutoPackets();
@@ -128,8 +138,6 @@ int main(void)
     serialWriteUSB((const uint8_t*)&bootPacket,sizeof(bootPacket));
     LED_OFF(GREEN);
 
-    adcStatus = ADC_STATUS_CONTINUOUS;
-
     // Initializes the constant header of our data packet
     dataPacket.start[0] = START_BYTE;
     dataPacket.start[1] = START_BYTE;
@@ -137,6 +145,8 @@ int main(void)
     dataPacket.type = DATA_PACKET;
     dataPacket.sequenceNumber = 0;
 
+    // Enable Trigger
+    adcStatus = ADC_STATUS_CONTINUOUS;
 
     while(1) {
         // Store ADC run and transmit data
@@ -284,4 +294,16 @@ ISR(ADC_vect){
             switchADCMuxChannel(analogSensors[currentSensorIndex]);
         }
     } // Do nothing if adc status is ADC_STATUS_IDLE or ADC_STATUS_ERROR
+}
+
+// Interrupt fired when 1PPS changes value
+ISR(PCINT3_vect){
+    if(PIND & 0B01000000)
+    {
+        /* LOW to HIGH pin change */
+        LED_TOGGLE(GREEN);
+        // Disable Interrupts on selected pin
+        PCICR &= ~0B00001000;
+        startFreeRunningADC(analogSensors[currentSensorIndex]);
+    }
 }
