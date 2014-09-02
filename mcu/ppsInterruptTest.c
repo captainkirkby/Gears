@@ -1,45 +1,41 @@
-#include <stdint.h>
-
 #include <avr/io.h>
 #include <util/delay.h>
 #include <avr/eeprom.h>
 #include <avr/interrupt.h>
 
+#include <stdint.h>
+
 #include "LED.h"
-#include "IR.h"
-#include "UART.h"
-#include "TWI.h"
-#include "BMP180.h"
-#include "FreeRunningADC.h"
-#include "Trimble.h"
-#include "packet.h"
-
-
 
 int main(void) {
-    // Initialize LEDs
     initLEDs();
 
-    // Configure PD6 as input (pulled up)
-    DDRD |= 0B01000000;
+    LED_OFF(GREEN);
+
+    // Set pin as input
+    DDRD &= ~0B01000000;
+
+    // Enable internal pull-up resistor
     PORTD |= 0B01000000;
 
-    // Select Pin to listen to
-    PCMSK3 |= (1 << PCINT30);
-
     // Enable Interrupts on selected pin
-    PCICR |= (1 << PCIE3);
+    PCICR |= 0B00001000;
+
+    // Select Pin to listen to
+    PCMSK3 |= 0B01000000;
 
     // Enable Global Interrupts
     sei();
 
-    while(1);
+    while(1){
+    }
+
     return 0;
 }
 
-ISR(PCI3_vect){
+ISR(PCINT3_vect){
     // Disable Interrupts on selected pin
-    PCICR &= ~(1 << PCIE3);
-    // Turn on the LED
+    PCICR &= ~0B00001000;
+
     LED_TOGGLE(GREEN);
 }
