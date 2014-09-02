@@ -209,7 +209,7 @@ ISR(ADC_vect){
                 // Note, this instruction takes 12 ADC clocks to execute
                 ADCSRA &= ~0B10000000;
                 adcStatus = ADC_STATUS_ERROR;
-                LED_ON(RED);
+                // LED_ON(RED);
             }
         }
     } else if(adcStatus == ADC_STATUS_CONTINUOUS){
