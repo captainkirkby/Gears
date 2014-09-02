@@ -114,23 +114,23 @@ int main(void)
     // Non-zero if sensor block is OK
     bootPacket.sensorBlockOK = !(adcStatus == ADC_STATUS_ERROR);
 
-    // Turn off GPS Auto packets and store status in boot packet
-    bootPacket.gpsSerialOk = turnOffGPSAutoPackets();
+    // // Turn off GPS Auto packets and store status in boot packet
+    // bootPacket.gpsSerialOk = turnOffGPSAutoPackets();
 
-    // Readout GPS health (and position?)
-    TsipHealthResponsePacket health = getGPSHealth();
-    bootPacket.latitude = health.latitude;
-    bootPacket.longitude = health.longitude;
-    bootPacket.altitude = health.altitude;
+    // // Readout GPS health (and position?)
+    // TsipHealthResponsePacket health = getGPSHealth();
+    // bootPacket.latitude = health.latitude;
+    // bootPacket.longitude = health.longitude;
+    // bootPacket.altitude = health.altitude;
+
+    // // Get Time
+    // TsipCommandResponsePacket time = getTime();
+    // bootPacket.utcOffset = time.gpsOffset;
+    // bootPacket.weekNumber = time.weekNumber;
+    // bootPacket.timeOfWeek = time.timeOfWeek;
 
     // Copies our serial number from EEPROM address 0x10 into the boot packet
     bootPacket.serialNumber = eeprom_read_dword((uint32_t*)0x10);
-
-    // Get Time
-    TsipCommandResponsePacket time = getTime();
-    bootPacket.utcOffset = time.gpsOffset;
-    bootPacket.weekNumber = time.weekNumber;
-    bootPacket.timeOfWeek = time.timeOfWeek;
 
     // Sends our boot packet
     LED_ON(GREEN);
