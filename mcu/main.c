@@ -114,8 +114,8 @@ int main(void)
     // Non-zero if sensor block is OK
     bootPacket.sensorBlockOK = !(adcStatus == ADC_STATUS_ERROR);
 
-    // // Turn off GPS Auto packets and store status in boot packet
-    // bootPacket.gpsSerialOk = turnOffGPSAutoPackets();
+    // Turn off GPS Auto packets and store status in boot packet
+    bootPacket.gpsSerialOk = turnOffGPSAutoPackets();
 
     // // Readout GPS health (and position?)
     TsipHealthResponsePacket health;
