@@ -84,16 +84,6 @@ int main(void)
         bootPacket.bmpSensorStatus = bmpError;
     }
 
-    // ADC Interrupt configuration
-    // Setup circular buffer and timer
-    currentElementIndex = 0;
-    timer = 0;
-    // Set ADC state and choose ADC channel
-    adcStatus = ADC_STATUS_TESTING;
-    currentSensorIndex = 0;
-    // Set the number of tries for sensor to be unobstructed
-    adcTestTries = 0;
-
     // PPS Interrupt Configuration
     // Set pin as input
     DDRD &= ~0B01000000;
@@ -209,7 +199,7 @@ ISR(ADC_vect){
                 // Note, this instruction takes 12 ADC clocks to execute
                 ADCSRA &= ~0B10000000;
                 adcStatus = ADC_STATUS_ERROR;
-                // LED_ON(RED);
+                LED_ON(RED);
             }
         }
     } else if(adcStatus == ADC_STATUS_CONTINUOUS){
@@ -305,6 +295,16 @@ ISR(PCINT3_vect){
         LED_TOGGLE(GREEN);
         // Disable Interrupts on selected pin
         PCICR &= ~0B00001000;
+
+        // ADC Interrupt configuration
+        // Setup circular buffer and timer
+        currentElementIndex = 0;
+        timer = 0;
+        // Set ADC state and choose ADC channel
+        adcStatus = ADC_STATUS_TESTING;
+        currentSensorIndex = 0;
+        // Set the number of tries for sensor to be unobstructed
+        adcTestTries = 0;
         startFreeRunningADC(analogSensors[currentSensorIndex]);
     }
 }
