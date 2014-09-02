@@ -118,6 +118,7 @@ int main(void)
     // bootPacket.gpsSerialOk = turnOffGPSAutoPackets();
 
     // // Readout GPS health (and position?)
+    TsipHealthResponsePacket health;
     // TsipHealthResponsePacket health = getGPSHealth();
     // bootPacket.latitude = health.latitude;
     // bootPacket.longitude = health.longitude;
