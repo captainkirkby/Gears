@@ -65,6 +65,7 @@ uint16_t humidityReading;
 uint8_t currentSensorIndex;
 
 volatile uint8_t currentMuxChannel;
+volatile uint8_t ppsFlag = 0;
 
 int main(void)
 {
@@ -97,6 +98,9 @@ int main(void)
     // When interrupt is called, Free Running ADC is started
     sei();
 
+    // Wait for the test to start
+    while(!ppsFlag);
+
     // Wait for test to finish
     // At the end, the ADC will either be running in error or idle mode
     while(adcStatus == ADC_STATUS_TESTING);
@@ -107,21 +111,20 @@ int main(void)
     // Turn off GPS Auto packets and store status in boot packet
     bootPacket.gpsSerialOk = turnOffGPSAutoPackets();
 
-    // // Readout GPS health (and position?)
-    TsipHealthResponsePacket health;
-    // TsipHealthResponsePacket health = getGPSHealth();
-    // bootPacket.latitude = health.latitude;
-    // bootPacket.longitude = health.longitude;
-    // bootPacket.altitude = health.altitude;
-
-    // // Get Time
-    // TsipCommandResponsePacket time = getTime();
-    // bootPacket.utcOffset = time.gpsOffset;
-    // bootPacket.weekNumber = time.weekNumber;
-    // bootPacket.timeOfWeek = time.timeOfWeek;
+    // Readout GPS health (and position?)
+    TsipHealthResponsePacket health = getGPSHealth();
+    bootPacket.latitude = health.latitude;
+    bootPacket.longitude = health.longitude;
+    bootPacket.altitude = health.altitude;
 
     // Copies our serial number from EEPROM address 0x10 into the boot packet
     bootPacket.serialNumber = eeprom_read_dword((uint32_t*)0x10);
+
+    // Get Time
+    TsipCommandResponsePacket time = getTime();
+    bootPacket.utcOffset = time.gpsOffset;
+    bootPacket.weekNumber = time.weekNumber;
+    bootPacket.timeOfWeek = time.timeOfWeek;
 
     // Sends our boot packet
     LED_ON(GREEN);
@@ -295,6 +298,7 @@ ISR(PCINT3_vect){
         LED_TOGGLE(GREEN);
         // Disable Interrupts on selected pin
         PCICR &= ~0B00001000;
+        ppsFlag = 1;
 
         // ADC Interrupt configuration
         // Setup circular buffer and timer
