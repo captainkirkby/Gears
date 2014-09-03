@@ -188,6 +188,8 @@ int main(void)
 // Interrupt service routine for the ADC completion
 // Note: When this is called, the next ADC conversion is already underway
 ISR(ADC_vect){
+    // Set pin to low
+    PORTA &= ~0B00000100;
     // Update counter that keeps track of the timing
     ++timingCounter;
 
@@ -243,8 +245,6 @@ ISR(ADC_vect){
         
             if(adcValue <= THRESHOLD){
                 // Store time since last threshold (max 5.4s for a 16 bit counter)
-                // Set pin to low
-                PORTA &= ~0B00000100;
                 lastCount = timingCounter;
                 timingCounter = 0;
                 // start timer
@@ -300,6 +300,8 @@ ISR(ADC_vect){
 
 // Interrupt fired when 1PPS changes value
 ISR(PCINT3_vect){
+    // Set pin to high
+    PORTA |= 0B00000100;
     if(PIND & 0B01000000)
     {
         /* LOW to HIGH pin change */
