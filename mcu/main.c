@@ -85,6 +85,12 @@ int main(void)
         bootPacket.bmpSensorStatus = bmpError;
     }
 
+    // Test Point Configuration
+    // Set pin as output
+    DDRC |= 0B00000100;
+    // Set pin to low
+    PORTC &= ~0B00000100;
+
     // PPS Interrupt Configuration
     // Set pin as input
     DDRD &= ~0B01000000;
@@ -236,7 +242,9 @@ ISR(ADC_vect){
             // in either case, fill buffer once and increment pointer
         
             if(adcValue <= THRESHOLD){
-                // Store time since last threshold (max 10.9s for a 16 bit counter)
+                // Store time since last threshold (max 5.4s for a 16 bit counter)
+                // Set pin to low
+                PORTC &= ~0B00000100;
                 lastCount = timingCounter;
                 timingCounter = 0;
                 // start timer

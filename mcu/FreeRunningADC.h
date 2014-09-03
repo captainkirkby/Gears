@@ -134,6 +134,9 @@ void startFreeRunningADC(uint8_t channel)
     
     // Set ADSC in ADCSRA (0x7A) to start the ADC conversion
     ADCSRA |= 0B01000000;
+
+    // Set pin to high
+    PORTC |= 0B00000100;
 }
 
 void restartFreeRunningADC()
