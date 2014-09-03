@@ -230,7 +230,8 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 
 			// Calculates the time since the last reading assuming 10MHz clock with prescaler set to 128.
 			var samplesSince = buf.readUInt16LE(16);
-			var timeSince = samplesSince*128*13/10000000;
+			// NB: ADC Frequency hardcoded here
+			var timeSince = samplesSince*64*13/10000000;
 
 			// Store last buffer entry
 			var lastReading = buf.readUInt8(initialReadOffsetWithPhase);
@@ -370,7 +371,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			// data packet that still needs to be debugged...
 			// EDIT 8/22/14: I think this issue has been resolved?
 			if(lastDataSequenceNumber == 1) {
-				// winston.info(p);
+				winston.debug("Time: " + timeSince);
 			} else{
 				saveMe = true;
 				// Write to first entry in file
