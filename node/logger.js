@@ -17,6 +17,9 @@ var connectToDB = require('./dbConnection').connectToDB;
 // Tracks the last seen data packet sequence number to enable sequencing errors to be detected.
 var lastDataSequenceNumber = 0;
 
+// Track the time of the initial PPS
+var ppsTime;
+
 // Maximum packet size : change this when you want to modify the number of samples
 var MAX_PACKET_SIZE = 2094;
 
@@ -176,6 +179,10 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			var MS_PER_WEEK = 7*24*60*60*1000;
 			var timestamp = new Date(GPS_EPOCH_IN_MS + weekNumber*MS_PER_WEEK + timeOfWeek*1000);		// GPS time!!! 16 leap seconds ahead of UTC
 			winston.debug("Date: " + timestamp);
+
+			ppsTime = new Date(GPS_EPOCH_IN_MS + weekNumber*MS_PER_WEEK + (timeOfWeek*1000*1000)/1000);
+			winston.debug("PPS Time: " + ppsTime);
+
 
 			// NB: the boot packet layout is hardcoded here!
 			hash = '';
