@@ -17,8 +17,8 @@ var connectToDB = require('./dbConnection').connectToDB;
 // Tracks the last seen data packet sequence number to enable sequencing errors to be detected.
 var lastDataSequenceNumber = 0;
 
-// Track the time of the initial PPS
-var ppsTime;
+// Track the time of the initial PPS and then the subsequent packets
+var lastTime;
 
 // Maximum packet size : change this when you want to modify the number of samples
 var MAX_PACKET_SIZE = 2094;
@@ -180,8 +180,8 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			var timestamp = new Date(GPS_EPOCH_IN_MS + weekNumber*MS_PER_WEEK + timeOfWeek*1000);		// GPS time!!! 16 leap seconds ahead of UTC
 			winston.debug("Date: " + timestamp);
 
-			ppsTime = new Date(GPS_EPOCH_IN_MS + weekNumber*MS_PER_WEEK + Math.floor(timeOfWeek)*1000);		// Truncate decimal to trim miliseconds
-			winston.debug("PPS Time: " + ppsTime);
+			lastTime = new Date(GPS_EPOCH_IN_MS + weekNumber*MS_PER_WEEK + Math.floor(timeOfWeek)*1000);		// Truncate decimal to trim miliseconds
+			winston.debug("PPS Time: " + lastTime);
 
 			// NB: the boot packet layout is hardcoded here!
 			hash = '';
@@ -238,8 +238,9 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			var timeSince = samplesSince*64*13/10000;	// in ms
 
 			// Create date object
-			var date = new Date(ppsTime.getTime() + timeSince);
+			var date = new Date(lastTime.getTime() + timeSince);
 			winston.debug("Date: " + date);
+			lastTime = date;
 
 			// Store last buffer entry
 			var lastReading = buf.readUInt8(initialReadOffsetWithPhase);
