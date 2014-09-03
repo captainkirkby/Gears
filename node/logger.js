@@ -171,6 +171,8 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			var weekNumber			= buf.readUInt16BE(60);
 			var timeOfWeek			= buf.readFloatBE(62);
 
+			winston.debug("Time of Week: " + timeOfWeek);
+
 			winston.debug("Week Number: " + weekNumber);
 			winston.debug("Time of Week: " + timeOfWeek);
 			winston.debug("UTC Offset: " + utcOffset);
