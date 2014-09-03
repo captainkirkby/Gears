@@ -132,7 +132,7 @@ async.parallel({
 	function(err,config) {
 		if(err) throw err;
 		// Record our startup time.
-		config.startupTime = new Date();
+		// config.startupTime = new Date();
 		if(config.db && config.port) {
 			// Logs TickTock packets from the serial port into the database.
 			winston.debug('starting data logger');
@@ -171,8 +171,6 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			var weekNumber			= buf.readUInt16BE(60);
 			var timeOfWeek			= buf.readFloatBE(62);
 
-			winston.debug("Time of Week: " + timeOfWeek);
-
 			winston.debug("Week Number: " + weekNumber);
 			winston.debug("Time of Week: " + timeOfWeek);
 			winston.debug("UTC Offset: " + utcOffset);
@@ -180,11 +178,10 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			var GPS_EPOCH_IN_MS = 315964800000;			// January 6, 1980 UTC
 			var MS_PER_WEEK = 7*24*60*60*1000;
 			var timestamp = new Date(GPS_EPOCH_IN_MS + weekNumber*MS_PER_WEEK + timeOfWeek*1000);		// GPS time!!! 16 leap seconds ahead of UTC
-			winston.debug("Date: " + timestamp.getTime());
+			winston.debug("Date: " + timestamp);
 
-			ppsTime = new Date(GPS_EPOCH_IN_MS + weekNumber*MS_PER_WEEK + parseInt(timeOfWeek*1000));		// Truncate decimal
-			winston.debug("PPS Time: " + ppsTime.getTime());
-
+			ppsTime = new Date(GPS_EPOCH_IN_MS + weekNumber*MS_PER_WEEK + Math.floor(timeOfWeek)*1000);		// Truncate decimal to trim miliseconds
+			winston.debug("PPS Time: " + ppsTime);
 
 			// NB: the boot packet layout is hardcoded here!
 			hash = '';
@@ -219,8 +216,6 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			winston.verbose("Got Data!");
 
 			// Prepare to recieve data
-			var date = new Date();
-
 			var QUADRANT = 0xFF;						// 2^8 when we're running the ADC in 8 bit mode
 
 			// Gets the raw data from the packet.raw field
@@ -240,7 +235,11 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			// Calculates the time since the last reading assuming 10MHz clock with prescaler set to 128.
 			var samplesSince = buf.readUInt16LE(16);
 			// NB: ADC Frequency hardcoded here
-			var timeSince = samplesSince*64*13/10000000;
+			var timeSince = samplesSince*64*13/10000;	// in ms
+
+			// Create date object
+			var date = new Date(ppsTime.getTime() + timeSince);
+			winston.debug("Date: " + date);
 
 			// Store last buffer entry
 			var lastReading = buf.readUInt8(initialReadOffsetWithPhase);
@@ -380,7 +379,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			// data packet that still needs to be debugged...
 			// EDIT 8/22/14: I think this issue has been resolved?
 			if(lastDataSequenceNumber == 1) {
-				winston.debug("Time: " + timeSince);
+				// winston.debug("Time: " + timeSince);
 			} else{
 				saveMe = true;
 				// Write to first entry in file
