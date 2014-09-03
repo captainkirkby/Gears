@@ -136,7 +136,7 @@ void startFreeRunningADC(uint8_t channel)
     ADCSRA |= 0B01000000;
 
     // Set pin to high
-    PORTC |= 0B00000100;
+    PORTA |= 0B00000100;
 }
 
 void restartFreeRunningADC()

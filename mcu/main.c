@@ -87,9 +87,9 @@ int main(void)
 
     // Test Point Configuration
     // Set pin as output
-    DDRC |= 0B00000100;
+    DDRA |= 0B00000100;
     // Set pin to low
-    PORTC &= ~0B00000100;
+    PORTA &= ~0B00000100;
 
     // PPS Interrupt Configuration
     // Set pin as input
@@ -244,7 +244,7 @@ ISR(ADC_vect){
             if(adcValue <= THRESHOLD){
                 // Store time since last threshold (max 5.4s for a 16 bit counter)
                 // Set pin to low
-                PORTC &= ~0B00000100;
+                PORTA &= ~0B00000100;
                 lastCount = timingCounter;
                 timingCounter = 0;
                 // start timer
