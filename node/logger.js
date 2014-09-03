@@ -182,7 +182,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			var timestamp = new Date(GPS_EPOCH_IN_MS + weekNumber*MS_PER_WEEK + timeOfWeek*1000);		// GPS time!!! 16 leap seconds ahead of UTC
 			winston.debug("Date: " + timestamp.getTime());
 
-			ppsTime = new Date(GPS_EPOCH_IN_MS + weekNumber*MS_PER_WEEK + (timeOfWeek*1000*1000)/1000);
+			ppsTime = new Date(GPS_EPOCH_IN_MS + weekNumber*MS_PER_WEEK + parseInt(timeOfWeek*1000));		// Truncate decimal
 			winston.debug("PPS Time: " + ppsTime.getTime());
 
 
