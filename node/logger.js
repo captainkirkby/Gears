@@ -177,10 +177,10 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 
 			var GPS_EPOCH_IN_MS = 315964800000;			// January 6, 1980 UTC
 			var MS_PER_WEEK = 7*24*60*60*1000;
-			var timestamp = new Date(GPS_EPOCH_IN_MS + weekNumber*MS_PER_WEEK + timeOfWeek*1000);		// GPS time!!! 16 leap seconds ahead of UTC
+			var timestamp = new Date(GPS_EPOCH_IN_MS + weekNumber*MS_PER_WEEK + timeOfWeek*1000);	// GPS time!!! 16 leap seconds ahead of UTC
 			winston.debug("Date: " + timestamp);
 
-			lastTime = new Date(GPS_EPOCH_IN_MS + weekNumber*MS_PER_WEEK + Math.floor(timeOfWeek)*1000);		// Truncate decimal to trim miliseconds
+			lastTime = new Date(GPS_EPOCH_IN_MS + weekNumber*MS_PER_WEEK + Math.floor(timeOfWeek)*1000);	// Truncate decimal to trim miliseconds
 			winston.debug("PPS Time: " + lastTime);
 
 			// NB: the boot packet layout is hardcoded here!
