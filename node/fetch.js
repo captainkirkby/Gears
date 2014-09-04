@@ -76,7 +76,8 @@ function fetch(query, dataPacketModel, bootPacketModel, averageDataModel) {
 	// Tries to interpret to as a date string
 	to = new Date(Date.parse(to));
 	// NB: Hardcoded 16 Second GPS-UTC Offset
-	if(to == 'Invalid Date') to = new Date(new Date().getTime()+16);
+	var utcNow = new Date();
+	if(to == 'Invalid Date') to = new Date(utcNow.getTime()+16);
 
 	// Tries to interpret from as start keyword
 	if(from == 'start' && latestDate !== null){
