@@ -311,13 +311,15 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 				criticalAlarms		: 0,
 				minorAlarms			: 0,
 				gpsDecodingStatus	: 0,
-				discipliningActivity: 0,
-				clockOffset			: 0
+				discipliningActivity: 0
 			};
 
-			var unexpectedValues = { "timestamp" : date };
+			var unexpectedValues = {
+				"timestamp" : date,
+				"clockOffset" : gpsStatusValues.clockOffset
+			};
 
-			for(var value in gpsStatusValues){
+			for(var value in expectedValues){
 				if(gpsStatusValues[value] != expectedValues[value]){
 					unexpectedValues[value] = gpsStatusValues[value];
 					// winston.debug(expectedValues[value] + " != " + gpsStatusValues[value]);
@@ -360,6 +362,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 				'pressure': pressure,
 				'blockTemperature': ttherm,
 				'humidity': humidity,
+				'clockOffset' : gpsStatusValues.clockOffset
 			}, function (data){
 				// To be called when the average reaches its period
 				averageDataModel.create(data,function(err,data){
