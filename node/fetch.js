@@ -95,19 +95,17 @@ function fetch(query, dataPacketModel, bootPacketModel, averageDataModel, gpsSta
 		}
 	}
 	winston.verbose('query', query);
+	var dbCollection = dataPacketModel;
+
+	if(query.db == "gps"){
+		// We need to fetch from gpsStatusModel
+		dbCollection = gpsStatusModel;
+	}
 
 	if(mostRecent){
 		// Only fetch most recent (raw)
-		dataPacketModel.find().
+		dbCollection.find().
 			limit(1).sort([['timestamp', -1]])
-			.exec(sendData);
-	} else if(query.db == "gps"){
-		// We need to fetch from gpsStatusModel
-		winston.verbose("Direct GPS Status Fetch");
-		gpsStatusModel.find()
-			.where('timestamp').gt(from).lte(to)
-			.limit(MAX_QUERY_RESULTS).sort([['timestamp', -1]])
-			.select(('series' in query) ? 'timestamp ' + getVisibleSets(query).join(" ") : '')
 			.exec(sendData);
 	} else {
 		// Fetch many (not raw)
@@ -117,7 +115,7 @@ function fetch(query, dataPacketModel, bootPacketModel, averageDataModel, gpsSta
 		if(binSize && binSize>0){
 			// We need averaging
 			winston.verbose("Averaging bin size: " + binSize);
-			averageDataModel.find()
+			dbCollection.find()
 				.where('timestamp').gt(from).lte(to)
 				.where('averagingPeriod').equals(binSize)
 				.limit(MAX_QUERY_RESULTS).sort([['timestamp', -1]])
@@ -126,7 +124,7 @@ function fetch(query, dataPacketModel, bootPacketModel, averageDataModel, gpsSta
 		} else {
 			// No averaging needed
 			winston.debug("Direct Fetch");
-			dataPacketModel.find()
+			dbCollection.find()
 				.where('timestamp').gt(from).lte(to)
 				.limit(MAX_QUERY_RESULTS).sort([['timestamp', -1]])
 				.select(('series' in query) ? 'timestamp ' + visibleSets.join(" ") : '')
