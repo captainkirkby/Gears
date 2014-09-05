@@ -1,0 +1,62 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>Plot</title>
+	<link href="examples.css" rel="stylesheet" type="text/css">
+	<!--[if lte IE 8]><script language="javascript" type="text/javascript" src="excanvas.min.js"></script><![endif]-->
+	<script language="javascript" type="text/javascript" src="jquery-1.10.2.min.js"></script>
+	<script language="javascript" type="text/javascript" src="jquery.flot.min.js"></script>
+	<script language="javascript" type="text/javascript" src="jquery.flot.time.min.js"></script>
+	<script language="javascript" type="text/javascript" src="gpsStatusSource.js"></script>
+</head>
+<body>
+
+	<div id="header">
+		<h2 class="loadingDiv">GPS Status</h2>
+		<span class="loading" style="display: none">
+			<!-- <img src="http://www.notabasement.com/images/loading.gif" /> -->
+			<img src="http://www.twillusa.com/images/loading_icon.gif"/>
+		</span>
+		<span class="back">
+			<a href="index.html">Home</a>
+		</span>
+	</div>
+
+	<div id="content">
+
+		<div class="demo-container">
+			<div id="placeholder" class="demo-placeholder"></div>
+		</div>
+
+		<input type="button" id="fetch" value="Get me my data!"></input>
+		<input type="button" id="continuousMode" value="Start Real Time Updates"></input>
+		<span class="checkboxes">
+			<input type="checkbox" id="toggleSmoothing">Smoothing</input>
+			<input type="checkbox" id="showDots" checked>Show Dots</input>
+		</span>
+
+
+		<br/> From:
+		<input type="text" id="from" size="30" value=""></input>
+
+
+		<br/> To:
+		<input type="text" id="to" size="30" value=""></input>
+
+		<br/>
+
+		Format: YYYY-MM-DDTHH:mm:ss.sssZ
+
+		<br/><br/> Samples:
+		<input type="text" id="length" size="10" value=""></input>
+
+
+	</div>
+
+	<div id="footer">
+		This software is maintained on <a href="https://github.com/captainkirkby/Gears">github</a>
+	</div>
+
+</body>
+</html>
