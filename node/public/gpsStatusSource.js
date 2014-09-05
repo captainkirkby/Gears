@@ -1,7 +1,7 @@
 $(function() {
 
 	// Reverse Order
-	var seriesToPlot = ["clockOffset"];
+	var seriesToPlot = ["clockOffset", "criticalAlarms", "minorAlarms"];
 
 	// Drawing Constants
 	var NORMAL = 2;

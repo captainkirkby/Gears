@@ -112,10 +112,12 @@ function fetch(query, dataPacketModel, bootPacketModel, averageDataModel, gpsSta
 		var visibleSets = getVisibleSets(query);
 		var binSize = getBins(to-from);		//in sec
 
+		console.log(('series' in query) ? 'timestamp ' + visibleSets.join(" ") : '');
+
 		if(binSize && binSize>0){
 			// We need averaging
 			winston.verbose("Averaging bin size: " + binSize);
-			dbCollection.find()
+			averageDataModel.find()
 				.where('timestamp').gt(from).lte(to)
 				.where('averagingPeriod').equals(binSize)
 				.limit(MAX_QUERY_RESULTS).sort([['timestamp', -1]])
@@ -135,6 +137,7 @@ function fetch(query, dataPacketModel, bootPacketModel, averageDataModel, gpsSta
 
 var sendData = function(err,results) {
 	if(err) throw err;
+	console.log(results);
 	// Send message to parent
 	process.send({
 		"done"		: true,
