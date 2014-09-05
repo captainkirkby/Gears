@@ -298,8 +298,8 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			var gpsStatusValues = {
 				recieverMode		: buf.readUInt8(34),
 				discipliningMode	: buf.readUInt8(35),
-				criticalAlarms		: buf.readUInt16LE(36),
-				minorAlarms			: buf.readUInt16LE(38),
+				criticalAlarms		: buf.readUInt16BE(36),
+				minorAlarms			: buf.readUInt16BE(38),
 				gpsDecodingStatus	: buf.readUInt8(40),
 				discipliningActivity: buf.readUInt8(41),
 				clockOffset			: buf.readFloatBE(42)
