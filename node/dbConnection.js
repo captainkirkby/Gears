@@ -65,6 +65,7 @@ var connectToDB = function (callback) {
 		var averageDataModel = mongoose.model('averageDataModel',averageDataSchema);
 		// Define the schema and model for the gps status schema
 		var gpsStatusSchema = mongoose.Schema({
+			timestamp: { type: Date, index: true },
 			recieverMode: Number,
 			discipliningMode: Number,
 			criticalAlarms: Number,

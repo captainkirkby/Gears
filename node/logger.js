@@ -315,7 +315,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 				clockOffset			: 0
 			};
 
-			var unexpectedValues = {};
+			var unexpectedValues = { "timestamp" : date };
 
 			for(var value in gpsStatusValues){
 				if(gpsStatusValues[value] != expectedValues[value]){
