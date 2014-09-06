@@ -137,7 +137,6 @@ function fetch(query, dataPacketModel, bootPacketModel, averageDataModel, gpsSta
 
 var sendData = function(err,results) {
 	if(err) throw err;
-	console.log(results);
 	// Send message to parent
 	process.send({
 		"done"		: true,
