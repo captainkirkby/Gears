@@ -184,7 +184,9 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			winston.debug("PPS Time: " + lastTime);
 
 			var d = new Date();
-			winston.debug("Current UTC date: " + d);
+			var predictedPPSTime = new Date(d.getTime()+utcOffset*1000);
+			winston.debug("Predicted PPS date: " + predictedPPSTime);
+			if(Math.abs(predictedPPSTime.getTime() - lastTime.getTime()) > 1000) throw new Error("GPS time is not correct!");
 
 			// NB: the boot packet layout is hardcoded here!
 			hash = '';
