@@ -132,6 +132,13 @@ int main(void)
     bootPacket.weekNumber = time.weekNumber;
     bootPacket.timeOfWeek = time.timeOfWeek;
 
+    uint8_t zero = 0x00;
+
+    // Write Zeros before we send boot packet
+    for(uint8_t zi = 0; zi < 100; ++zi){
+        serialWriteUSB((const uint8_t*)&zero,sizeof(zero));    
+    }
+
     // Sends our boot packet
     LED_ON(GREEN);
     // _delay_ms(2000);
