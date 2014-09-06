@@ -183,6 +183,9 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			lastTime = new Date(GPS_EPOCH_IN_MS + weekNumber*MS_PER_WEEK + Math.floor(timeOfWeek)*1000);	// Truncate decimal to trim miliseconds
 			winston.debug("PPS Time: " + lastTime);
 
+			var d = new Date();
+			winston.debug("Current UTC date: " + d);
+
 			// NB: the boot packet layout is hardcoded here!
 			hash = '';
 			for(var offset = 11; offset < 31; offset++) hash += sprintf("%02x",buf.readUInt8(offset));
