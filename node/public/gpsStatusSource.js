@@ -1,5 +1,24 @@
 $(function() {
 
+	// NB: Minor alarm bit structure hardcoded here
+	var minorAlarmKey = [
+		"DAC Near Rail",
+		"Antenna Open",
+		"Antenna Shorted",
+		"Not Tracking Satellites",
+		"Not Disciplining Oscillator",
+		"Survey In Progress",
+		"No Stored Position",
+		"Leap Second Pending",
+		"In Test Mode",
+		"Position Is Questionable",
+		"Not Used",
+		"Almanac Not Complete",
+		"PPS Not Generated"
+	];
+
+	var alarms = {};
+
 	// Reverse Order
 	var seriesToPlot = ["clockOffset"];
 
@@ -214,6 +233,37 @@ $(function() {
 
 			stopSpinner();
 
+			function onStatusDataRecieved(alarmData){
+				console.log(alarmData);
+				var minorAlarms = alarmData[0]["minorAlarms"];
+
+				var alarmCount=0;
+				for(alarmCount=0; alarmCount < minorAlarmKey.length; alarmCount++){
+					if(minorAlarms >> alarmCount == 1) setAlarm([minorAlarmKey[alarmCount]]);
+				}
+			}
+
+			// Plot Settings
+			var alarmSeries = {
+				"minorAlarms" : { "visible" : true, "width" : NORMAL, "color" : 0}
+			};
+	
+			// Get status alarms
+			var statusURL = "fetch?" + $.param({
+					"from"		: -1,
+					"to"		: "now",
+					"series"	: alarmSeries,
+					"db"		: "gps"
+			});
+	
+			$.ajax({
+				url: statusURL,
+				type:"GET",
+				dataType:"json",
+				success:onStatusDataRecieved
+			});
+
+
 		}
 
 		startSpinner();
@@ -225,6 +275,10 @@ $(function() {
 			success:onDataRecieved
 		});
 
+		
+	}
+
+	function setAlarm(description){
 		
 	}
 
