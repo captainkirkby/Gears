@@ -11,7 +11,7 @@
 #define ADC_STATUS_ERROR 255
 
 // ADC test constants
-#define ADC_MAX_TEST_TRIES 255    // This number determines how many tries the ADC gets to not be covered
+#define ADC_MAX_TEST_TRIES 1000    // This number determines how many tries the ADC gets to not be covered
 
 // ADC inputs
 // These are ADC channel numbers, not Arduino pin numbers.
