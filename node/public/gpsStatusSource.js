@@ -234,13 +234,17 @@ $(function() {
 			stopSpinner();
 
 			function onStatusDataRecieved(alarmData){
-				console.log(alarmData);
+				// console.log(alarmData);
 				var minorAlarms = alarmData[0]["minorAlarms"];
+				// minorAlarms = 8191
 
 				var alarmCount=0;
 				for(alarmCount=0; alarmCount < minorAlarmKey.length; alarmCount++){
-					if(minorAlarms >> alarmCount == 1) setAlarm([minorAlarmKey[alarmCount]]);
+					var flag = false;
+					if((minorAlarms >> alarmCount)%2 == 1) flag = true;
+					alarms[minorAlarmKey[alarmCount]] = flag;
 				}
+				writeAlarms();
 			}
 
 			// Plot Settings
@@ -278,8 +282,16 @@ $(function() {
 		
 	}
 
-	function setAlarm(description){
-		
+	function writeAlarms(){
+		// Clear alarms
+		$(".alarms").html("");
+
+		// Write alarms
+		var newText = "";
+		for(var alarm in alarms){
+			if(alarms[alarm]) newText += alarm + ", ";
+		}
+		$(".alarms").html(newText.substring(0, newText.length - 2));
 	}
 
 	function continuousUpdate(length){
