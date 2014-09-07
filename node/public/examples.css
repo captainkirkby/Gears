@@ -59,6 +59,12 @@ input[type=checkbox] {
 	float:right;
 }
 
+.alarms {
+	font-size: 12px;
+	float:right;
+	max-width: 300px;
+}
+
 .back {
 	float: right;
 	display: inline-block;

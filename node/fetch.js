@@ -56,7 +56,7 @@ function dbCallbackFunction(err, config) {
 
 	process.on('message', function(message) {
 		winston.verbose("Starting Fetch");
-		fetch(message.query, config.dataPacketModel, config.bootPacketModel, config.averageDataModel);
+		fetch(message.query, config.dataPacketModel, config.bootPacketModel, config.averageDataModel, config.gpsStatusModel);
 	});
 }
 
@@ -67,7 +67,7 @@ var MAX_QUERY_RESULTS = 120;
 var DEFAULT_FETCH = 120;
 
 // Responds to a request to fetch data.
-function fetch(query, dataPacketModel, bootPacketModel, averageDataModel) {
+function fetch(query, dataPacketModel, bootPacketModel, averageDataModel, gpsStatusModel) {
 	// Gets the date range to fetch.
 	var from = ('from' in query) ? query.from : '-120';
 	var to = ('to' in query) ? query.to : 'now';
@@ -75,7 +75,10 @@ function fetch(query, dataPacketModel, bootPacketModel, averageDataModel) {
 
 	// Tries to interpret to as a date string
 	to = new Date(Date.parse(to));
-	if(to == 'Invalid Date') to = new Date();
+	// NB: Hardcoded 16 Second GPS-UTC Offset
+	var utcNow = new Date();
+	var GPS_UTC_OFFSET = 16;
+	if(to == 'Invalid Date') to = new Date(utcNow.getTime()+GPS_UTC_OFFSET*1000);
 
 	// Tries to interpret from as start keyword
 	if(from == 'start' && latestDate !== null){
@@ -92,16 +95,24 @@ function fetch(query, dataPacketModel, bootPacketModel, averageDataModel) {
 		}
 	}
 	winston.verbose('query', query);
+	var dbCollection = dataPacketModel;
+
+	if(query.db == "gps"){
+		// We need to fetch from gpsStatusModel
+		dbCollection = gpsStatusModel;
+	}
 
 	if(mostRecent){
 		// Only fetch most recent (raw)
-		dataPacketModel.find().
+		dbCollection.find().
 			limit(1).sort([['timestamp', -1]])
 			.exec(sendData);
 	} else {
 		// Fetch many (not raw)
 		var visibleSets = getVisibleSets(query);
 		var binSize = getBins(to-from);		//in sec
+
+		console.log(('series' in query) ? 'timestamp ' + visibleSets.join(" ") : '');
 
 		if(binSize && binSize>0){
 			// We need averaging
@@ -115,7 +126,7 @@ function fetch(query, dataPacketModel, bootPacketModel, averageDataModel) {
 		} else {
 			// No averaging needed
 			winston.debug("Direct Fetch");
-			dataPacketModel.find()
+			dbCollection.find()
 				.where('timestamp').gt(from).lte(to)
 				.limit(MAX_QUERY_RESULTS).sort([['timestamp', -1]])
 				.select(('series' in query) ? 'timestamp ' + visibleSets.join(" ") : '')

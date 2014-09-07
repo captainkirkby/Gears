@@ -19,7 +19,13 @@ var connectToDB = function (callback) {
 			sensorBlockOK: Boolean,
 			commitTimestamp: Date,
 			commitHash: String,
-			commitStatus: Number
+			commitStatus: Number,
+			latitude: Number,
+			longitude: Number,
+			altitude: Number,
+			initialWeekNumber: Number,
+			initialTimeOfWeek: Number,
+			initialUTCOffset: Number
 		});
 		var bootPacketModel = mongoose.model('bootPacketModel',bootPacketSchema);
 		// Defines the schema and model for our serial data packets
@@ -34,6 +40,13 @@ var connectToDB = function (callback) {
 			blockTemperature: Number,
 			humidity: Number,
 			irLevel: Number,
+			recieverMode: Number,
+			discipliningMode: Number,
+			criticalAlarms: Number,
+			minorAlarms: Number,
+			gpsDecodingStatus: Number,
+			discipliningActivity: Number,
+			clockOffset: Number,
 			raw: Array
 		});
 		var dataPacketModel = mongoose.model('dataPacketModel',dataPacketSchema);
@@ -47,14 +60,28 @@ var connectToDB = function (callback) {
 			pressure: Number,
 			blockTemperature: Number,
 			humidity: Number,
-			averagingPeriod : Number
+			averagingPeriod : Number,
+			clockOffset: Number
 		});
 		var averageDataModel = mongoose.model('averageDataModel',averageDataSchema);
+		// Define the schema and model for the gps status schema
+		var gpsStatusSchema = mongoose.Schema({
+			timestamp: { type: Date, index: true },
+			recieverMode: Number,
+			discipliningMode: Number,
+			criticalAlarms: Number,
+			minorAlarms: Number,
+			gpsDecodingStatus: Number,
+			discipliningActivity: Number,
+			clockOffset: Number
+		});
+		var gpsStatusModel = mongoose.model('gpsStatusModel',gpsStatusSchema);
 		// Propagates our database connection and db models to data logger.
 		callback(null,{
 			'connection':db,
 			'bootPacketModel':bootPacketModel,
 			'dataPacketModel':dataPacketModel,
+			'gpsStatusModel':gpsStatusModel,
 			'averageDataModel':averageDataModel
 		});
 	});

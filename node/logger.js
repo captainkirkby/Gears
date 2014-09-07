@@ -17,8 +17,11 @@ var connectToDB = require('./dbConnection').connectToDB;
 // Tracks the last seen data packet sequence number to enable sequencing errors to be detected.
 var lastDataSequenceNumber = 0;
 
+// Track the time of the initial PPS and then the subsequent packets
+var lastTime;
+
 // Maximum packet size : change this when you want to modify the number of samples
-var MAX_PACKET_SIZE = 2082;
+var MAX_PACKET_SIZE = 2094;
 
 // Keep track of the dates we are waiting on a fit to process
 // FIFO : unshift on, then pop off
@@ -129,19 +132,21 @@ async.parallel({
 	function(err,config) {
 		if(err) throw err;
 		// Record our startup time.
-		config.startupTime = new Date();
+		// config.startupTime = new Date();
 		if(config.db && config.port) {
 			// Logs TickTock packets from the serial port into the database.
 			winston.debug('starting data logger');
 			// Initializes our binary packet assembler to initially only accept a boot packet.
 			// NB: the maximum and boot packet sizes are hardcoded here!
-			var assembler = new packet.Assembler(0xFE,3,MAX_PACKET_SIZE,{0x00:32},0);
+			var assembler = new packet.Assembler(0xFE,3,MAX_PACKET_SIZE,{0x00:66},0);
 			// Initializes averagers
 			var averagerCollection = new average.AveragerCollection(bins.stdBinSizes());
-
+			// Flush serial port of any old data before accepting new data
+			config.port.flush();
 			// Handles incoming chunks of binary data from the device.
 			config.port.on('data',function(data) {
-				receive(data,assembler,averagerCollection,config.db.bootPacketModel,config.db.dataPacketModel,config.db.averageDataModel);
+				receive(data,assembler,averagerCollection,config.db.bootPacketModel,config.db.dataPacketModel,
+					config.db.gpsStatusModel,config.db.averageDataModel);
 			});
 
 			// Handles incoming data packets from pipe to fit.py
@@ -154,26 +159,58 @@ async.parallel({
 
 // Receives a new chunk of binary data from the serial port and returns the
 // updated value of remaining that should be used for the next call.
-function receive(data,assembler,averager,bootPacketModel,dataPacketModel,averageDataModel) {
+function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStatusModel,averageDataModel) {
 	assembler.ingest(data,function(ptype,buf) {
 		var saveMe = true;
 		var p = null;
 		if(ptype === 0x00) {
 			winston.verbose("Got Boot Packet!");
 			// Prepares boot packet for storing to the database.
+			// GPS Time
+			var utcOffset			= buf.readFloatBE(56);
+			var weekNumber			= buf.readUInt16BE(60);
+			var timeOfWeek			= buf.readFloatBE(62);
+
+			winston.debug("Week Number: " + weekNumber);
+			winston.debug("Time of Week: " + timeOfWeek);
+			winston.debug("UTC Offset: " + utcOffset);
+
+			var GPS_EPOCH_IN_MS = 315964800000;			// January 6, 1980 UTC
+			var MS_PER_WEEK = 7*24*60*60*1000;
+			var timestamp = new Date(GPS_EPOCH_IN_MS + weekNumber*MS_PER_WEEK + timeOfWeek*1000);	// GPS time!!! 16 leap seconds ahead of UTC
+			winston.debug("Date: " + timestamp);
+
+			lastTime = new Date(GPS_EPOCH_IN_MS + weekNumber*MS_PER_WEEK + Math.floor(timeOfWeek)*1000);	// Truncate decimal to trim miliseconds
+			winston.debug("PPS Time: " + lastTime);
+
+			var d = new Date();
+			var predictedPPSTime = new Date(d.getTime()+utcOffset*1000);
+			winston.debug("Predicted PPS date: " + predictedPPSTime);
+			if(Math.abs(predictedPPSTime.getTime() - lastTime.getTime()) > 1000) throw new Error("GPS time is not correct!");
+
 			// NB: the boot packet layout is hardcoded here!
 			hash = '';
 			for(var offset = 11; offset < 31; offset++) hash += sprintf("%02x",buf.readUInt8(offset));
 			p = new bootPacketModel({
-				'timestamp': new Date(),
+				'timestamp': timestamp,
 				'serialNumber': sprintf("%08x",buf.readUInt32LE(0)),
 				'bmpSensorOk': buf.readUInt8(4),
 				'gpsSerialOk': buf.readUInt8(5),
 				'sensorBlockOK': buf.readUInt8(6),
 				'commitTimestamp': new Date(buf.readUInt32LE(7)*1000),
 				'commitHash': hash,
-				'commitStatus': buf.readUInt8(31)
+				'commitStatus': buf.readUInt8(31),
+				'latitude': buf.readDoubleBE(32),
+				'longitude': buf.readDoubleBE(40),
+				'altitude': buf.readDoubleBE(48),
+				'initialWeekNumber': weekNumber,
+				'initialTimeOfWeek': timeOfWeek,
+				'initialUTCOffset': utcOffset
 			});
+			winston.debug("Latitude, Longitude: " + 180/Math.PI*buf.readDoubleBE(32) + ", " + 180/Math.PI*buf.readDoubleBE(40));
+			winston.debug("Altitude: " + buf.readDoubleBE(48));
+			winston.debug("Sanity Check: should be around 34m?");
+			winston.debug("Serial OK: " + buf.readUInt8(5));
 			// After seeing a boot packet, we accept data packets.
 			// NB: the data packet size is hardcoded here!
 			assembler.addPacketType(0x01,MAX_PACKET_SIZE);
@@ -184,8 +221,6 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,average
 			winston.verbose("Got Data!");
 
 			// Prepare to recieve data
-			var date = new Date();
-
 			var QUADRANT = 0xFF;						// 2^8 when we're running the ADC in 8 bit mode
 
 			// Gets the raw data from the packet.raw field
@@ -193,7 +228,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,average
 			var rawFill = 0;
 			var rawPhase = buf.readUInt16LE(32);
 			// winston.info(rawPhase);
-			var initialReadOffset = 34;
+			var initialReadOffset = 46;
 			var initialReadOffsetWithPhase = initialReadOffset+(rawPhase);
 
 			if(initialReadOffsetWithPhase >= MAX_PACKET_SIZE || initialReadOffsetWithPhase < 0){
@@ -204,7 +239,13 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,average
 
 			// Calculates the time since the last reading assuming 10MHz clock with prescaler set to 128.
 			var samplesSince = buf.readUInt16LE(16);
-			var timeSince = samplesSince*128*13/10000000;
+			// NB: ADC Frequency hardcoded here
+			var timeSince = samplesSince*64*13/10000;	// in ms
+
+			// Create date object
+			var date = new Date(lastTime.getTime() + timeSince);
+			winston.debug("Date: " + date);
+			lastTime = date;
 
 			// Store last buffer entry
 			var lastReading = buf.readUInt8(initialReadOffsetWithPhase);
@@ -258,6 +299,45 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,average
 			var boardTemperature	= buf.readInt32LE(18)/160.0;
 			var pressure			= buf.readInt32LE(22);
 			var irLevel				= buf.readUInt16LE(30)/65536.0*5.0;				// convert IR level to volts
+			// GPS status
+			var gpsStatusValues = {
+				recieverMode		: buf.readUInt8(34),
+				discipliningMode	: buf.readUInt8(35),
+				criticalAlarms		: buf.readUInt16BE(36),
+				minorAlarms			: buf.readUInt16BE(38),
+				gpsDecodingStatus	: buf.readUInt8(40),
+				discipliningActivity: buf.readUInt8(41),
+				clockOffset			: buf.readFloatBE(42)
+			};
+
+			var expectedValues = {
+				recieverMode		: 0x07,
+				discipliningMode	: 0,
+				criticalAlarms		: 0,
+				minorAlarms			: 0,
+				gpsDecodingStatus	: 0,
+				discipliningActivity: 0
+			};
+
+			var unexpectedValues = {
+				"timestamp" : date,
+				"clockOffset" : gpsStatusValues.clockOffset
+			};
+
+			for(var value in expectedValues){
+				if(gpsStatusValues[value] != expectedValues[value]){
+					unexpectedValues[value] = gpsStatusValues[value];
+					// winston.debug(expectedValues[value] + " != " + gpsStatusValues[value]);
+				} else {
+					// winston.debug(expectedValues[value] + " = " + gpsStatusValues[value]);
+				}
+			}
+
+			// winston.debug(unexpectedValues);
+
+			gpsStatusModel.create(unexpectedValues);
+
+			winston.debug("Clock Offset: " + gpsStatusValues.clockOffset + " ppb");
 
 			// Calculates the thermistor resistance in ohms assuming 100uA current source.
 			var rtherm = buf.readUInt16LE(26)/65536.0*5.0/100e-6;
@@ -287,6 +367,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,average
 				'pressure': pressure,
 				'blockTemperature': ttherm,
 				'humidity': humidity,
+				'clockOffset' : gpsStatusValues.clockOffset
 			}, function (data){
 				// To be called when the average reaches its period
 				averageDataModel.create(data,function(err,data){
@@ -307,7 +388,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,average
 			// data packet that still needs to be debugged...
 			// EDIT 8/22/14: I think this issue has been resolved?
 			if(lastDataSequenceNumber == 1) {
-				// winston.info(p);
+				// winston.debug("Time: " + timeSince);
 			} else{
 				saveMe = true;
 				// Write to first entry in file

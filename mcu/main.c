@@ -17,8 +17,9 @@
 #include "TWI.h"
 #include "BMP180.h"
 #include "FreeRunningADC.h"
-
+#include "Trimble.h"
 #include "packet.h"
+
 
 // Declares and initializes our boot info packet
 BootPacket bootPacket = {
@@ -64,6 +65,7 @@ uint16_t humidityReading;
 uint8_t currentSensorIndex;
 
 volatile uint8_t currentMuxChannel;
+volatile uint8_t ppsFlag = 0;
 
 int main(void)
 {
@@ -79,67 +81,69 @@ int main(void)
     bmpError = initBMP180();
     if(bmpError) {
         // A non-zero status indicates a problem, so flash an bmpError code
-        flashNumber(100+bootPacket.bmpSensorStatus);
+        flashNumber(100+bmpError);
         bootPacket.bmpSensorStatus = bmpError;
     }
 
-    // Setup circular buffer and timer
-    currentElementIndex = 0;
-    timer = 0;
-    // Set ADC state and choose ADC channel
-    adcStatus = ADC_STATUS_TESTING;
-    currentSensorIndex = 0;
-    // Set the number of tries for sensor to be unobstructed
-    adcTestTries = 0;
-    // currentMuxChannel = analogSensors[currentSensorIndex];
-    startFreeRunningADC(analogSensors[currentSensorIndex]);
+    // Test Point Configuration
+    // Set pin as output
+    DDRA |= 0B00000100;
+    // Set pin to low
+    PORTA &= ~0B00000100;
+
+    // PPS Interrupt Configuration
+    // Set pin as input
+    DDRD &= ~0B01000000;
+    // Enable internal pull-up resistor
+    PORTD |= 0B01000000;
+    // Enable Interrupts on selected pin
+    PCICR |= 0B00001000;
+    // Select Pin to listen to
+    PCMSK3 |= 0B01000000;
+    // Enable Global Interrupts
+    // When interrupt is called, Free Running ADC is started
+    sei();
+
+    // Wait for the test to start
+    while(!ppsFlag);
 
     // Wait for test to finish
-    // At the end, the ADC will either be running in Free Running Mode or
-    // be disabled.
+    // At the end, the ADC will either be running in error or idle mode
     while(adcStatus == ADC_STATUS_TESTING);
 
     // Non-zero if sensor block is OK
     bootPacket.sensorBlockOK = !(adcStatus == ADC_STATUS_ERROR);
 
+    // Turn off GPS Auto packets and store status in boot packet
+    bootPacket.gpsSerialOk = turnOffGPSAutoPackets();
+
+    // Readout GPS health (and position?)
+    TsipHealthResponsePacket health = getGPSHealth();
+    bootPacket.latitude = health.latitude;
+    bootPacket.longitude = health.longitude;
+    bootPacket.altitude = health.altitude;
+
     // Copies our serial number from EEPROM address 0x10 into the boot packet
     bootPacket.serialNumber = eeprom_read_dword((uint32_t*)0x10);
 
+    // Get Time
+    TsipCommandResponsePacket time = getTime();
+    bootPacket.utcOffset = time.gpsOffset;
+    bootPacket.weekNumber = time.weekNumber;
+    bootPacket.timeOfWeek = time.timeOfWeek;
+
+    uint8_t zero = 0x00;
+
+    // Write Zeros before we send boot packet
+    for(uint8_t zi = 0; zi < 100; ++zi){
+        serialWriteUSB((const uint8_t*)&zero,sizeof(zero));    
+    }
+
     // Sends our boot packet
     LED_ON(GREEN);
+    // _delay_ms(2000);
     serialWriteUSB((const uint8_t*)&bootPacket,sizeof(bootPacket));
     LED_OFF(GREEN);
-
-    // Declare and define a TSIP Packet to stop automatic packet transmission
-    TsipPacket tsipPacket;
-    tsipPacket.header = TSIP_START_BYTE;
-    
-    tsipPacket.packetType = 0x8E;
-    tsipPacket.packetSubType = 0xA5;
-
-    tsipPacket.data[0] = 0x00; 
-    tsipPacket.data[1] = 0x05;
-    tsipPacket.data[2] = 0x00;
-    tsipPacket.data[3] = 0x00;
-
-    tsipPacket.stop[0] = TSIP_STOP_BYTE1;
-    tsipPacket.stop[1] = TSIP_STOP_BYTE2;
-
-    serialWriteUSB((const uint8_t*)&tsipPacket,sizeof(tsipPacket));
-
-    // Talk to GPS
-    LED_ON(GREEN);
-    serialWriteGPS((const uint8_t*)&tsipPacket,sizeof(tsipPacket));
-    LED_OFF(GREEN);
-
-    int rx;
-    while(1){
-        rx = getc1();
-        if(rx > -1) {
-            LED_ON(YELLOW);
-            serialWriteUSB((const uint8_t*)&rx,sizeof(rx));
-        }
-    }
 
     // Initializes the constant header of our data packet
     dataPacket.start[0] = START_BYTE;
@@ -148,6 +152,8 @@ int main(void)
     dataPacket.type = DATA_PACKET;
     dataPacket.sequenceNumber = 0;
 
+    // Enable Trigger
+    adcStatus = ADC_STATUS_CONTINUOUS;
 
     while(1) {
         // Store ADC run and transmit data
@@ -165,6 +171,17 @@ int main(void)
             dataPacket.rawPhase = (currentElementIndex + 1) % CIRCULAR_BUFFER_LENGTH;
             dataPacket.thermistor = thermistorReading;
             dataPacket.humidity = humidityReading;
+
+            // Readout GPS health
+            health = getGPSHealth();
+
+            dataPacket.recieverMode = health.recieverMode;
+            dataPacket.discipliningMode = health.discipliningMode;
+            dataPacket.criticalAlarms = health.criticalAlarms;
+            dataPacket.minorAlarms = health.minorAlarms;
+            dataPacket.gpsDecodingStatus = health.gpsDecodingStatus;
+            dataPacket.discipliningActivity = health.discipliningActivity;
+            dataPacket.clockOffset = health.clockOffset;
             
             // Sends binary packet data synchronously
             serialWriteUSB((const uint8_t*)&dataPacket,sizeof(dataPacket));
@@ -178,6 +195,8 @@ int main(void)
 // Interrupt service routine for the ADC completion
 // Note: When this is called, the next ADC conversion is already underway
 ISR(ADC_vect){
+    // // Set pin to low
+    // PORTA &= ~0B00000100;
     // Update counter that keeps track of the timing
     ++timingCounter;
 
@@ -187,7 +206,7 @@ ISR(ADC_vect){
     if(adcStatus >= ADC_STATUS_TESTING){
         if(adcValue > THRESHOLD){
             // Not covered, leave testing mode
-            adcStatus = ADC_STATUS_CONTINUOUS;
+            adcStatus = ADC_STATUS_IDLE;
         } else {
             if(adcTestTries < ADC_MAX_TEST_TRIES){
                 // Keep incrementing the ADC Status until we hit ADC_STATUS_ERROR
@@ -232,7 +251,7 @@ ISR(ADC_vect){
             // in either case, fill buffer once and increment pointer
         
             if(adcValue <= THRESHOLD){
-                // Store time since last threshold (max 10.9s for a 16 bit counter)
+                // Store time since last threshold (max 5.4s for a 16 bit counter)
                 lastCount = timingCounter;
                 timingCounter = 0;
                 // start timer
@@ -283,5 +302,30 @@ ISR(ADC_vect){
             // Set ADC channel
             switchADCMuxChannel(analogSensors[currentSensorIndex]);
         }
+    } // Do nothing if adc status is ADC_STATUS_IDLE or ADC_STATUS_ERROR
+}
+
+// Interrupt fired when 1PPS changes value
+ISR(PCINT3_vect){
+    // // Set pin to high
+    // PORTA |= 0B00000100;
+    if(PIND & 0B01000000)
+    {
+        /* LOW to HIGH pin change */
+        LED_TOGGLE(GREEN);
+        // Disable Interrupts on selected pin
+        PCICR &= ~0B00001000;
+        ppsFlag = 1;
+
+        // ADC Interrupt configuration
+        // Setup circular buffer and timer
+        currentElementIndex = 0;
+        timer = 0;
+        // Set ADC state and choose ADC channel
+        adcStatus = ADC_STATUS_TESTING;
+        currentSensorIndex = 0;
+        // Set the number of tries for sensor to be unobstructed
+        adcTestTries = 0;
+        startFreeRunningADC(analogSensors[currentSensorIndex]);
     }
 }
