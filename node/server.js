@@ -42,20 +42,49 @@ process.argv.forEach(function(val,index,array) {
 if(!noSerial && !service){
 	// Start process with data pipes
 	var logger = fork('./logger.js', process.argv.slice(2,process.argv.length), { stdio : 'inherit'});
-	
-	// Make sure to kill the fit process when node is about to exit
-	process.on('SIGINT', function(){
-		gracefulExit();
+
+	// Thank you to https://www.exratione.com/2013/05/die-child-process-die/ for the following snippets
+	// Helper function added to the child process to manage shutdown.
+	logger.onUnexpectedExit = function (code, signal) {
+		winston.error("Child process terminated with code: " + code);
+		process.exit(1);
+	};
+	logger.on("exit", logger.onUnexpectedExit);
+
+	// A helper function to shut down the child.
+	logger.shutdown = function () {
+		winston.info("Stopping Data Logger");
+		// Get rid of the exit listener since this is a planned exit.
+		this.removeListener("exit", this.onUnexpectedExit);
+		this.kill("SIGTERM");
+	};
+	// The exit event shuts down the child.
+	process.once("exit", function () {
+		logger.shutdown();
+	});
+	// This is a somewhat ugly approach, but it has the advantage of working
+	// in conjunction with most of what third parties might choose to do with
+	// uncaughtException listeners, while preserving whatever the exception is.
+	process.once("uncaughtException", function (error) {
+		// If this was the last of the listeners, then shut down the child and rethrow.
+		// Our assumption here is that any other code listening for an uncaught
+		// exception is going to do the sensible thing and call process.exit().
+		if (process.listeners("uncaughtException").length === 0) {
+			logger.shutdown();
+			throw error;
+		}
 	});
 }
 
-function gracefulExit()
-{
-	winston.info("Stopping Data Logger");
-	logger.kill('SIGINT');
+// Handle Exit Signals
+process.once('SIGTERM', function(){
 	winston.info("Stopping Server " + __filename);
-	process.exit();
-}
+	process.exit(0);
+});
+process.once('SIGINT', function(){
+	winston.info("Stopping Server " + __filename);
+	process.exit(0);
+});
 
 winston.verbose(__filename + ' connecting to the database...');
 
@@ -63,7 +92,9 @@ var dbCallback = dbCallbackFunction;
 connectToDB(dbCallback);
 
 function dbCallbackFunction(err, config) {
-	if(err) throw err;
+	if(err) {
+		throw err;
+	}
 	newConfig = {};
 	newConfig.port = null;			// Fix Me... probably not true
 	newConfig.db = config;

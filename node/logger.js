@@ -62,18 +62,48 @@ var fit = spawn("../fit/fit.py", pythonFlags, { cwd : "../fit", stdio : 'pipe'})
 // Send all output to node stdout (readable.pipe(writable))
 // fit.stdout.pipe(process.stdout);
 
-// Make sure to kill the fit process when node is about to exit
-process.on('SIGINT', function(){
-	gracefulExit();
+// Thank you to https://www.exratione.com/2013/05/die-child-process-die/ for the following snippets
+
+// Helper function added to the child process to manage shutdown.
+fit.onUnexpectedExit = function (code, signal) {
+	winston.error("Child process terminated with code: " + code);
+	process.exit(1);
+};
+fit.on("exit", fit.onUnexpectedExit);
+
+// A helper function to shut down the child.
+fit.shutdown = function () {
+	winston.info("Stopping Fit.py");
+	// Get rid of the exit listener since this is a planned exit.
+	this.removeListener("exit", this.onUnexpectedExit);
+	this.kill("SIGTERM");
+};
+// The exit event shuts down the child.
+process.once("exit", function () {
+	fit.shutdown();
+});
+// This is a somewhat ugly approach, but it has the advantage of working
+// in conjunction with most of what third parties might choose to do with
+// uncaughtException listeners, while preserving whatever the exception is.
+process.once("uncaughtException", function (error) {
+	// If this was the last of the listeners, then shut down the child and rethrow.
+	// Our assumption here is that any other code listening for an uncaught
+	// exception is going to do the sensible thing and call process.exit().
+	if (process.listeners("uncaughtException").length === 0) {
+		fit.shutdown();
+		throw error;
+	}
 });
 
-function gracefulExit()
-{
-	winston.info("Stopping Python");
-	fit.kill();
+// Handle Exit Signals
+process.once('SIGTERM', function(){
 	winston.info("Stopping Logger " + __filename);
-	process.exit();
-}
+	process.exit(0);
+});
+process.once('SIGINT', function(){
+	winston.info("Stopping Logger " + __filename);
+	process.exit(0);
+});
 
 winston.verbose(__filename + ' connecting to the database...');
 
