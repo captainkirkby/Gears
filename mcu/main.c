@@ -47,7 +47,7 @@ uint16_t currentElementIndex;
 volatile uint8_t adcStatus;
 
 // Stores number of tries we've had in the ADC to get an unobstructed reading
-uint8_t adcTestTries;
+volatile uint16_t adcTestTries;
 
 //Declare timer used for filling up the buffer
 /*volatile*/ uint16_t timer;
