@@ -411,7 +411,7 @@ def main():
     parser.add_argument('--replay', type=str, default='',
         help = 'name of input data file to replay')
 
-    parser.add_argument('--fromDB', action = 'store_true',
+    parser.add_argument('--from-db', action = 'store_true',
         help = 'fetch data from a Mongo database')
     parser.add_argument('--db-name', type=str, default='TickTock',
         help = 'name of Mongo database to fetch from')
@@ -419,6 +419,8 @@ def main():
         help = 'name of Mongo collection to fetch from')
     parser.add_argument('--fetch-limit', type=int, default=100,
         help = 'how many documents to fetch from Mongo database')
+    parser.add_argument('--mongo-port', type=int, default=27017,
+        help = 'port to use when connecting to a Mongo database')
     parser.add_argument('--batch-replay', action = 'store_true',
         help = 'no interactive prompting for each frame during replay')
     parser.add_argument('--max-frames', type = int, default = 0,
@@ -456,11 +458,11 @@ def main():
     processor = FrameProcessor(tabs,args)
 
     # replay a pre-recorded data file if requested
-    if args.replay or args.fromDB:
-        if args.fromDB:
+    if args.replay or args.from_db:
+        if args.from_db:
             # load the input from given database
             # Connect to Mongod (fails and exits if mongod is not running)
-            client = MongoClient('localhost', 27017)
+            client = MongoClient('localhost', args.mongo_port)
             # Get db object
             db = client[args.db_name]
             # Get collection object
