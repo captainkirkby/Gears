@@ -479,7 +479,6 @@ def main():
             for document in results:
                 data = numpy.append(data,document[CRUDE_PERIOD])
                 data = numpy.append(data,document[RAW])
-            numpy.savetxt("output.dat",data)
         elif args.replay:
             # load the input data file
             data = numpy.loadtxt(args.replay)
