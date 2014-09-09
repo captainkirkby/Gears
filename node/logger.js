@@ -61,6 +61,7 @@ process.argv.forEach(function(val,index,array) {
 
 // Start process with data pipes
 var fit = spawn("../fit/fit.py", pythonFlags, { cwd : "../fit", stdio : 'pipe'});
+fit.alive = true;
 // Send all output to node stdout (readable.pipe(writable))
 // fit.stdout.pipe(process.stdout);
 
@@ -481,11 +482,11 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 				// Push most recent date to the top of the FIFO stack
 				datesBeingProcessed.unshift(date);
 				// Write crude period to pipe
-				if(fit.connected) fit.stdin.write(samplesSince + '\n');
+				if(fit.alive) fit.stdin.write(samplesSince + '\n');
 
 				// Iterate through samples writing them to the fit pipe
 				for(var i = 0; i < 2048; i++){
-					if(fit.connected) fit.stdin.write(raw[i] + '\n');
+					if(fit.alive) fit.stdin.write(raw[i] + '\n');
 					if(runningData) fs.appendFileSync('runningData.dat', raw[i] + '\n');
 				}
 			}
