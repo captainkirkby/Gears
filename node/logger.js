@@ -207,6 +207,7 @@ async.parallel({
 	
 							// Restart fit.py (is this the best thing to do?)
 							fit = spawn("../fit/fit.py", pythonFlags, { cwd : "../fit", stdio : 'pipe'});
+							fit.connected = true;
 							// fit.stdout.pipe(process.stdout);
 							// Thank you to https://www.exratione.com/2013/05/die-child-process-die/ for the following snippets
 							// Helper function added to the child process to manage shutdown.
