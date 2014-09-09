@@ -69,7 +69,7 @@ var fit = spawn("../fit/fit.py", pythonFlags, { cwd : "../fit", stdio : 'pipe'})
 // Helper function added to the child process to manage shutdown.
 fit.onUnexpectedExit = function (code, signal) {
 	winston.error("Child process terminated with code: " + code);
-	this.disconnect();
+	// this.disconnect();
 	// process.exit(1);
 };
 fit.on("exit", fit.onUnexpectedExit);
