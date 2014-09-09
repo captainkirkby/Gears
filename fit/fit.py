@@ -8,6 +8,8 @@ from scipy.stats import linregress
 import matplotlib.pyplot as plt
 from iminuit import Minuit
 import argparse
+from pymongo import MongoClient
+from pymongo import DESCENDING
 
 def edgeTransmission(x,D):
     """
@@ -408,6 +410,15 @@ def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--replay', type=str, default='',
         help = 'name of input data file to replay')
+
+    parser.add_argument('--fromDB', action = 'store_true',
+        help = 'fetch data from a Mongo database')
+    parser.add_argument('--db-name', type=str, default='TickTock',
+        help = 'name of Mongo database to fetch from')
+    parser.add_argument('--collection-name', type=str, default='datapacketmodels',
+        help = 'name of Mongo collection to fetch from')
+    parser.add_argument('--fetch-limit', type=int, default=100,
+        help = 'how many documents to fetch from Mongo database')
     parser.add_argument('--batch-replay', action = 'store_true',
         help = 'no interactive prompting for each frame during replay')
     parser.add_argument('--max-frames', type = int, default = 0,
@@ -445,9 +456,31 @@ def main():
     processor = FrameProcessor(tabs,args)
 
     # replay a pre-recorded data file if requested
-    if args.replay:
-        # load the input data file
-        data = numpy.loadtxt(args.replay)
+    if args.replay or args.fromDB:
+        if args.fromDB:
+            # load the input from given database
+            # Connect to Mongod (fails and exits if mongod is not running)
+            client = MongoClient('localhost', 27017)
+            # Get db object
+            db = client[args.db_name]
+            # Get collection object
+            collection = db[args.collection_name]
+            # Set fetch constants
+            ID              = u"_id"
+            RAW             = u"raw"
+            TIMESTAMP       = u"timestamp"
+            CRUDE_PERIOD    = u"crudePeriod"
+            # Perform Query
+            results = collection.find({},{ID:False,TIMESTAMP:True, CRUDE_PERIOD:True, RAW:True}).sort(TIMESTAMP, DESCENDING).limit(args.fetch_limit)
+            # Construct numpy array
+            data = numpy.array([], dtype=numpy.uint16)
+            for document in results:
+                data = numpy.append(data,document[CRUDE_PERIOD])
+                data = numpy.append(data,document[RAW])
+            numpy.savetxt("output.dat",data)
+        elif args.replay:
+            # load the input data file
+            data = numpy.loadtxt(args.replay)
         if len(data.shape) != 1:
             print 'Data has unexpected shape',data.shape
             return -1
