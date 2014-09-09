@@ -60,7 +60,7 @@ process.argv.forEach(function(val,index,array) {
 // Start process with data pipes
 var fit = spawn("../fit/fit.py", pythonFlags, { cwd : "../fit", stdio : 'pipe'});
 // Send all output to node stdout (readable.pipe(writable))
-fit.stdout.pipe(process.stdout);
+// fit.stdout.pipe(process.stdout);
 
 // Thank you to https://www.exratione.com/2013/05/die-child-process-die/ for the following snippets
 
@@ -187,7 +187,7 @@ async.parallel({
 			// HUGE debounce time
 			var debounceTime = 2000;
 			var s = 0;
-			fs.watch("template.dat",{ persistent: true}, function(event,filename){
+			fs.watch("../fit/template.dat",{ persistent: true}, function(event,filename){
 				if(s === 0){
 					s = 1;
 					setTimeout(function(){
