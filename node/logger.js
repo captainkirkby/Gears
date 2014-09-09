@@ -60,7 +60,7 @@ process.argv.forEach(function(val,index,array) {
 // Start process with data pipes
 var fit = spawn("../fit/fit.py", pythonFlags, { cwd : "../fit", stdio : 'pipe'});
 // Send all output to node stdout (readable.pipe(writable))
-// fit.stdout.pipe(process.stdout);
+fit.stdout.pipe(process.stdout);
 
 // Thank you to https://www.exratione.com/2013/05/die-child-process-die/ for the following snippets
 
