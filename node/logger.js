@@ -41,7 +41,7 @@ var noDatabase = false;
 var debug = false;
 var debugLevel2 = false;
 var runningData = false;
-var pythonFlags = ["--load-template", "template2048.dat"];
+var pythonFlags = ["--load-template", "template.dat"];
 var service = false;
 process.argv.forEach(function(val,index,array) {
 	if(val == '--no-serial') noSerial = true;

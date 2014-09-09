@@ -6,6 +6,7 @@ var express = require('express');
 var winston_module = require('winston');
 
 var fork = require('child_process').fork;
+var exec = require('child_process').exec;
 
 var connectToDB = require('./dbConnection').connectToDB;
 
@@ -25,7 +26,7 @@ var winston = new (winston_module.Logger)({
 var noSerial = false;
 var noDatabase = false;
 var debug = false;
-var pythonFlags = ["--load-template", "template2048.dat"];
+var pythonFlags = ["--load-template", "template.dat"];
 var service = false;
 process.argv.forEach(function(val,index,array) {
 	if(val == '--no-serial') noSerial = true;
@@ -114,6 +115,8 @@ function startWebApp(config)
 		dataPacketModel = config.db.dataPacketModel;
 		// Serves boot packet info.
 		app.get('/boot', function(req,res) { return boot(req,res,config.db.bootPacketModel); });
+		// Serve requests to update template
+		app.get('/template', function(req,res) { return updateTemplate(req,res); });
 		// Serves data dynamically via AJAX.
 		// app.get('/fetch', function(req,res) { return fetch(req,res,config.db.dataPacketModel); });
 		app.get('/fetch', function(req,res) {
@@ -183,5 +186,10 @@ function boot(req,res,bootPacketModel) {
 	bootPacketModel.find()
 		.limit(10).sort([['timestamp', -1]])
 		.exec(function(err,results) { res.send(results); });
+}
+
+// Updates the template file from the web server
+function updateTemplate(req,res) {
+	var update = exec("../fit/fit.py --from-db --save-template template.dat", { cwd : "../fit" });
 }
 
