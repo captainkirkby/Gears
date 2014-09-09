@@ -116,7 +116,7 @@ function startWebApp(config)
 		// Serves boot packet info.
 		app.get('/boot', function(req,res) { return boot(req,res,config.db.bootPacketModel); });
 		// Serve requests to update template
-		app.get('/template', function(req,res) { return updateTemplate(req,res); });
+		app.get('/template', function(req,res) { return updateTemplate(req,res,config.db.dataPacketModel); });
 		// Serves data dynamically via AJAX.
 		// app.get('/fetch', function(req,res) { return fetch(req,res,config.db.dataPacketModel); });
 		app.get('/fetch', function(req,res) {
@@ -189,7 +189,8 @@ function boot(req,res,bootPacketModel) {
 }
 
 // Updates the template file from the web server
-function updateTemplate(req,res) {
+function updateTemplate(req,res,dataPacketModel) {
+	// console.log(dataPacketModel.collection.name);
 	var update = exec("../fit/fit.py --from-db --save-template template.dat", { cwd : "../fit" });
 }
 
