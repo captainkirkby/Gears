@@ -500,8 +500,9 @@ def main():
         if args.save_template:
             template = buildSplineTemplate(frames,args)
             numpy.savetxt(args.save_template,template.T)
-            plt.plot(template[0],template[1])
-            plt.show()
+            if args.show_plots:
+                plt.plot(template[0],template[1])
+                plt.show()
             return 0
         for i,frame in enumerate(frames):
             elapsed,samples = frame[0],frame[1:]
