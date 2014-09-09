@@ -69,6 +69,7 @@ var fit = spawn("../fit/fit.py", pythonFlags, { cwd : "../fit", stdio : 'pipe'})
 // Helper function added to the child process to manage shutdown.
 fit.onUnexpectedExit = function (code, signal) {
 	winston.error("Child process terminated with code: " + code);
+	this.disconnect();
 	// process.exit(1);
 };
 fit.on("exit", fit.onUnexpectedExit);
@@ -479,11 +480,11 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 				// Push most recent date to the top of the FIFO stack
 				datesBeingProcessed.unshift(date);
 				// Write crude period to pipe
-				fit.stdin.write(samplesSince + '\n');
+				if(fit.connected) fit.stdin.write(samplesSince + '\n');
 
 				// Iterate through samples writing them to the fit pipe
 				for(var i = 0; i < 2048; i++){
-					fit.stdin.write(raw[i] + '\n');
+					if(fit.connected) fit.stdin.write(raw[i] + '\n');
 					if(runningData) fs.appendFileSync('runningData.dat', raw[i] + '\n');
 				}
 			}
