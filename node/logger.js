@@ -35,13 +35,15 @@ var winston = new (winston_module.Logger)({
 	]
 });
 
+var templateFile = "template.dat";
+
 // Parses command-line arguments.
 var noSerial = false;
 var noDatabase = false;
 var debug = false;
 var debugLevel2 = false;
 var runningData = false;
-var pythonFlags = ["--load-template", "template.dat"];
+var pythonFlags = ["--load-template", templateFile];
 var service = false;
 process.argv.forEach(function(val,index,array) {
 	if(val == '--no-serial') noSerial = true;
@@ -187,45 +189,53 @@ async.parallel({
 			// HUGE debounce time
 			var debounceTime = 2000;
 			var s = 0;
-			fs.watch("../fit/template.dat",{ persistent: true}, function(event,filename){
-				if(s === 0){
-					s = 1;
-					setTimeout(function(){
-						winston.info("File " + filename + " Changed by event " + event);
-						fit.shutdown();
-
-						// Restart fit.py (is this the best thing to do?)
-						fit = spawn("../fit/fit.py", pythonFlags, { cwd : "../fit", stdio : 'pipe'});
-						// fit.stdout.pipe(process.stdout);
-						// Thank you to https://www.exratione.com/2013/05/die-child-process-die/ for the following snippets
-						// Helper function added to the child process to manage shutdown.
-						fit.onUnexpectedExit = function (code, signal) {
-							winston.error("Child process terminated with code: " + code);
-							// process.exit(1);
-						};
-						fit.on("exit", fit.onUnexpectedExit);
-						
-						// A helper function to shut down the child.
-						fit.shutdown = function () {
-							winston.info("Stopping Fit.py");
-							// Get rid of the exit listener since this is a planned exit.
-							this.removeListener("exit", this.onUnexpectedExit);
-							this.kill("SIGTERM");
-						};
-
-						// Clear cache of dates being processed
-						datesBeingProcessed = [];
-
-						// Handles incoming data packets from pipe to fit.py
-						fit.stdout.on('data', function(data){
-							storeRefinedPeriodAndAngle(data, config.db.dataPacketModel, averagerCollection);
-						});
-
-						s = 0;
-					}, debounceTime);
+			var templatePath = "../fit/"+templateFile;
+			// Can only watch a file that exists...
+			fs.exists(templatePath, function(exists){
+				if(!exists){
+					// Create an empty file
+					fs.openSync(templatePath, 'w');		// Synchronous
+					// fs.close(templatePath);				// Asynchronous
 				}
+				fs.watch(templatePath,{ persistent: true}, function(event,filename){
+					if(s === 0){
+						s = 1;
+						setTimeout(function(){
+							winston.info("File " + filename + " Changed by event " + event);
+							fit.shutdown();
+	
+							// Restart fit.py (is this the best thing to do?)
+							fit = spawn("../fit/fit.py", pythonFlags, { cwd : "../fit", stdio : 'pipe'});
+							// fit.stdout.pipe(process.stdout);
+							// Thank you to https://www.exratione.com/2013/05/die-child-process-die/ for the following snippets
+							// Helper function added to the child process to manage shutdown.
+							fit.onUnexpectedExit = function (code, signal) {
+								winston.error("Child process terminated with code: " + code);
+								// process.exit(1);
+							};
+							fit.on("exit", fit.onUnexpectedExit);
+							
+							// A helper function to shut down the child.
+							fit.shutdown = function () {
+								winston.info("Stopping Fit.py");
+								// Get rid of the exit listener since this is a planned exit.
+								this.removeListener("exit", this.onUnexpectedExit);
+								this.kill("SIGTERM");
+							};
+	
+							// Clear cache of dates being processed
+							datesBeingProcessed = [];
+	
+							// Handles incoming data packets from pipe to fit.py
+							fit.stdout.on('data', function(data){
+								storeRefinedPeriodAndAngle(data, config.db.dataPacketModel, averagerCollection);
+							});
+	
+							s = 0;
+						}, debounceTime);
+					}
+				});
 			});
-
 		}
 	}
 );
