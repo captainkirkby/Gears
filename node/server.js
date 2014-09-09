@@ -192,5 +192,6 @@ function boot(req,res,bootPacketModel) {
 function updateTemplate(req,res,dataPacketModel) {
 	// console.log(dataPacketModel.collection.name);
 	var update = exec("../fit/fit.py --from-db --save-template template.dat", { cwd : "../fit" });
+	res.send("");
 }
 
