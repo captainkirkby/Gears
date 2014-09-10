@@ -500,6 +500,8 @@ def main():
         if args.save_template:
             template = buildSplineTemplate(frames,args)
             numpy.savetxt(args.save_template,template.T)
+            # save to database
+            db["templatemodels"].insert({"template":template.T.tolist()})
             if args.show_plots:
                 plt.plot(template[0],template[1])
                 plt.show()
