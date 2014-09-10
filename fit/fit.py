@@ -314,7 +314,31 @@ class FrameProcessor(object):
         if args.load_template is not None:
             if args.physical:
                 raise RuntimeError('Options --physical and --load-template cannot be combined')
-            templateData = numpy.transpose(numpy.loadtxt(args.load_template))
+            if args.load_template == "db":
+                #load from database
+                # Connect to Mongod (fails and exits if mongod is not running)
+                client = MongoClient('localhost', args.mongo_port)
+                # Get db object
+                db = client[args.db_name]
+                # Get collection object
+                collection = db[args.template_collection]
+                # Set fetch constants
+                ID              = u"_id"
+                RAW             = u"raw"
+                TIMESTAMP       = u"timestamp"
+                CRUDE_PERIOD    = u"crudePeriod"
+                TEMPLATE        = u"template"
+                # Perform Query
+                results = collection.find({},{ID:False,TIMESTAMP:True, TEMPLATE:True}).sort(TIMESTAMP, DESCENDING).limit(1)
+
+                data = []
+                for document in results:
+                    for pair in document[TEMPLATE]:
+                        data.append(pair)
+                templateData = numpy.transpose(numpy.array(data))
+            else:
+                #load from file specified
+                templateData = numpy.transpose(numpy.loadtxt(args.load_template))
             self.template = scipy.interpolate.UnivariateSpline(templateData[0],templateData[1],k=3,s=0.)
         else:
             self.template = None
@@ -417,6 +441,8 @@ def main():
         help = 'name of Mongo database to fetch from')
     parser.add_argument('--collection-name', type=str, default='datapacketmodels',
         help = 'name of Mongo collection to fetch from')
+    parser.add_argument('--template-collection', type = str, default = 'templatemodels',
+        help = 'database collection where spline template should be saved and loaded')
     parser.add_argument('--fetch-limit', type=int, default=100,
         help = 'how many documents to fetch from Mongo database')
     parser.add_argument('--mongo-port', type=int, default=27017,
@@ -479,6 +505,8 @@ def main():
             for document in results:
                 data = numpy.append(data,document[CRUDE_PERIOD])
                 data = numpy.append(data,document[RAW])
+                # Get last timestamp
+                timestamp = document[TIMESTAMP]
         elif args.replay:
             # load the input data file
             data = numpy.loadtxt(args.replay)
@@ -499,9 +527,12 @@ def main():
         frames = data[:nframe*(1+args.nsamples)].reshape((nframe,1+args.nsamples))
         if args.save_template:
             template = buildSplineTemplate(frames,args)
-            numpy.savetxt(args.save_template,template.T)
-            # save to database
-            db["templatemodels"].insert({"template":template.T.tolist()})
+            if args.save_template == "db":
+                # Save to database as array of ordered pairs (arrays)
+                db[args.template_collection].insert({TIMESTAMP:timestamp, u"template":template.T.tolist()})
+            else:
+                # Save to file
+                numpy.savetxt(args.save_template,template.T)
             if args.show_plots:
                 plt.plot(template[0],template[1])
                 plt.show()
