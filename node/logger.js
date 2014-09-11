@@ -340,6 +340,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 
 			// Date sanity check
 			var referenceDate = new Date();
+			referenceDate = new Date(referenceDate.getTime() + 16*1000);
 			var deltaTime = Math.abs(referenceDate.getTime() - date.getTime());
 			var SYNC_THRESHOLD = 500;
 
