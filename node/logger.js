@@ -85,6 +85,7 @@ fit.shutdown = function () {
 };
 // The exit event shuts down the child.
 process.once("exit", function () {
+	winston.info("Logger Stopped");
 	fit.shutdown();
 });
 // This is a somewhat ugly approach, but it has the advantage of working
