@@ -291,9 +291,10 @@ def buildSplineTemplate(frames,args):
     return numpy.vstack((sgrid,resampled))
 
 class FrameProcessor(object):
-    def __init__(self,tabs,args):
+    def __init__(self,tabs,args,db):
         self.tabs = tabs
         self.args = args
+        self.db = db
         self.lastDirection = None
         self.nextLastOffset = None
         self.lastOffset = None
@@ -315,27 +316,8 @@ class FrameProcessor(object):
             if args.physical:
                 raise RuntimeError('Options --physical and --load-template cannot be combined')
             if args.load_template == "db":
-                #load from database
-                # Connect to Mongod (fails and exits if mongod is not running)
-                client = MongoClient('localhost', args.mongo_port)
-                # Get db object
-                db = client[args.db_name]
-                # Get collection object
-                collection = db[args.template_collection]
-                # Set fetch constants
-                ID              = u"_id"
-                RAW             = u"raw"
-                TIMESTAMP       = u"timestamp"
-                CRUDE_PERIOD    = u"crudePeriod"
-                TEMPLATE        = u"template"
-                # Perform Query
-                results = collection.find({},{ID:False,TIMESTAMP:True, TEMPLATE:True}).sort(TIMESTAMP, DESCENDING).limit(1)
-
-                data = []
-                for document in results:
-                    for pair in document[TEMPLATE]:
-                        data.append(pair)
-                templateData = numpy.transpose(numpy.array(data))
+                # Load from database
+                templateData = self.db.loadTemplate()
             else:
                 #load from file specified
                 templateData = numpy.transpose(numpy.loadtxt(args.load_template))
@@ -443,7 +425,8 @@ class DB(object):
         # Get db object
         self.db = self.client[args.db_name]
         # Get collection object
-        self.collection = self.db[args.collection_name]
+        self.dataCollection = self.db[args.collection_name]
+        self.templateCollection = self.db[self.args.template_collection]
 
     def loadData(self):
         """
@@ -453,7 +436,7 @@ class DB(object):
         IR...
         """
         # Perform Query
-        results = self.collection.find({},{self.ID:False,self.TIMESTAMP:True, self.CRUDE_PERIOD:True, 
+        results = self.dataCollection.find({},{self.ID:False,self.TIMESTAMP:True, self.CRUDE_PERIOD:True, 
             self.RAW:True}).sort(self.TIMESTAMP, DESCENDING).limit(self.args.fetch_limit)
         # Construct numpy array
         data = numpy.array([], dtype=numpy.uint16)
@@ -468,14 +451,15 @@ class DB(object):
         """
         Saves a given template into the database
         """
-        self.db[self.args.template_collection].insert({self.TIMESTAMP:timestamp, u"template":template.T.tolist()})
+        self.templateCollection.insert({self.TIMESTAMP:timestamp, self.TEMPLATE:template.T.tolist()})
 
     def loadTemplate(self):
         """
         Loads a given template from the database
         """
         # Perform Query
-        results = self.collection.find({},{self.ID:False,self.TIMESTAMP:True, self.TEMPLATE:True}).sort(self.TIMESTAMP, DESCENDING).limit(1)
+        results = self.templateCollection.find({},{self.ID:False,self.TIMESTAMP:True, 
+            self.TEMPLATE:True}).sort(self.TIMESTAMP, DESCENDING).limit(1)
 
         data = []
         for document in results:
@@ -535,36 +519,18 @@ def main():
     # define tab geometry
     tabs = numpy.array([[-15.,-5.],[0.,5.],[10.,15.]])
 
-    # initialize our frame processor
-    processor = FrameProcessor(tabs,args)
-
     # initialize our database connection
     db = DB(args)
+
+    # initialize our frame processor
+    processor = FrameProcessor(tabs,args,db)
 
     # replay a pre-recorded data file if requested
     if args.replay or args.from_db:
         if args.from_db:
-            # load the input from given database
-            # Connect to Mongod (fails and exits if mongod is not running)
-            client = MongoClient('localhost', args.mongo_port)
-            # Get db object
-            db = client[args.db_name]
-            # Get collection object
-            collection = db[args.collection_name]
-            # Set fetch constants
-            ID              = u"_id"
-            RAW             = u"raw"
-            TIMESTAMP       = u"timestamp"
-            CRUDE_PERIOD    = u"crudePeriod"
-            # Perform Query
-            results = collection.find({},{ID:False,TIMESTAMP:True, CRUDE_PERIOD:True, RAW:True}).sort(TIMESTAMP, DESCENDING).limit(args.fetch_limit)
-            # Construct numpy array
-            data = numpy.array([], dtype=numpy.uint16)
-            for document in results:
-                data = numpy.append(data,document[CRUDE_PERIOD])
-                data = numpy.append(data,document[RAW])
-                # Get last timestamp
-                timestamp = document[TIMESTAMP]
+            dataTuple = db.loadData()
+            data = dataTuple[0]
+            timestamp = dataTuple[1]
         elif args.replay:
             # load the input data file
             data = numpy.loadtxt(args.replay)
@@ -587,7 +553,7 @@ def main():
             template = buildSplineTemplate(frames,args)
             if args.save_template == "db":
                 # Save to database as array of ordered pairs (arrays)
-                db[args.template_collection].insert({TIMESTAMP:timestamp, u"template":template.T.tolist()})
+                db.saveTemplate(template,timestamp)
             else:
                 # Save to file
                 numpy.savetxt(args.save_template,template.T)
