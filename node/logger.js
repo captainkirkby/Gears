@@ -342,13 +342,17 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			var referenceDate = new Date();
 			var deltaTime = Math.abs(referenceDate.getTime() - date.getTime());
 			var SYNC_THRESHOLD = 500;
+
+			// Date logging
 			winston.debug("Delta Time: " + deltaTime);
+			winston.debug("Date: " + date);
+			
+			// Perform test
 			if(deltaTime > SYNC_THRESHOLD || Math.abs(lastDeltaTime - deltaTime) > SYNC_THRESHOLD) {
 				winston.error("Running GPS time out of sync!");
 				winston.info("Running GPS time out of sync!");
 				throw new Error("Running GPS time out of sync!");
 			}
-			winston.debug("Date: " + date);
 			lastTime = date;
 			deltaLastTime = deltaTime;
 
