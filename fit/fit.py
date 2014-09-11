@@ -291,9 +291,10 @@ def buildSplineTemplate(frames,args):
     return numpy.vstack((sgrid,resampled))
 
 class FrameProcessor(object):
-    def __init__(self,tabs,args):
+    def __init__(self,tabs,args,db):
         self.tabs = tabs
         self.args = args
+        self.db = db
         self.lastDirection = None
         self.nextLastOffset = None
         self.lastOffset = None
@@ -314,7 +315,12 @@ class FrameProcessor(object):
         if args.load_template is not None:
             if args.physical:
                 raise RuntimeError('Options --physical and --load-template cannot be combined')
-            templateData = numpy.transpose(numpy.loadtxt(args.load_template))
+            if args.load_template == "db":
+                # Load from database
+                templateData = self.db.loadTemplate()
+            else:
+                #load from file specified
+                templateData = numpy.transpose(numpy.loadtxt(args.load_template))
             self.template = scipy.interpolate.UnivariateSpline(templateData[0],templateData[1],k=3,s=0.)
         else:
             self.template = None
@@ -404,6 +410,63 @@ class FrameProcessor(object):
             self.fig.savefig('fit.png')
         numpy.savetxt('fit.dat',numpy.vstack([periods,swings]).T)
 
+class DB(object):
+    def __init__(self,args):
+        # Set fetch constants
+        self.ID              = u"_id"
+        self.RAW             = u"raw"
+        self.TIMESTAMP       = u"timestamp"
+        self.CRUDE_PERIOD    = u"crudePeriod"
+        self.TEMPLATE        = u"template"
+
+        self.args = args
+        # Connect to Mongod (fails and exits if mongod is not running)
+        self.client = MongoClient('localhost', args.mongo_port)
+        # Get db object
+        self.db = self.client[args.db_name]
+        # Get collection object
+        self.dataCollection = self.db[args.collection_name]
+        self.templateCollection = self.db[self.args.template_collection]
+
+    def loadData(self):
+        """
+        Loads IR data from the database into the expected numpy format
+        Crude Period
+        IR
+        IR...
+        """
+        # Perform Query
+        results = self.dataCollection.find({},{self.ID:False,self.TIMESTAMP:True, self.CRUDE_PERIOD:True, 
+            self.RAW:True}).sort(self.TIMESTAMP, DESCENDING).limit(self.args.fetch_limit)
+        # Construct numpy array
+        data = numpy.array([], dtype=numpy.uint16)
+        for document in results:
+            data = numpy.append(data,document[self.CRUDE_PERIOD])
+            data = numpy.append(data,document[self.RAW])
+            # Get last timestamp
+            timestamp = document[self.TIMESTAMP]
+        return (data,timestamp)
+
+    def saveTemplate(self,template,timestamp):
+        """
+        Saves a given template into the database
+        """
+        self.templateCollection.insert({self.TIMESTAMP:timestamp, self.TEMPLATE:template.T.tolist()})
+
+    def loadTemplate(self):
+        """
+        Loads a given template from the database
+        """
+        # Perform Query
+        results = self.templateCollection.find({},{self.ID:False,self.TIMESTAMP:True, 
+            self.TEMPLATE:True}).sort(self.TIMESTAMP, DESCENDING).limit(1)
+
+        data = []
+        for document in results:
+            for pair in document[self.TEMPLATE]:
+                data.append(pair)
+        return numpy.transpose(numpy.array(data))
+
 def main():
 
     # parse command-line args
@@ -417,6 +480,8 @@ def main():
         help = 'name of Mongo database to fetch from')
     parser.add_argument('--collection-name', type=str, default='datapacketmodels',
         help = 'name of Mongo collection to fetch from')
+    parser.add_argument('--template-collection', type = str, default = 'templatemodels',
+        help = 'database collection where spline template should be saved and loaded')
     parser.add_argument('--fetch-limit', type=int, default=100,
         help = 'how many documents to fetch from Mongo database')
     parser.add_argument('--mongo-port', type=int, default=27017,
@@ -454,32 +519,18 @@ def main():
     # define tab geometry
     tabs = numpy.array([[-15.,-5.],[0.,5.],[10.,15.]])
 
+    # initialize our database connection
+    db = DB(args)
+
     # initialize our frame processor
-    processor = FrameProcessor(tabs,args)
+    processor = FrameProcessor(tabs,args,db)
 
     # replay a pre-recorded data file if requested
     if args.replay or args.from_db:
         if args.from_db:
-            # load the input from given database
-            # Connect to Mongod (fails and exits if mongod is not running)
-            client = MongoClient('localhost', args.mongo_port)
-            # Get db object
-            db = client[args.db_name]
-            # Get collection object
-            collection = db[args.collection_name]
-            # Set fetch constants
-            ID              = u"_id"
-            RAW             = u"raw"
-            TIMESTAMP       = u"timestamp"
-            CRUDE_PERIOD    = u"crudePeriod"
-            # Perform Query
-            results = collection.find({},{ID:False,TIMESTAMP:True, CRUDE_PERIOD:True, RAW:True}).sort(TIMESTAMP, DESCENDING).limit(args.fetch_limit)
-            # Construct numpy array
-            data = numpy.array([], dtype=numpy.uint16)
-            for document in results:
-                data = numpy.append(data,document[CRUDE_PERIOD])
-                data = numpy.append(data,document[RAW])
-            numpy.savetxt("output.dat",data)
+            dataTuple = db.loadData()
+            data = dataTuple[0]
+            timestamp = dataTuple[1]
         elif args.replay:
             # load the input data file
             data = numpy.loadtxt(args.replay)
@@ -500,9 +551,15 @@ def main():
         frames = data[:nframe*(1+args.nsamples)].reshape((nframe,1+args.nsamples))
         if args.save_template:
             template = buildSplineTemplate(frames,args)
-            numpy.savetxt(args.save_template,template.T)
-            plt.plot(template[0],template[1])
-            plt.show()
+            if args.save_template == "db":
+                # Save to database as array of ordered pairs (arrays)
+                db.saveTemplate(template,timestamp)
+            else:
+                # Save to file
+                numpy.savetxt(args.save_template,template.T)
+            if args.show_plots:
+                plt.plot(template[0],template[1])
+                plt.show()
             return 0
         for i,frame in enumerate(frames):
             elapsed,samples = frame[0],frame[1:]

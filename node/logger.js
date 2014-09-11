@@ -35,13 +35,16 @@ var winston = new (winston_module.Logger)({
 	]
 });
 
+// Use database for templating
+var templateFile = "db";
+
 // Parses command-line arguments.
 var noSerial = false;
 var noDatabase = false;
 var debug = false;
 var debugLevel2 = false;
 var runningData = false;
-var pythonFlags = ["--load-template", "template2048.dat"];
+var pythonFlags = ["--load-template", templateFile];
 var service = false;
 process.argv.forEach(function(val,index,array) {
 	if(val == '--no-serial') noSerial = true;
@@ -59,6 +62,7 @@ process.argv.forEach(function(val,index,array) {
 
 // Start process with data pipes
 var fit = spawn("../fit/fit.py", pythonFlags, { cwd : "../fit", stdio : 'pipe'});
+fit.alive = true;
 // Send all output to node stdout (readable.pipe(writable))
 // fit.stdout.pipe(process.stdout);
 
@@ -67,19 +71,22 @@ var fit = spawn("../fit/fit.py", pythonFlags, { cwd : "../fit", stdio : 'pipe'})
 // Helper function added to the child process to manage shutdown.
 fit.onUnexpectedExit = function (code, signal) {
 	winston.error("Child process terminated with code: " + code);
-	process.exit(1);
+	// this.disconnect();
+	// process.exit(1);
 };
 fit.on("exit", fit.onUnexpectedExit);
 
 // A helper function to shut down the child.
 fit.shutdown = function () {
 	winston.info("Stopping Fit.py");
+	fit.alive = false;
 	// Get rid of the exit listener since this is a planned exit.
 	this.removeListener("exit", this.onUnexpectedExit);
 	this.kill("SIGTERM");
 };
 // The exit event shuts down the child.
 process.once("exit", function () {
+	winston.info("Logger Stopped");
 	fit.shutdown();
 });
 // This is a somewhat ugly approach, but it has the advantage of working
@@ -91,6 +98,7 @@ process.once("uncaughtException", function (error) {
 	// exception is going to do the sensible thing and call process.exit().
 	if (process.listeners("uncaughtException").length === 0) {
 		fit.shutdown();
+		winston.warn("Throwing error: ", error);
 		throw error;
 	}
 });
@@ -183,6 +191,59 @@ async.parallel({
 			fit.stdout.on('data', function(data){
 				storeRefinedPeriodAndAngle(data, config.db.dataPacketModel, averagerCollection);
 			});
+
+			// HUGE debounce time
+			var debounceTime = 2000;
+			var s = 0;
+			var templatePath = "../fit/"+templateFile;
+			// Can only watch a file that exists...
+			fs.exists(templatePath, function(exists){
+				if(!exists){
+					// Create an empty file
+					fs.openSync(templatePath, 'w');		// Synchronous
+					// fs.close(templatePath);				// Asynchronous
+				}
+				fs.watch(templatePath,{ persistent: true}, function(event,filename){
+					if(s === 0){
+						s = 1;
+						setTimeout(function(){
+							winston.info("File " + filename + " Changed by event " + event);
+							fit.shutdown();
+	
+							// Restart fit.py (is this the best thing to do?)
+							fit = spawn("../fit/fit.py", pythonFlags, { cwd : "../fit", stdio : 'pipe'});
+							fit.alive = true;
+							// fit.stdout.pipe(process.stdout);
+							// Thank you to https://www.exratione.com/2013/05/die-child-process-die/ for the following snippets
+							// Helper function added to the child process to manage shutdown.
+							fit.onUnexpectedExit = function (code, signal) {
+								winston.error("Child process terminated with code: " + code);
+								// process.exit(1);
+							};
+							fit.on("exit", fit.onUnexpectedExit);
+							
+							// A helper function to shut down the child.
+							fit.shutdown = function () {
+								winston.info("Stopping Fit.py");
+								fit.alive = false;
+								// Get rid of the exit listener since this is a planned exit.
+								this.removeListener("exit", this.onUnexpectedExit);
+								this.kill("SIGTERM");
+							};
+	
+							// Clear cache of dates being processed
+							datesBeingProcessed = [];
+	
+							// Handles incoming data packets from pipe to fit.py
+							fit.stdout.on('data', function(data){
+								storeRefinedPeriodAndAngle(data, config.db.dataPacketModel, averagerCollection);
+							});
+	
+							s = 0;
+						}, debounceTime);
+					}
+				});
+			});
 		}
 	}
 );
@@ -274,6 +335,13 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 
 			// Create date object
 			var date = new Date(lastTime.getTime() + timeSince);
+
+			// Date sanity check
+			var referenceDate = new Date();
+			if(Math.abs(referenceDate.getTime() + 16*1000 - date.getTime()) > 1000) {
+				winston.error("GPS running date out of sync!");
+				throw new Error("GPS running date out of sync!");
+			}
 			winston.debug("Date: " + date);
 			lastTime = date;
 
@@ -378,7 +446,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			// NB: the data packet layout is hardcoded here!
 			p = new dataPacketModel({
 				'timestamp': date,
-				'crudePeriod': crudePeriod,
+				'crudePeriod': ((sequenceNumber == 1) ? null : crudePeriod),
 				'refinedPeriod': null,
 				'angle': null,
 				'sequenceNumber': sequenceNumber,
@@ -389,10 +457,11 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 				'irLevel': irLevel,
 				'raw': raw
 			});
+			if(sequenceNumber == 1) p['initialCrudePeriod'] = crudePeriod;
 
 			averager.input({
 				'timestamp': date,
-				'crudePeriod': crudePeriod,
+				'crudePeriod': ((sequenceNumber == 1) ? null : crudePeriod),
 				'boardTemperature': boardTemperature,
 				'pressure': pressure,
 				'blockTemperature': ttherm,
@@ -426,11 +495,11 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 				// Push most recent date to the top of the FIFO stack
 				datesBeingProcessed.unshift(date);
 				// Write crude period to pipe
-				fit.stdin.write(samplesSince + '\n');
+				if(fit.alive) fit.stdin.write(samplesSince + '\n');
 
 				// Iterate through samples writing them to the fit pipe
 				for(var i = 0; i < 2048; i++){
-					fit.stdin.write(raw[i] + '\n');
+					if(fit.alive) fit.stdin.write(raw[i] + '\n');
 					if(runningData) fs.appendFileSync('runningData.dat', raw[i] + '\n');
 				}
 			}
@@ -455,7 +524,9 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel, averager) {
 	// Pop least recent date off FIFO stack
 	var storeDate = datesBeingProcessed.pop();
-	winston.info("Length :" + datesBeingProcessed.length, datesBeingProcessed);
+	if(datesBeingProcessed.length !== 0){
+		winston.warn("Length :" + datesBeingProcessed.length, datesBeingProcessed);
+	}
 
 	var period = Number(periodAndAngle.toString().split(" ")[0].toString());
 	var angle = Number(periodAndAngle.toString()
