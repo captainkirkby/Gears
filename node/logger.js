@@ -440,7 +440,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			// NB: the data packet layout is hardcoded here!
 			p = new dataPacketModel({
 				'timestamp': date,
-				'crudePeriod': crudePeriod,
+				'crudePeriod': ((lastDataSequenceNumber == 1) ? null : crudePeriod),
 				'refinedPeriod': null,
 				'angle': null,
 				'sequenceNumber': sequenceNumber,
@@ -451,10 +451,11 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 				'irLevel': irLevel,
 				'raw': raw
 			});
+			if(lastDataSequenceNumber == 1) p['initialCrudePeriod'] = crudePeriod;
 
 			averager.input({
 				'timestamp': date,
-				'crudePeriod': crudePeriod,
+				'crudePeriod': ((lastDataSequenceNumber == 1) ? null : crudePeriod),
 				'boardTemperature': boardTemperature,
 				'pressure': pressure,
 				'blockTemperature': ttherm,
