@@ -96,6 +96,7 @@ process.once("uncaughtException", function (error) {
 	// exception is going to do the sensible thing and call process.exit().
 	if (process.listeners("uncaughtException").length === 0) {
 		fit.shutdown();
+		winston.warn("Throwing error: ", error);
 		throw error;
 	}
 });
