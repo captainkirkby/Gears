@@ -332,6 +332,10 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 
 			// Create date object
 			var date = new Date(lastTime.getTime() + timeSince);
+
+			// Date sanity check
+			var referenceDate = new Date();
+			if(Math.abs(referenceDate.getTime() + 16*1000 - date.getTime()) > 1000) throw new Error("GPS running date out of sync!");
 			winston.debug("Date: " + date);
 			lastTime = date;
 
@@ -513,7 +517,9 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel, averager) {
 	// Pop least recent date off FIFO stack
 	var storeDate = datesBeingProcessed.pop();
-	winston.info("Length :" + datesBeingProcessed.length, datesBeingProcessed);
+	if(datesBeingProcessed.length !== 0){
+		winston.warn("Length :" + datesBeingProcessed.length, datesBeingProcessed);
+	}
 
 	var period = Number(periodAndAngle.toString().split(" ")[0].toString());
 	var angle = Number(periodAndAngle.toString()
