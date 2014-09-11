@@ -335,7 +335,10 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 
 			// Date sanity check
 			var referenceDate = new Date();
-			if(Math.abs(referenceDate.getTime() + 16*1000 - date.getTime()) > 1000) throw new Error("GPS running date out of sync!");
+			if(Math.abs(referenceDate.getTime() + 16*1000 - date.getTime()) > 1000) {
+				winston.error("GPS running date out of sync!");
+				throw new Error("GPS running date out of sync!");
+			}
 			winston.debug("Date: " + date);
 			lastTime = date;
 
