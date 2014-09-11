@@ -438,10 +438,9 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			var ttherm = 1.0/(0.000878844 + 0.000231913*logr + 7.70349e-8*logr*logr*logr) - 273.15;
 			// Prepares data packet for storing to the database.
 			// NB: the data packet layout is hardcoded here!
-			winston.debug("Crude Period : " + crudePeriod + " and sequence number: " + sequenceNumber);
 			p = new dataPacketModel({
 				'timestamp': date,
-				'crudePeriod': ((sequenceNumber === 0) ? null : crudePeriod),
+				'crudePeriod': ((sequenceNumber == 1) ? null : crudePeriod),
 				'refinedPeriod': null,
 				'angle': null,
 				'sequenceNumber': sequenceNumber,
@@ -452,11 +451,11 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 				'irLevel': irLevel,
 				'raw': raw
 			});
-			if(sequenceNumber === 0) p['initialCrudePeriod'] = crudePeriod;
+			if(sequenceNumber == 1) p['initialCrudePeriod'] = crudePeriod;
 
 			averager.input({
 				'timestamp': date,
-				'crudePeriod': ((sequenceNumber === 0) ? null : crudePeriod),
+				'crudePeriod': ((sequenceNumber == 1) ? null : crudePeriod),
 				'boardTemperature': boardTemperature,
 				'pressure': pressure,
 				'blockTemperature': ttherm,
