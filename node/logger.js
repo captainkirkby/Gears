@@ -17,8 +17,10 @@ var connectToDB = require('./dbConnection').connectToDB;
 // Tracks the last seen data packet sequence number to enable sequencing errors to be detected.
 var lastDataSequenceNumber = 0;
 
-// Track the time of the initial PPS and then the subsequent packets
+// Track the time of the initial PPS and then the subsequent packets and the delta
 var lastTime;
+var lastDeltaTime;
+
 
 // Maximum packet size : change this when you want to modify the number of samples
 var MAX_PACKET_SIZE = 2094;
@@ -277,7 +279,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			var d = new Date();
 			var predictedPPSTime = new Date(d.getTime()+utcOffset*1000);
 			winston.debug("Predicted PPS date: " + predictedPPSTime);
-			if(Math.abs(predictedPPSTime.getTime() - lastTime.getTime()) > 1000) throw new Error("GPS time is not correct!");
+			if(Math.abs(predictedPPSTime.getTime() - lastTime.getTime()) > 1000) throw new Error("Initial GPS time is not correct!");
 
 			// NB: the boot packet layout is hardcoded here!
 			hash = '';
@@ -338,12 +340,17 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 
 			// Date sanity check
 			var referenceDate = new Date();
-			if(Math.abs(referenceDate.getTime() + 16*1000 - date.getTime()) > 1000) {
-				winston.error("GPS running date out of sync!");
-				throw new Error("GPS running date out of sync!");
+			var deltaTime = Math.abs(referenceDate.getTime() - date.getTime());
+			var SYNC_THRESHOLD = 500;
+			if(deltaTime > SYNC_THRESHOLD || Math.abs(lastDeltaTime - deltaTime) > SYNC_THRESHOLD) {
+				winston.error("Running GPS time out of sync!");
+				winston.info("Running GPS time out of sync!");
+				throw new Error("Running GPS time out of sync!");
 			}
 			winston.debug("Date: " + date);
+			winston.debug("Delta Time: " + deltaTime);
 			lastTime = date;
+			deltaLastTime = deltaTime;
 
 			// Store last buffer entry
 			var lastReading = buf.readUInt8(initialReadOffsetWithPhase);
