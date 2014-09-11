@@ -35,7 +35,8 @@ var winston = new (winston_module.Logger)({
 	]
 });
 
-var templateFile = "template.dat";
+// Use database for templating
+var templateFile = "db";
 
 // Parses command-line arguments.
 var noSerial = false;
