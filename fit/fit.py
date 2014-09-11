@@ -428,6 +428,61 @@ class FrameProcessor(object):
             self.fig.savefig('fit.png')
         numpy.savetxt('fit.dat',numpy.vstack([periods,swings]).T)
 
+class DB(object):
+    def __init__(self,args):
+        # Set fetch constants
+        self.ID              = u"_id"
+        self.RAW             = u"raw"
+        self.TIMESTAMP       = u"timestamp"
+        self.CRUDE_PERIOD    = u"crudePeriod"
+        self.TEMPLATE        = u"template"
+
+        self.args = args
+        # Connect to Mongod (fails and exits if mongod is not running)
+        self.client = MongoClient('localhost', args.mongo_port)
+        # Get db object
+        self.db = self.client[args.db_name]
+        # Get collection object
+        self.collection = self.db[args.collection_name]
+
+    def loadData(self):
+        """
+        Loads IR data from the database into the expected numpy format
+        Crude Period
+        IR
+        IR...
+        """
+        # Perform Query
+        results = self.collection.find({},{self.ID:False,self.TIMESTAMP:True, self.CRUDE_PERIOD:True, 
+            self.RAW:True}).sort(self.TIMESTAMP, DESCENDING).limit(self.args.fetch_limit)
+        # Construct numpy array
+        data = numpy.array([], dtype=numpy.uint16)
+        for document in results:
+            data = numpy.append(data,document[self.CRUDE_PERIOD])
+            data = numpy.append(data,document[self.RAW])
+            # Get last timestamp
+            timestamp = document[self.TIMESTAMP]
+        return (data,timestamp)
+
+    def saveTemplate(self,template,timestamp):
+        """
+        Saves a given template into the database
+        """
+        self.db[self.args.template_collection].insert({self.TIMESTAMP:timestamp, u"template":template.T.tolist()})
+
+    def loadTemplate(self):
+        """
+        Loads a given template from the database
+        """
+        # Perform Query
+        results = self.collection.find({},{self.ID:False,self.TIMESTAMP:True, self.TEMPLATE:True}).sort(self.TIMESTAMP, DESCENDING).limit(1)
+
+        data = []
+        for document in results:
+            for pair in document[self.TEMPLATE]:
+                data.append(pair)
+        return numpy.transpose(numpy.array(data))
+
 def main():
 
     # parse command-line args
@@ -482,6 +537,9 @@ def main():
 
     # initialize our frame processor
     processor = FrameProcessor(tabs,args)
+
+    # initialize our database connection
+    db = DB(args)
 
     # replay a pre-recorded data file if requested
     if args.replay or args.from_db:
