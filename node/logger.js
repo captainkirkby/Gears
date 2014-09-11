@@ -346,6 +346,8 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			// Date logging
 			winston.debug("Delta Time: " + deltaTime);
 			winston.debug("Date: " + date);
+			winston.debug("Reference Date: " + referenceDate);
+
 
 			// Perform test
 			if(deltaTime > SYNC_THRESHOLD && Math.abs(lastDeltaTime - deltaTime) > SYNC_THRESHOLD) {
