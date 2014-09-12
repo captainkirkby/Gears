@@ -338,13 +338,32 @@ class FrameProcessor(object):
         timestamp
         """
         if self.args.load_template == "db":
-            # Load from database
-            templateTuple = self.db.loadTemplate()
-            templateData = templateTuple[0]
-            templateTimestamp = templateTuple[1]
-            if templateTimestamp != self.mostRecentTemplateTimestamp:
-                self.template = scipy.interpolate.UnivariateSpline(templateData[0],templateData[1],k=3,s=0.)
-                self.mostRecentTemplateTimestamp = templateTimestamp
+            # Try and create a template if one doesn't exist
+            if self.template is None:
+                # Try and create one
+                dataTuple = self.db.loadData()
+                data = dataTuple[0]
+                timestamp = dataTuple[1]
+                if len(data.shape) != 1:
+                    return
+                # loop over data frames
+                nframe = len(data)/(1+self.args.nsamples)
+                if(nframe < self.args.fetch_limit):
+                    return
+                if not (self.args.max_frames == 0 or nframe <= self.args.max_frames):
+                    nframe = self.args.max_frames
+                frames = data[:nframe*(1+self.args.nsamples)].reshape((nframe,1+self.args.nsamples))
+                template = buildSplineTemplate(frames,self.args)
+                # Save to database as array of ordered pairs (arrays)
+                self.db.saveTemplate(template,timestamp)
+            # Look for newer template from database
+            else:
+                templateTuple = self.db.loadTemplate()
+                templateData = templateTuple[0]
+                templateTimestamp = templateTuple[1]
+                if templateTimestamp != self.mostRecentTemplateTimestamp:
+                    self.template = scipy.interpolate.UnivariateSpline(templateData[0],templateData[1],k=3,s=0.)
+                    self.mostRecentTemplateTimestamp = templateTimestamp
 
 
 
