@@ -323,7 +323,11 @@ class FrameProcessor(object):
             else:
                 #load from file specified
                 templateData = numpy.transpose(numpy.loadtxt(self.args.load_template))
-            self.template = scipy.interpolate.UnivariateSpline(templateData[0],templateData[1],k=3,s=0.)
+            try:
+                self.template = scipy.interpolate.UnivariateSpline(templateData[0],templateData[1],k=3,s=0.)
+            except IndexError:
+                self.template = None
+                # Output zeroes
         else:
             self.template = None
 
@@ -354,6 +358,8 @@ class FrameProcessor(object):
         if len(samples) != self.args.nsamples:
             # Something is seriously wrong.
             return -2
+        if self.args.load_template and self.template is None:
+            return 0,0
         # always start with a quick fit
         direction,lo,hi,offset,rise,fall = quickFit(samples)
         if self.args.physical:
@@ -482,6 +488,7 @@ class DB(object):
             self.TEMPLATE:True}).sort(self.TIMESTAMP, DESCENDING).limit(1)
 
         data = []
+        templateTimestamp = None
         for document in results:
             templateTimestamp = document[self.TIMESTAMP]
             for pair in document[self.TEMPLATE]:
