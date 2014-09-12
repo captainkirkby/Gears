@@ -339,8 +339,7 @@ class FrameProcessor(object):
             templateData = templateTuple[0]
             templateTimestamp = templateTuple[1]
             if templateTimestamp != self.mostRecentTemplateTimestamp:
-                print "NewTemplate"
-                sys.stdout.flush()
+                sys.exit()
                 self.template = scipy.interpolate.UnivariateSpline(templateData[0],templateData[1],k=3,s=0.)
                 self.mostRecentTemplateTimestamp = templateTimestamp
 
