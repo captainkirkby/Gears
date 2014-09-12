@@ -357,13 +357,12 @@ class FrameProcessor(object):
                 # Save to database as array of ordered pairs (arrays)
                 self.db.saveTemplate(template,timestamp)
             # Look for newer template from database
-            else:
-                templateTuple = self.db.loadTemplate()
-                templateData = templateTuple[0]
-                templateTimestamp = templateTuple[1]
-                if templateTimestamp != self.mostRecentTemplateTimestamp:
-                    self.template = scipy.interpolate.UnivariateSpline(templateData[0],templateData[1],k=3,s=0.)
-                    self.mostRecentTemplateTimestamp = templateTimestamp
+            templateTuple = self.db.loadTemplate()
+            templateData = templateTuple[0]
+            templateTimestamp = templateTuple[1]
+            if templateTimestamp != self.mostRecentTemplateTimestamp:
+                self.template = scipy.interpolate.UnivariateSpline(templateData[0],templateData[1],k=3,s=0.)
+                self.mostRecentTemplateTimestamp = templateTimestamp
 
 
 
