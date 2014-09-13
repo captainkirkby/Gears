@@ -44,7 +44,7 @@ var noDatabase = false;
 var debug = false;
 var debugLevel2 = false;
 var runningData = false;
-var pythonFlags = ["--load-template", templateFile];
+var pythonFlags = ["--load-template", templateFile, "--db-name", "Empty"];
 var service = false;
 process.argv.forEach(function(val,index,array) {
 	if(val == '--no-serial') noSerial = true;
