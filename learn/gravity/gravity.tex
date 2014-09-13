@@ -1,0 +1,107 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath}
+\usepackage{graphicx}
+
+\providecommand{\eqn}[1]{eqn.~(\ref{eqn:#1})}
+\providecommand{\tab}[1]{Table~\ref{tab:#1}}
+\providecommand{\fig}[1]{Figure~\ref{fig:#1}}
+
+\providecommand{\vecsymbol}[1]{\ensuremath{\boldsymbol{#1}}}
+\providecommand{\rv}{\vecsymbol{r}}
+\providecommand{\Rv}{\vecsymbol{R}}
+\providecommand{\vv}{\vecsymbol{v}}
+\providecommand{\Vv}{\vecsymbol{V}}
+\providecommand{\mv}{\hat{\vecsymbol{m}}}
+\providecommand{\nv}{\hat{\vecsymbol{n}}}
+\providecommand{\thdot}{\dot{\theta}}
+
+\title{Gravitational Effects on a Simple Pendulum}
+\author{D. Kirkby and D. Kirkby}
+\begin{document}
+
+\maketitle
+
+\section{Formalism}
+
+Consider a simple pendulum of fixed length $l$ whose pivot point $\Rv$ is in motion so that the suspended mass $m$ has a position $\rv$ given by
+\begin{equation}
+\rv(t,\theta) = \Rv(t) + l (\sin\theta \mv + \cos\theta \nv)
+\end{equation}
+where $\theta$ describes the motion in the plane specified by the unit vectors $\mv$ (``horizontal'') and $\nv$ (``down''). Next, assume that the unit vectors used to define the coordinate $\theta$ are changing with time while maintaining orthonormality $\mv(t)\cdot\mv(t) = 1$, $\nv(t)\cdot\nv(t) = 1$, and $\mv\cdot\nv = 0$, then
+\begin{equation}
+\rv(t,\theta) = \Rv(t) + l (\sin\theta \mv(t) + \cos\theta \nv(t)) \; .
+\end{equation}
+We now have a system described by a single generalized coordinate $\theta$ that is constrained by the fixed pendulum length,
+\begin{equation}
+\left| \rv(t,\theta) - \Rv(t) \right| = l \; ,
+\end{equation}
+and so that rotation occurs only in the plane defined by $\mv(t)$ and $\nv(t)$. Note that this last constraint is not usually included when analyzing the simple pendulum but is imposed by the leaf spring suspension in a real pendulum clock. Without this constraint, the pendulum plane would rotate (relative to an earth-based reference frame) as is observed with a Foucault pendulum.
+
+The suspended mass has a velocity
+\begin{equation}
+\vv(t,\theta,\thdot) = \Vv(t) + l\thdot \left[ \cos\theta\,\mv(t) - \sin\theta\,\nv(t) \right]
++ l \left[ \sin\theta\,\dot{\mv}(t) + \cos\theta\,\dot{\nv}(t) \right]
+\end{equation}
+where
+\begin{equation}
+\Vv(t) \equiv \frac{d}{dt}\Rv(t)
+\end{equation}
+and dots denote time derivatives. The corresponding kinetic energy is
+\begin{equation}
+\begin{split}
+T &= \frac{1}{2} m \left( \vv(t)\cdot \vv(t) \right) \\
+&= \frac{1}{2} m \left\{ (\Vv(t)\cdot\Vv(t)) + l^2\thdot^2 + 2l^2\thdot (\mv\cdot\dot{\nv}) \right. \\
+&\qquad + l^2 \left[\sin^2\theta (\dot{\mv}\cdot\dot{\mv}) + \cos^2\theta (\dot{\nv}\cdot\dot{\nv}) +
+2 \sin\theta\cos\theta (\dot{\mv}\cdot\dot{\nv}) \right] \\
+&\qquad \left. +2 l\,\Vv(t)\cdot\left[ \cos\theta\,(\thdot \mv+\dot{\mv}) -
+\sin\theta\,(\thdot \nv+\dot{\nv})\right] \right\} \; , \\ 
+\end{split}
+\end{equation}
+where we have invoked the orthonormality conditions to simplify this result using
+\begin{equation}
+\mv\cdot\dot{\mv} = \nv\cdot\dot{\nv} = 0 \quad , \quad
+\mv\cdot\dot{\nv} + \dot{\mv}\cdot\mv = 0 \; .
+\end{equation}
+We also suppress the explicit time dependences of $\mv$, $\nv$, $\dot{\mv}$, $\dot{\nv}$ for notational brevity.
+
+The gravitational potential energy of the suspended mass is given by
+\begin{equation}
+V = G m \sum_i \frac{M_i}{\left| \Rv_i(t) - \rv(t) \right|}
+\end{equation}
+where the sum is over the astronomical bodies (earth, moon, sun) contributing to the potential with masses $M_i$ and center-of-mass positions $\Rv_i(t)$. Note that the potential does not depend on $\thdot$.
+
+The pendulum equation of motion is now given by
+\begin{equation}
+\frac{d}{dt} \left( \frac{\partial L}{\partial \thdot} \right) =
+\frac{\partial L}{\partial \theta} \; ,
+\end{equation}
+with the Lagrangian $L \equiv T - V$. The relevant partial derivatives are
+\begin{equation}
+\begin{split}
+\frac{\partial L}{\partial \thdot}
+&= \frac{\partial T}{\partial \thdot} \\
+&= m \left\{ l^2\thdot  + l^2 (\mv\cdot\dot{\nv})
++ l\,\Vv(t)\cdot\left[ \cos\theta\,\mv - \sin\theta\,\nv\right] \right\}
+\end{split}
+\end{equation}
+and
+\begin{equation}
+\frac{\partial L}{\partial \theta} = \frac{\partial T}{\partial \theta} - \frac{\partial V}{\partial \theta}
+\end{equation}
+with
+\begin{equation}
+\begin{split}
+\frac{\partial T}{\partial \theta} &= \frac{m}{2} \left\{
+l^2 \left[ \sin 2\theta \left( \dot{\mv}\cdot\dot{\mv} - \dot{\nv}\cdot\dot{\nv}\right) +
+\cos 2\theta \left(\dot{\mv}\cdot\dot{\nv}\right) \right] \right. \\
+&\qquad \left. -2 l\,\Vv(t)\cdot\left[ \sin\theta\,(\thdot \mv+\dot{\mv}) +
+\cos\theta\,(\thdot \nv+\dot{\nv})\right]
+\right\}
+\end{split}
+\end{equation}
+and
+\begin{equation}
+\frac{\partial V}{\partial \theta} = \ldots
+\end{equation}
+
+\end{document}
