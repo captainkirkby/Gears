@@ -14,6 +14,7 @@
 \providecommand{\mv}{\hat{\vecsymbol{m}}}
 \providecommand{\nv}{\hat{\vecsymbol{n}}}
 \providecommand{\thdot}{\dot{\theta}}
+\providecommand{\thddot}{\ddot{\theta}}
 
 \title{Gravitational Effects on a Simple Pendulum}
 \author{D. Kirkby and D. Kirkby}
@@ -49,7 +50,7 @@ where
 and dots denote time derivatives. The corresponding kinetic energy is
 \begin{equation}
 \begin{split}
-T &= \frac{1}{2} m \left( \vv(t)\cdot \vv(t) \right) \\
+T(t,\theta,\thdot) &= \frac{1}{2} m \left( \vv(t)\cdot \vv(t) \right) \\
 &= \frac{1}{2} m \left\{ (\Vv(t)\cdot\Vv(t)) + l^2\thdot^2 + 2l^2\thdot (\mv\cdot\dot{\nv}) \right. \\
 &\qquad + l^2 \left[\sin^2\theta (\dot{\mv}\cdot\dot{\mv}) + \cos^2\theta (\dot{\nv}\cdot\dot{\nv}) +
 2 \sin\theta\cos\theta (\dot{\mv}\cdot\dot{\nv}) \right] \\
@@ -66,9 +67,22 @@ We also suppress the explicit time dependences of $\mv$, $\nv$, $\dot{\mv}$, $\d
 
 The gravitational potential energy of the suspended mass is given by
 \begin{equation}
-V = G m \sum_i \frac{M_i}{\left| \Rv_i(t) - \rv(t) \right|}
+\begin{split}
+V(t,\theta) &= \sum_i \frac{G m M_i}{\left| \Rv_i(t) - \rv(t) \right|} \\
+&= \sum_i \frac{G m M_i}{\left|\Delta\Rv_i(t)\right|} \left[
+1 + \frac{l^2 - 2 l \Delta\Rv_i(t)\cdot(\sin\theta \mv + \cos\theta \nv)}{\left|\Delta\Rv_i(t)\right|^2}
+\right]^{-1/2} \; ,
+\end{split}
 \end{equation}
-where the sum is over the astronomical bodies (earth, moon, sun) contributing to the potential with masses $M_i$ and center-of-mass positions $\Rv_i(t)$. Note that the potential does not depend on $\thdot$.
+with
+\begin{equation}
+\Delta\Rv_i(t) \equiv \Rv_i(t)-\Rv(t) \; ,
+\end{equation}
+and where $G$ is Newton's constant and the sum is over the astronomical bodies (earth, moon, sun) contributing to the potential with masses $M_i$ and center-of-mass positions $\Rv_i(t)$. Note that the potential does not depend on $\thdot$. Expanding to first order in $l/|\Delta\Rv_i(t)|$, we find
+\begin{equation}
+V(t,\theta) \simeq \sum_i \frac{G m M_i}{\left|\Delta\Rv_i(t)\right|} \left[1 +
+\frac{l \Delta\Rv_i(t)\cdot(\sin\theta \mv + \cos\theta \nv)}{\left|\Delta\Rv_i(t)\right|^2}\right] \; .
+\end{equation}
 
 The pendulum equation of motion is now given by
 \begin{equation}
@@ -81,7 +95,7 @@ with the Lagrangian $L \equiv T - V$. The relevant partial derivatives are
 \frac{\partial L}{\partial \thdot}
 &= \frac{\partial T}{\partial \thdot} \\
 &= m \left\{ l^2\thdot  + l^2 (\mv\cdot\dot{\nv})
-+ l\,\Vv(t)\cdot\left[ \cos\theta\,\mv - \sin\theta\,\nv\right] \right\}
++ l\,\Vv(t)\cdot\left( \cos\theta\,\mv - \sin\theta\,\nv\right) \right\}
 \end{split}
 \end{equation}
 and
@@ -101,7 +115,19 @@ l^2 \left[ \sin 2\theta \left( \dot{\mv}\cdot\dot{\mv} - \dot{\nv}\cdot\dot{\nv}
 \end{equation}
 and
 \begin{equation}
-\frac{\partial V}{\partial \theta} = \ldots
+\frac{\partial V}{\partial \theta} = G m 
+\sum_i \frac{M_i}{\left|\Delta\Rv_i(t)\right|^3} \,l \Delta\Rv_i(t)\cdot(\cos\theta\, \mv - \sin\theta\, \nv) \; .
 \end{equation}
+Putting the pieces together and dividing through by $m l$, we find
+\begin{multline}
+l\thddot + l(\mv\cdot\ddot{\nv} + \dot{\mv}\cdot\dot{\nv}) +
+\dot{\Vv}(t)\cdot\left(\cos\theta \mv - \sin\theta \nv\right) \\
+- \Vv(t)\cdot \left[ \sin\theta\, (\thdot\mv+\dot{\nv}) + \cos\theta\, (\thdot\nv - \dot{\mv}) \right] =\\
+\frac{l}{2} \left[ \sin 2\theta \left( \dot{\mv}\cdot\dot{\mv} - \dot{\nv}\cdot\dot{\nv}\right) +
+\cos 2\theta \left(\dot{\mv}\cdot\dot{\nv}\right) \right]\\
+-\Vv(t)\cdot\left[ \sin\theta\,(\thdot \mv+\dot{\mv}) +
+\cos\theta\,(\thdot \nv+\dot{\nv})\right]\\
+-G \sum_i \frac{M_i}{\left|\Delta\Rv_i(t)\right|^3} \Delta\Rv_i(t)\cdot(\cos\theta\, \mv - \sin\theta\, \nv) \; .
+\end{multline}
 
 \end{document}
