@@ -53,6 +53,7 @@ var connectToDB = function (callback) {
 		// Defines the schema and model for the running averages
 		var averageDataSchema = mongoose.Schema({
 			timestamp: { type: Date, index: true },
+			initialCrudePeriod: Number,
 			crudePeriod: Number,
 			refinedPeriod: Number,
 			angle: Number,
