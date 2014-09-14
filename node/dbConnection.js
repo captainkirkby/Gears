@@ -5,7 +5,7 @@ var mongoose = require('mongoose');
 // Intended for use by the parallel function of the async package
 var connectToDB = function (callback) {
 	//if(noDatabase) return callback(null,null);
-	mongoose.connect('mongodb://localhost:27017/Empty');
+	mongoose.connect('mongodb://localhost:27017/TickTock');
 	var db = mongoose.connection;
 	db.on('error', function(){callback(new Error("Could not connect to Database.  Make sure mongod is running."))});
 	db.once('open', function() {
