@@ -259,7 +259,8 @@ def buildSplineTemplate(frames,args):
     # calculate the mean positions of each edge relative to the fiducial
     rise = numpy.mean(risevec,axis=0)
     fall = numpy.mean(fallvec,axis=0)
-    print 'rise/fall',rise,fall
+    if args.verbose:
+        print 'rise/fall',rise,fall
     # Estimate the stretch factors that map the time between the outer edges to ds = 2
     stretch = (risevec[:,-1] - fallvec[:,0])/2.
     # initialize a vector of ADC sample counts
