@@ -472,17 +472,23 @@ function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel, averager) {
 	// Pop least recent date off FIFO stack
 	var storeDate = datesBeingProcessed.pop();
 	if(datesBeingProcessed.length !== 0){
-		winston.warn("Length :" + datesBeingProcessed.length, datesBeingProcessed);
+		winston.warn("Length :" + datesBeingProcessed.length);
 	}
 
+	var bad = false;
 	var period = Number(periodAndAngle.toString().split(" ")[0].toString());
 	var angle = Number(periodAndAngle.toString()
 		.split(" ")[1].toString());
 	if(period <= 0 || isNaN(period)){
-		winston.warn("Bad Period : " + period);
-		return;
-	} else if(angle <= 0 || isNaN(angle)){
-		winston.warn("Bad Angle : " + angle);
+		winston.warn("Bad Period: " + period);
+		bad = true;
+	}
+	if(angle <= 0 || isNaN(angle)){
+		winston.warn("Bad Angle: " + angle);
+		bad = true;
+	}
+	if(bad){
+		winston.debug("Raw: " + periodAndAngle);
 		return;
 	}
 	winston.verbose(period);
