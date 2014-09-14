@@ -475,28 +475,31 @@ function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel, averager) {
 		winston.warn("Length :" + datesBeingProcessed.length);
 	}
 
-	var bad = false;
+	var badPeriod,badAngle = false;
+	var data = {};
 	var period = Number(periodAndAngle.toString().split(" ")[0].toString());
 	var angle = Number(periodAndAngle.toString()
 		.split(" ")[1].toString());
 	if(period <= 0 || isNaN(period)){
 		winston.warn("Bad Period: " + period);
-		bad = true;
+		badPeriod = true;
+	} else {
+		winston.verbose("Period: " + period);
+		data["refinedPeriod"] = period;
 	}
 	if(angle <= 0 || isNaN(angle)){
 		winston.warn("Bad Angle: " + angle);
-		bad = true;
+		badAngle = true;
+	} else {
+		winston.verbose("Angle: " + angle);
+		data["angle"] = angle;
 	}
-	if(bad){
-		winston.debug("Raw: " + periodAndAngle);
-		return;
-	}
-	winston.verbose(period);
+	// if(badPeriod && badAngle) return;
 	// winston.info(storeDate);
 	// winston.info(dataPacketModel);
 
 	var conditions	= { timestamp : storeDate };
-	var update		= { $set : { refinedPeriod : period , angle : angle}};
+	var update		= { $set : data};
 	var options		= { multi : false };
 
 	dataPacketModel.update(conditions, update, options, function(err, numberAffected){
@@ -504,10 +507,11 @@ function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel, averager) {
 		// winston.info("Update of " + numberAffected + " Documents Successful!")
 	});
 
+	// Extend object
+	var averageData = {
+		'timestamp': storeDate
+	};
+	for (var attrname in data) { averageData[attrname] = data[attrname]; }
 	// Note: because averager does not wait on these fields to save to the database, the average values will be OFFSET!
-	averager.input({
-		'timestamp': storeDate,
-		'refinedPeriod': period,
-		'angle': angle,
-	});
+	averager.input(averageData);
 }
