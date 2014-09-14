@@ -191,59 +191,6 @@ async.parallel({
 			fit.stdout.on('data', function(data){
 				storeRefinedPeriodAndAngle(data, config.db.dataPacketModel, averagerCollection);
 			});
-
-			// HUGE debounce time
-			var debounceTime = 2000;
-			var s = 0;
-			var templatePath = "../fit/"+templateFile;
-			// Can only watch a file that exists...
-			fs.exists(templatePath, function(exists){
-				if(!exists){
-					// Create an empty file
-					fs.openSync(templatePath, 'w');		// Synchronous
-					// fs.close(templatePath);				// Asynchronous
-				}
-				fs.watch(templatePath,{ persistent: true}, function(event,filename){
-					if(s === 0){
-						s = 1;
-						setTimeout(function(){
-							winston.info("File " + filename + " Changed by event " + event);
-							fit.shutdown();
-	
-							// Restart fit.py (is this the best thing to do?)
-							fit = spawn("../fit/fit.py", pythonFlags, { cwd : "../fit", stdio : 'pipe'});
-							fit.alive = true;
-							// fit.stdout.pipe(process.stdout);
-							// Thank you to https://www.exratione.com/2013/05/die-child-process-die/ for the following snippets
-							// Helper function added to the child process to manage shutdown.
-							fit.onUnexpectedExit = function (code, signal) {
-								winston.error("Child process terminated with code: " + code);
-								// process.exit(1);
-							};
-							fit.on("exit", fit.onUnexpectedExit);
-							
-							// A helper function to shut down the child.
-							fit.shutdown = function () {
-								winston.info("Stopping Fit.py");
-								fit.alive = false;
-								// Get rid of the exit listener since this is a planned exit.
-								this.removeListener("exit", this.onUnexpectedExit);
-								this.kill("SIGTERM");
-							};
-	
-							// Clear cache of dates being processed
-							datesBeingProcessed = [];
-	
-							// Handles incoming data packets from pipe to fit.py
-							fit.stdout.on('data', function(data){
-								storeRefinedPeriodAndAngle(data, config.db.dataPacketModel, averagerCollection);
-							});
-	
-							s = 0;
-						}, debounceTime);
-					}
-				});
-			});
 		}
 	}
 );
@@ -444,11 +391,8 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			var ttherm = 1.0/(0.000878844 + 0.000231913*logr + 7.70349e-8*logr*logr*logr) - 273.15;
 			// Prepares data packet for storing to the database.
 			// NB: the data packet layout is hardcoded here!
-			p = new dataPacketModel({
+			dataPacketData = {
 				'timestamp': date,
-				'crudePeriod': ((sequenceNumber == 1) ? null : crudePeriod),
-				'refinedPeriod': null,
-				'angle': null,
 				'sequenceNumber': sequenceNumber,
 				'boardTemperature': boardTemperature,
 				'pressure': pressure,
@@ -456,8 +400,13 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 				'humidity': humidity,
 				'irLevel': irLevel,
 				'raw': raw
-			});
-			if(sequenceNumber == 1) p['initialCrudePeriod'] = crudePeriod;
+			};
+			if(sequenceNumber == 1) {
+				dataPacketData['initialCrudePeriod'] = crudePeriod;
+			} else {
+				dataPacketData['crudePeriod'] = crudePeriod;
+			}
+			p = new dataPacketModel(dataPacketData);
 
 			averager.input({
 				'timestamp': date,
@@ -525,25 +474,34 @@ function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel, averager) {
 	// Pop least recent date off FIFO stack
 	var storeDate = datesBeingProcessed.pop();
 	if(datesBeingProcessed.length !== 0){
-		winston.warn("Length :" + datesBeingProcessed.length, datesBeingProcessed);
+		winston.warn("Length :" + datesBeingProcessed.length);
 	}
 
+	var badPeriod,badAngle = false;
+	var data = {};
 	var period = Number(periodAndAngle.toString().split(" ")[0].toString());
 	var angle = Number(periodAndAngle.toString()
 		.split(" ")[1].toString());
 	if(period <= 0 || isNaN(period)){
-		winston.warn("Bad Period : " + period);
-		return;
-	} else if(angle <= 0 || isNaN(angle)){
-		winston.warn("Bad Angle : " + angle);
-		return;
+		winston.warn("Bad Period: " + period);
+		badPeriod = true;
+	} else {
+		winston.verbose("Period: " + period);
+		data["refinedPeriod"] = period;
 	}
-	winston.verbose(period);
+	if(angle <= 0 || isNaN(angle)){
+		winston.warn("Bad Angle: " + angle);
+		badAngle = true;
+	} else {
+		winston.verbose("Angle: " + angle);
+		data["angle"] = angle;
+	}
+	// if(badPeriod && badAngle) return;
 	// winston.info(storeDate);
 	// winston.info(dataPacketModel);
 
 	var conditions	= { timestamp : storeDate };
-	var update		= { $set : { refinedPeriod : period , angle : angle}};
+	var update		= { $set : data};
 	var options		= { multi : false };
 
 	dataPacketModel.update(conditions, update, options, function(err, numberAffected){
@@ -551,10 +509,11 @@ function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel, averager) {
 		// winston.info("Update of " + numberAffected + " Documents Successful!")
 	});
 
+	// Extend object
+	var averageData = {
+		'timestamp': storeDate
+	};
+	for (var attrname in data) { averageData[attrname] = data[attrname]; }
 	// Note: because averager does not wait on these fields to save to the database, the average values will be OFFSET!
-	averager.input({
-		'timestamp': storeDate,
-		'refinedPeriod': period,
-		'angle': angle,
-	});
+	averager.input(averageData);
 }
