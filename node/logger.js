@@ -391,11 +391,10 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			var ttherm = 1.0/(0.000878844 + 0.000231913*logr + 7.70349e-8*logr*logr*logr) - 273.15;
 			// Prepares data packet for storing to the database.
 			// NB: the data packet layout is hardcoded here!
-			p = new dataPacketModel({
+			dataPacketData = {
 				'timestamp': date,
-				'crudePeriod': ((sequenceNumber == 1) ? null : crudePeriod),
-				'refinedPeriod': null,
-				'angle': null,
+				'refinedPeriod':null,
+				'angle':null,
 				'sequenceNumber': sequenceNumber,
 				'boardTemperature': boardTemperature,
 				'pressure': pressure,
@@ -403,8 +402,13 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 				'humidity': humidity,
 				'irLevel': irLevel,
 				'raw': raw
-			});
-			if(sequenceNumber == 1) p['initialCrudePeriod'] = crudePeriod;
+			};
+			if(sequenceNumber == 1) {
+				dataPacketData['initialCrudePeriod'] = crudePeriod;
+			} else {
+				dataPacketData['crudePeriod'] = crudePeriod;
+			}
+			p = new dataPacketModel(dataPacketData);
 
 			averager.input({
 				'timestamp': date,
