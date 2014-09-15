@@ -259,7 +259,8 @@ def buildSplineTemplate(frames,args):
     # calculate the mean positions of each edge relative to the fiducial
     rise = numpy.mean(risevec,axis=0)
     fall = numpy.mean(fallvec,axis=0)
-    print 'rise/fall',rise,fall
+    if args.verbose:
+        print 'rise/fall',rise,fall
     # Estimate the stretch factors that map the time between the outer edges to ds = 2
     stretch = (risevec[:,-1] - fallvec[:,0])/2.
     # initialize a vector of ADC sample counts
@@ -306,24 +307,65 @@ class FrameProcessor(object):
         self.periods = [ ]
         self.swings = [ ]
         # initialize plot display if requested
-        if args.show_plots:
+        if self.args.show_plots:
             self.fig = plt.figure(figsize=(12,12))
             plt.ion()
             plt.show()
-            self.plotx = numpy.arange(args.nsamples)
+            self.plotx = numpy.arange(self.args.nsamples)
         # load template if requested
-        if args.load_template is not None:
-            if args.physical:
+        if self.args.load_template is not None:
+            if self.args.physical:
                 raise RuntimeError('Options --physical and --load-template cannot be combined')
-            if args.load_template == "db":
+            if self.args.load_template == "db":
                 # Load from database
-                templateData = self.db.loadTemplate()
+                templateTuple = self.db.loadTemplate()
+                templateData = templateTuple[0]
+                self.mostRecentTemplateTimestamp = templateTuple[1]
             else:
                 #load from file specified
-                templateData = numpy.transpose(numpy.loadtxt(args.load_template))
-            self.template = scipy.interpolate.UnivariateSpline(templateData[0],templateData[1],k=3,s=0.)
+                templateData = numpy.transpose(numpy.loadtxt(self.args.load_template))
+            try:
+                self.template = scipy.interpolate.UnivariateSpline(templateData[0],templateData[1],k=3,s=0.)
+            except IndexError:
+                self.template = None
+                # Output zeroes
         else:
             self.template = None
+
+    def updateTemplate(self):
+        """
+        Checks the database for a newer version of the template.  If one exists, replace
+        self.template with it and replace self.mostRecentTemplateTimestamp with its
+        timestamp
+        """
+        if self.args.load_template == "db":
+            # Try and create a template if one doesn't exist
+            if self.template is None:
+                # Try and create one
+                dataTuple = self.db.loadData()
+                data = dataTuple[0]
+                timestamp = dataTuple[1]
+                if len(data.shape) != 1:
+                    return
+                # loop over data frames
+                nframe = len(data)/(1+self.args.nsamples)
+                if(nframe < self.args.fetch_limit):
+                    return
+                if not (self.args.max_frames == 0 or nframe <= self.args.max_frames):
+                    nframe = self.args.max_frames
+                frames = data[:nframe*(1+self.args.nsamples)].reshape((nframe,1+self.args.nsamples))
+                template = buildSplineTemplate(frames,self.args)
+                # Save to database as array of ordered pairs (arrays)
+                self.db.saveTemplate(template,timestamp)
+            # Look for newer template from database
+            templateTuple = self.db.loadTemplate()
+            templateData = templateTuple[0]
+            templateTimestamp = templateTuple[1]
+            if templateTimestamp != self.mostRecentTemplateTimestamp:
+                self.template = scipy.interpolate.UnivariateSpline(templateData[0],templateData[1],k=3,s=0.)
+                self.mostRecentTemplateTimestamp = templateTimestamp
+
+
 
     def process(self,elapsed,samples):
         """
@@ -335,6 +377,8 @@ class FrameProcessor(object):
         if len(samples) != self.args.nsamples:
             # Something is seriously wrong.
             return -2
+        if self.args.load_template and self.template is None:
+            return 0,0
         # always start with a quick fit
         direction,lo,hi,offset,rise,fall = quickFit(samples)
         if self.args.physical:
@@ -434,6 +478,7 @@ class DB(object):
         Crude Period
         IR
         IR...
+        Returns the tuple (data,timestamp)
         """
         # Perform Query
         results = self.dataCollection.find({},{self.ID:False,self.TIMESTAMP:True, self.CRUDE_PERIOD:True, 
@@ -455,17 +500,19 @@ class DB(object):
 
     def loadTemplate(self):
         """
-        Loads a given template from the database
+        Loads a given template from the database, returns the tuple (template,timestamp)
         """
         # Perform Query
         results = self.templateCollection.find({},{self.ID:False,self.TIMESTAMP:True, 
             self.TEMPLATE:True}).sort(self.TIMESTAMP, DESCENDING).limit(1)
 
         data = []
+        templateTimestamp = None
         for document in results:
+            templateTimestamp = document[self.TIMESTAMP]
             for pair in document[self.TEMPLATE]:
                 data.append(pair)
-        return numpy.transpose(numpy.array(data))
+        return (numpy.transpose(numpy.array(data)),templateTimestamp)
 
 def main():
 
@@ -566,6 +613,8 @@ def main():
             try:
                 period,swing = processor.process(elapsed,samples)
                 print 'Period = %f secs, swing = %f (%d/%d)' % (period,swing,i,nframe)
+                # check for more recent template
+                processor.updateTemplate()
             except RuntimeError,e:
                 print str(e)
             if not args.batch_replay:
@@ -593,6 +642,8 @@ def main():
                         # send the calculated period to our STDOUT and flush the buffer!
                         print period,swing
                         sys.stdout.flush()
+                        # check for more recent template
+                        processor.updateTemplate()
             except Exception,e:
                 # Try to keep going silently after any error
                 pass

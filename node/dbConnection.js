@@ -32,6 +32,7 @@ var connectToDB = function (callback) {
 		var dataPacketSchema = mongoose.Schema({
 			timestamp: { type: Date, index: true },
 			crudePeriod: Number,
+			initialCrudePeriod: Number,
 			refinedPeriod: Number,
 			angle: Number,
 			sequenceNumber: Number,
