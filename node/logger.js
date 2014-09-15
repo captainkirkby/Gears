@@ -224,7 +224,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			winston.debug("PPS Time: " + lastTime);
 
 			computerTimestamp = new Date();
-			var predictedPPSTime = new Date(d.getTime()+utcOffset*1000);
+			var predictedPPSTime = new Date(computerTimestamp.getTime()+utcOffset*1000);
 			winston.debug("Predicted PPS date: " + predictedPPSTime);
 			if(Math.abs(predictedPPSTime.getTime() - lastTime.getTime()) > 1000) throw new Error("Initial GPS time is not correct!");
 
