@@ -21,7 +21,6 @@ var lastDataSequenceNumber = 0;
 var lastTime;
 var lastDeltaTime;
 
-
 // Maximum packet size : change this when you want to modify the number of samples
 var MAX_PACKET_SIZE = 2094;
 
@@ -223,7 +222,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			lastTime = new Date(GPS_EPOCH_IN_MS + weekNumber*MS_PER_WEEK + Math.floor(timeOfWeek)*1000);	// Truncate decimal to trim miliseconds
 			winston.debug("PPS Time: " + lastTime);
 
-			var d = new Date();
+			var computerTimestamp = new Date();
 			var predictedPPSTime = new Date(d.getTime()+utcOffset*1000);
 			winston.debug("Predicted PPS date: " + predictedPPSTime);
 			if(Math.abs(predictedPPSTime.getTime() - lastTime.getTime()) > 1000) throw new Error("Initial GPS time is not correct!");
@@ -233,6 +232,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			for(var offset = 11; offset < 31; offset++) hash += sprintf("%02x",buf.readUInt8(offset));
 			p = new bootPacketModel({
 				'timestamp': timestamp,
+				'computerTimestamp': computerTimestamp,
 				'serialNumber': sprintf("%08x",buf.readUInt32LE(0)),
 				'bmpSensorOk': buf.readUInt8(4),
 				'gpsSerialOk': buf.readUInt8(5),
@@ -287,6 +287,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 
 			// Date sanity check
 			var referenceDate = new Date();
+			var computerTimestamp = referenceDate
 			referenceDate = new Date(referenceDate.getTime() + 16*1000);
 			var deltaTime = Math.abs(referenceDate.getTime() - date.getTime());
 			var SYNC_THRESHOLD = 500;
@@ -407,6 +408,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			// NB: the data packet layout is hardcoded here!
 			dataPacketData = {
 				'timestamp': date,
+				'computerTimestamp': computerTimestamp,
 				'sequenceNumber': sequenceNumber,
 				'boardTemperature': boardTemperature,
 				'pressure': pressure,
