@@ -202,6 +202,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 	assembler.ingest(data,function(ptype,buf) {
 		var saveMe = true;
 		var p = null;
+		var computerTimestamp = null;
 		if(ptype === 0x00) {
 			winston.verbose("Got Boot Packet!");
 			// Prepares boot packet for storing to the database.
@@ -222,7 +223,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			lastTime = new Date(GPS_EPOCH_IN_MS + weekNumber*MS_PER_WEEK + Math.floor(timeOfWeek)*1000);	// Truncate decimal to trim miliseconds
 			winston.debug("PPS Time: " + lastTime);
 
-			var computerTimestamp = new Date();
+			computerTimestamp = new Date();
 			var predictedPPSTime = new Date(d.getTime()+utcOffset*1000);
 			winston.debug("Predicted PPS date: " + predictedPPSTime);
 			if(Math.abs(predictedPPSTime.getTime() - lastTime.getTime()) > 1000) throw new Error("Initial GPS time is not correct!");
@@ -287,7 +288,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 
 			// Date sanity check
 			var referenceDate = new Date();
-			var computerTimestamp = referenceDate
+			computerTimestamp = referenceDate;
 			referenceDate = new Date(referenceDate.getTime() + 16*1000);
 			var deltaTime = Math.abs(referenceDate.getTime() - date.getTime());
 			var SYNC_THRESHOLD = 500;
