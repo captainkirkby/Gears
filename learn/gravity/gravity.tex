@@ -13,6 +13,7 @@
 \providecommand{\Vv}{\vecsymbol{V}}
 \providecommand{\mv}{\hat{\vecsymbol{m}}}
 \providecommand{\nv}{\hat{\vecsymbol{n}}}
+\providecommand{\ev}{\hat{\vecsymbol{e}}}
 \providecommand{\thdot}{\dot{\theta}}
 \providecommand{\thddot}{\ddot{\theta}}
 
@@ -61,7 +62,7 @@ T(t,\theta,\thdot) &= \frac{1}{2} m \left( \vv(t)\cdot \vv(t) \right) \\
 where we have invoked the orthonormality conditions to simplify this result using
 \begin{equation}
 \mv\cdot\dot{\mv} = \nv\cdot\dot{\nv} = 0 \quad , \quad
-\mv\cdot\dot{\nv} + \dot{\mv}\cdot\mv = 0 \; .
+\mv\cdot\dot{\nv} + \dot{\mv}\cdot\nv = 0 \; .
 \end{equation}
 We also suppress the explicit time dependences of $\mv$, $\nv$, $\dot{\mv}$, $\dot{\nv}$ for notational brevity.
 
@@ -129,5 +130,30 @@ l\thddot + l(\mv\cdot\ddot{\nv} + \dot{\mv}\cdot\dot{\nv}) +
 \cos\theta\,(\thdot \nv+\dot{\nv})\right]\\
 -G \sum_i \frac{M_i}{\left|\Delta\Rv_i(t)\right|^3} \Delta\Rv_i(t)\cdot(\cos\theta\, \mv - \sin\theta\, \nv) \; .
 \end{multline}
+Combining terms proportional to $\Vv(t)$, we can simplify
+\begin{multline}
+l\thddot + l(\mv\cdot\ddot{\nv} + \dot{\mv}\cdot\dot{\nv}) +
+\dot{\Vv}(t)\cdot\left(\cos\theta \mv - \sin\theta \nv\right) =\\
+\frac{l}{2} \left[ \sin 2\theta \left( \dot{\mv}\cdot\dot{\mv} - \dot{\nv}\cdot\dot{\nv}\right) +
+\cos 2\theta \left(\dot{\mv}\cdot\dot{\nv}\right) \right]\\
+-\Vv(t)\cdot\left[ \sin\theta\,(\dot{\mv}-\dot{\nv}) +
+\cos\theta\,(\dot{\mv}+\dot{\nv})\right]\\
+-G \sum_i \frac{M_i}{\left|\Delta\Rv_i(t)\right|^3} \Delta\Rv_i(t)\cdot(\cos\theta\, \mv - \sin\theta\, \nv) \; .
+\end{multline}
+
+For the plane of rotation used to define $\theta$, we take $\nv$ to point from the pendulum pivot towards the Earth's center of gravity $\Rv_e$
+\begin{equation}
+\nv(t) = \frac{\Rv_e(t) - \Rv(t)}{\left|\Rv_e(t) - \Rv(t)\right|} \; .
+\end{equation}
+We then define unit vectors $\ev_1$ and $\ev_2$ that establish the easterly and northerly directions at $\Rv$, respectively, as
+\begin{equation}
+\ev_1(t) = \frac{\Vv(t) - \Vv_e(t)}{\left|\Vv(t) - \Vv_e(t)\right|} \quad , \quad
+\ev_2(t) = \nv(t) \times \ev_1(t) \; .
+\end{equation}
+Note that $\nv(t)$ and $\ev_1(t)$ are orthogonal since the earth rotates as a rigid body, and therefore $\nv$, $\ev_1$, $\ev_2$ define a right-handed coordinate system. We assume that the pendulum's plane of rotation is constrained to a plane at a fixed orientation in the rotating $\ev_1$-$\ev_2$ plane
+\begin{equation}
+\mv(t) = \sin\alpha\,\ev_1 + \cos\alpha\,\ev_2
+\end{equation}
+where $\alpha$ is the usual azimuthal compass bearing angle ($\alpha = 0^\circ, 90^\circ, 180^\circ, 270^\circ$ point north, east, south, west).
 
 \end{document}
