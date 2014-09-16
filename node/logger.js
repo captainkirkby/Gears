@@ -281,7 +281,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			// Calculates the time since the last reading assuming 10MHz clock with prescaler set to 128.
 			var samplesSince = buf.readUInt16LE(16);
 			// NB: ADC Frequency hardcoded here
-			var timeSince = samplesSince*64*13/10000;	// in ms
+			var timeSince = samplesSince*64.0*13.0/10000.0;	// in ms
 
 			// Create date object
 			var date = new Date(lastTime.getTime() + timeSince);
