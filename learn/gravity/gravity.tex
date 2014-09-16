@@ -139,6 +139,7 @@ l\thddot + l(\mv\cdot\ddot{\nv} + \dot{\mv}\cdot\dot{\nv}) +
 -\Vv(t)\cdot\left[ \sin\theta\,(\dot{\mv}-\dot{\nv}) +
 \cos\theta\,(\dot{\mv}+\dot{\nv})\right]\\
 -G \sum_i \frac{M_i}{\left|\Delta\Rv_i(t)\right|^3} \Delta\Rv_i(t)\cdot(\cos\theta\, \mv - \sin\theta\, \nv) \; .
+\label{eqn:ode}
 \end{multline}
 
 For the plane of rotation used to define $\theta$, we take $\nv$ to point from the pendulum pivot towards the Earth's center of gravity $\Rv_e$
@@ -155,5 +156,33 @@ Note that $\nv(t)$ and $\ev_1(t)$ are orthogonal since the earth rotates as a ri
 \mv(t) = \sin\alpha\,\ev_1 + \cos\alpha\,\ev_2
 \end{equation}
 where $\alpha$ is the usual azimuthal compass bearing angle ($\alpha = 0^\circ, 90^\circ, 180^\circ, 270^\circ$ point north, east, south, west).
+
+In order to study gravitational effects on the pendulum period, we work in the small angle limit where \eqn{ode} simplifies to
+\begin{equation}
+l \thddot(t) + g(t) \theta(t) + h(t) = 0
+\end{equation}
+with
+\begin{multline}
+g(t) = -G \sum_i \frac{M_i}{\left|\Delta\Rv_i(t)\right|^3} \left(\Delta\Rv_i(t)\cdot\nv\right) \\
++ \Vv(t)\cdot\left(\dot{\mv}-\dot{\nv}\right) - \dot{\Vv(t)}\cdot\nv
+- \dot{\mv}\cdot\dot{\mv} + \dot{\nv}\cdot\dot{\nv}
+\end{multline}
+and
+\begin{equation}
+h(t) = l(\mv\cdot\ddot{\nv} + \dot{\mv}\cdot\dot{\nv}) \; .
+\end{equation}
+If we assume that $g(t)$ and $h(t)$ are essentially constant during one period of oscillation and take initial conditions $\theta(0) = \theta_0$ and $\thdot(0) = 0$, then we find the solution
+\begin{equation}
+\theta(t) = \frac{h(t)}{g(t)}\left( 1 - \cos(\omega t) \right) + \theta_0 \cos(\omega t)
+\end{equation}
+with slowly varying angular frequency
+\begin{equation}
+\omega(t) = \sqrt{g(t)/l}
+\end{equation}
+and period
+\begin{equation}
+T(t) = 2\pi \sqrt{l/g(t)} \; .
+\end{equation}
+Note that the constant term $h(t)$ effectively changes the meaning of ``dead center'' from $\theta = 0$ to some small non-zero value associated with the changing constraint on the plane of oscillation.
 
 \end{document}
