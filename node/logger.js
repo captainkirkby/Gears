@@ -20,6 +20,7 @@ var lastDataSequenceNumber = 0;
 // Track the time of the initial PPS and then the subsequent packets and the delta
 var lastTime;
 var lastDeltaTime;
+var runningMicroseconds;
 
 // Maximum packet size : change this when you want to modify the number of samples
 var MAX_PACKET_SIZE = 2094;
@@ -283,8 +284,17 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			// NB: ADC Frequency hardcoded here
 			var timeSince = samplesSince*64.0*13.0/10000.0;	// in ms
 
-			// Create date object
-			var date = new Date(lastTime.getTime() + timeSince);
+			// Keep track of sub-miliseconds ourselves
+			// JS Date object cant handle them
+			var extra = false;
+			runningUs += timeSince%1;		// Get part after decimal
+			if(runningUs >= 1){
+				--runningUs;
+				extra = true;
+			}
+
+			// Create date object (add extra milisecond if sub-ms parts have added up to a milisecond)
+			var date = new Date(lastTime.getTime() + Math.floor(timeSince) + (extra ? 1 : 0));
 
 			// Date sanity check
 			var referenceDate = new Date();
