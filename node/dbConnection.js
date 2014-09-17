@@ -7,12 +7,13 @@ var connectToDB = function (callback) {
 	//if(noDatabase) return callback(null,null);
 	mongoose.connect('mongodb://localhost:27017/TickTock');
 	var db = mongoose.connection;
-	db.on('error', function(){callback(new Error("Could not connect to Database.  Make sure mongod is running."))});
+	db.on('error', function(){callback(new Error("Could not connect to Database.  Make sure mongod is running."));});
 	db.once('open', function() {
 		// winston.info('db connection established.');		// Doesn't make it to the file
 		// Defines the schema and model for our serial boot packets
 		var bootPacketSchema = mongoose.Schema({
 			timestamp: { type: Date, index: true },
+			computerTimestamp: { type: Date, index: true },
 			serialNumber: String,
 			bmpSensorOk: Boolean,
 			gpsSerialOk: Boolean,
@@ -31,6 +32,7 @@ var connectToDB = function (callback) {
 		// Defines the schema and model for our serial data packets
 		var dataPacketSchema = mongoose.Schema({
 			timestamp: { type: Date, index: true },
+			computerTimestamp: { type: Date, index: true },
 			crudePeriod: Number,
 			initialCrudePeriod: Number,
 			refinedPeriod: Number,

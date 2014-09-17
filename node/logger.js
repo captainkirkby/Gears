@@ -17,8 +17,12 @@ var connectToDB = require('./dbConnection').connectToDB;
 // Tracks the last seen data packet sequence number to enable sequencing errors to be detected.
 var lastDataSequenceNumber = 0;
 
-// Track the time of the initial PPS and then the subsequent packets
+// Track the time of the initial PPS and then the subsequent packets and the delta
 var lastTime;
+var lastDeltaTime;
+var runningMicroseconds;
+var runningUs = 0;
+var flag = false;
 
 // Maximum packet size : change this when you want to modify the number of samples
 var MAX_PACKET_SIZE = 2094;
@@ -201,6 +205,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 	assembler.ingest(data,function(ptype,buf) {
 		var saveMe = true;
 		var p = null;
+		var computerTimestamp = null;
 		if(ptype === 0x00) {
 			winston.verbose("Got Boot Packet!");
 			// Prepares boot packet for storing to the database.
@@ -221,16 +226,17 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			lastTime = new Date(GPS_EPOCH_IN_MS + weekNumber*MS_PER_WEEK + Math.floor(timeOfWeek)*1000);	// Truncate decimal to trim miliseconds
 			winston.debug("PPS Time: " + lastTime);
 
-			var d = new Date();
-			var predictedPPSTime = new Date(d.getTime()+utcOffset*1000);
+			computerTimestamp = new Date();
+			var predictedPPSTime = new Date(computerTimestamp.getTime()+utcOffset*1000);
 			winston.debug("Predicted PPS date: " + predictedPPSTime);
-			if(Math.abs(predictedPPSTime.getTime() - lastTime.getTime()) > 1000) throw new Error("GPS time is not correct!");
+			if(Math.abs(predictedPPSTime.getTime() - lastTime.getTime()) > 1000) throw new Error("Initial GPS time is not correct!");
 
 			// NB: the boot packet layout is hardcoded here!
 			hash = '';
 			for(var offset = 11; offset < 31; offset++) hash += sprintf("%02x",buf.readUInt8(offset));
 			p = new bootPacketModel({
 				'timestamp': timestamp,
+				'computerTimestamp': computerTimestamp,
 				'serialNumber': sprintf("%08x",buf.readUInt32LE(0)),
 				'bmpSensorOk': buf.readUInt8(4),
 				'gpsSerialOk': buf.readUInt8(5),
@@ -278,19 +284,41 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			// Calculates the time since the last reading assuming 10MHz clock with prescaler set to 128.
 			var samplesSince = buf.readUInt16LE(16);
 			// NB: ADC Frequency hardcoded here
-			var timeSince = samplesSince*64*13/10000;	// in ms
+			var timeSince = samplesSince*64.0*13.0/10000.0;	// in ms
 
-			// Create date object
-			var date = new Date(lastTime.getTime() + timeSince);
+			// Keep track of sub-miliseconds ourselves
+			// JS Date object cant handle them
+			var extra = false;
+			runningUs += timeSince%1;		// Get part after decimal
+			if(runningUs >= 1){
+				--runningUs;
+				extra = true;
+			}
+
+			// Create date object (add extra milisecond if sub-ms parts have added up to a milisecond)
+			var date = new Date(lastTime.getTime() + Math.floor(timeSince) + (extra ? 1 : 0));
 
 			// Date sanity check
 			var referenceDate = new Date();
-			if(Math.abs(referenceDate.getTime() + 16*1000 - date.getTime()) > 1000) {
-				winston.error("GPS running date out of sync!");
-				throw new Error("GPS running date out of sync!");
-			}
+			computerTimestamp = referenceDate;
+			referenceDate = new Date(referenceDate.getTime() + 16*1000);
+			var deltaTime = Math.abs(referenceDate.getTime() - date.getTime());
+			var SYNC_THRESHOLD = 500;
+
+			// Date logging
+			winston.debug("Delta Time: " + deltaTime);
 			winston.debug("Date: " + date);
+			winston.debug("Reference Date: " + referenceDate);
+
+
+			// Perform test
+			if(deltaTime > SYNC_THRESHOLD && Math.abs(lastDeltaTime - deltaTime) > SYNC_THRESHOLD) {
+				winston.error("Running GPS time out of sync!");
+				winston.info("Running GPS time out of sync!");
+				throw new Error("Running GPS time out of sync!");
+			}
 			lastTime = date;
+			deltaLastTime = deltaTime;
 
 			// Store last buffer entry
 			var lastReading = buf.readUInt8(initialReadOffsetWithPhase);
@@ -393,6 +421,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			// NB: the data packet layout is hardcoded here!
 			dataPacketData = {
 				'timestamp': date,
+				'computerTimestamp': computerTimestamp,
 				'sequenceNumber': sequenceNumber,
 				'boardTemperature': boardTemperature,
 				'pressure': pressure,
