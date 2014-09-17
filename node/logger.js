@@ -21,6 +21,8 @@ var lastDataSequenceNumber = 0;
 var lastTime;
 var lastDeltaTime;
 var runningMicroseconds;
+var runningUs = 0;
+var flag = false;
 
 // Maximum packet size : change this when you want to modify the number of samples
 var MAX_PACKET_SIZE = 2094;
