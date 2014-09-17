@@ -14,3 +14,7 @@ logs
 results
  
 npm-debug.log
+
+notebook_files
+.ipynb_checkpoints
+*.np
