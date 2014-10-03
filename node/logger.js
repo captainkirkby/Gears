@@ -280,8 +280,8 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			var initialReadOffsetWithPhase = initialReadOffset+(rawPhase);
 
 			if(initialReadOffsetWithPhase >= MAX_PACKET_SIZE || initialReadOffsetWithPhase < 0){
-				winston.warn("PROBLEMS!! Phase is " + initialReadOffsetWithPhase);
-				// Probably shouldn't send next packet to fit.py
+				winston.warn("PROBLEMS!! Phase is " + initialReadOffsetWithPhase + " and max packet size is " + MAX_PACKET_SIZE);
+				// Shouldn't send next packet to fit.py so return
 				return;
 			}
 
@@ -462,6 +462,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			if(p.sequenceNumber != lastDataSequenceNumber+1) {
 				winston.warn('Got packet #%d when expecting packet #%d',
 					p.sequenceNumber,lastDataSequenceNumber+1);
+				winston.warn(p);
 			}
 			lastDataSequenceNumber = p.sequenceNumber;
 			// Never save the first packet since there is usually a startup glitch
@@ -507,7 +508,7 @@ function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel, averager) {
 	// Pop least recent date off FIFO stack
 	var storeDate = datesBeingProcessed.pop();
 	if(datesBeingProcessed.length !== 0){
-		winston.warn("Length :" + datesBeingProcessed.length);
+		winston.warn("Length :" + datesBeingProcessed.length, datesBeingProcessed);
 	}
 
 	var badPeriod,badAngle = false;
