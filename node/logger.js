@@ -229,7 +229,11 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			computerTimestamp = new Date();
 			var predictedPPSTime = new Date(computerTimestamp.getTime()+utcOffset*1000);
 			winston.debug("Predicted PPS date: " + predictedPPSTime);
-			if(Math.abs(predictedPPSTime.getTime() - lastTime.getTime()) > 1000) throw new Error("Initial GPS time is not correct!");
+
+			var predictionError = Math.abs(predictedPPSTime.getTime() - lastTime.getTime());
+			if(isNaN(predictedPPSTime.getTime()) || isNaN(lastTime.getTime()) || predictionError > 1000){
+				throw new Error("Initial GPS time is not correct!");
+			}
 
 			// NB: the boot packet layout is hardcoded here!
 			hash = '';
