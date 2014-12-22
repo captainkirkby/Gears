@@ -82,6 +82,7 @@ Assembler.prototype.ingest = function(data,handler) {
 			else {
 				if(this.debugLevel > 0) {
 					console.log('Skipping unexpected padding');
+					throw new Error('Assembler: unexpected padding');
 				}
 				// Forget any previously seen header bytes.
 				this.remaining = 0;
