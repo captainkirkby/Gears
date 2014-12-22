@@ -180,7 +180,7 @@ async.parallel({
 			winston.debug('starting data logger');
 			// Initializes our binary packet assembler to initially only accept a boot packet.
 			// NB: the maximum and boot packet sizes are hardcoded here!
-			var assembler = new packet.Assembler(0xFE,3,MAX_PACKET_SIZE,{0x00:66},2);
+			var assembler = new packet.Assembler(0xFE,3,MAX_PACKET_SIZE,{0x00:66},0);
 			// Initializes averagers
 			var averagerCollection = new average.AveragerCollection(bins.stdBinSizes());
 			// Flush serial port of any old data before accepting new data
