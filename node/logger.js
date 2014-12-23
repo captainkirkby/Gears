@@ -14,6 +14,11 @@ var average = require('./average');
 var bins = require('./bins');
 var connectToDB = require('./dbConnection').connectToDB;
 
+// For logging all binary data to a file
+var binaryPacketsFile = fs.createWriteStream('binaryPackets',{ flags: 'a' });
+var dataBuffer = null;
+var lengthBuffer = new Buffer(2);
+
 // Tracks the last seen data packet sequence number to enable sequencing errors to be detected.
 var lastDataSequenceNumber = 0;
 
@@ -187,6 +192,11 @@ async.parallel({
 			config.port.flush();
 			// Handles incoming chunks of binary data from the device.
 			config.port.on('data',function(data) {
+				// Log binary data to a file
+				dataBuffer = new Buffer(arr);
+				lengthBuffer.writeUInt16LE(arr.length, 0);
+				binaryPacketsFile.write(Buffer.concat([lengthBuffer,dataBuffer]));
+				// Send to receive()
 				receive(data,assembler,averagerCollection,config.db.bootPacketModel,config.db.dataPacketModel,
 					config.db.gpsStatusModel,config.db.averageDataModel);
 			});
