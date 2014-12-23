@@ -283,7 +283,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 				winston.warn("PROBLEMS!! Phase is " + initialReadOffsetWithPhase + " and max packet size is " + MAX_PACKET_SIZE);
 				// Crash and log offending packet.
 				winston.error(JSON.stringify(buf));
-				throw new Error("Bad Phase (possible corrupted packet)");
+				// throw new Error("Bad Phase (possible corrupted packet)");
 				// Shouldn't send next packet to fit.py so return
 				return;
 			}
@@ -468,7 +468,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 				winston.warn(p);
 				// Crash and log offending packet.
 				winston.error(JSON.stringify(buf));
-				throw new Error("Packets coming in out of order!");
+				// throw new Error("Packets coming in out of order!");
 			}
 			lastDataSequenceNumber = p.sequenceNumber;
 			// Never save the first packet since there is usually a startup glitch

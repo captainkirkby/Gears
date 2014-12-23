@@ -85,7 +85,7 @@ Assembler.prototype.ingest = function(data,handler) {
 					console.log('Skipping unexpected padding');
 					console.log('Last Buffer:');
 					console.log(JSON.stringify(this.lastBuffer));
-					throw new Error('Assembler: unexpected padding');
+					// throw new Error('Assembler: unexpected padding');
 				}
 				// Forget any previously seen header bytes.
 				this.remaining = 0;
