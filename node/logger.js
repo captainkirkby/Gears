@@ -156,7 +156,7 @@ async.parallel({
 				winston.verbose('Opening device %s...',ttyName);
 				var port = new serial.SerialPort(ttyName, {
 					baudrate: 57600,
-					buffersize: 255,
+					buffersize: 2048,
 					parser: serial.parsers.raw
 				});
 				port.on('open',function(err) {
