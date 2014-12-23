@@ -193,8 +193,8 @@ async.parallel({
 			// Handles incoming chunks of binary data from the device.
 			config.port.on('data',function(data) {
 				// Log binary data to a file
-				dataBuffer = new Buffer(arr);
-				lengthBuffer.writeUInt16LE(arr.length, 0);
+				dataBuffer = new Buffer(data);
+				lengthBuffer.writeUInt16LE(data.length, 0);
 				binaryPacketsFile.write(Buffer.concat([lengthBuffer,dataBuffer]));
 				// Send to receive()
 				receive(data,assembler,averagerCollection,config.db.bootPacketModel,config.db.dataPacketModel,
