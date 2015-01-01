@@ -301,22 +301,13 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 				return;
 			}
 
-			// Calculates the time since the last reading assuming 10MHz clock with prescaler set to 128.
+			// Calculates the time since the last boot packet assuming 10MHz clock with prescaler set to 64.
 			var samplesSince = buf.readUInt16LE(16);
 			// NB: ADC Frequency hardcoded here
 			var timeSince = samplesSince*64.0*13.0/10000.0;	// in ms
 
-			// Keep track of sub-miliseconds ourselves
-			// JS Date object cant handle them
-			var extra = false;
-			runningUs += timeSince%1;		// Get part after decimal
-			if(runningUs >= 1){
-				--runningUs;
-				extra = true;
-			}
-
-			// Create date object (add extra milisecond if sub-ms parts have added up to a milisecond)
-			var date = new Date(lastTime.getTime() + Math.floor(timeSince) + (extra ? 1 : 0));
+			// Create date object
+			var date = new Date(lastTime.getTime() + timeSince);
 
 			// Date sanity check
 			var referenceDate = new Date();
