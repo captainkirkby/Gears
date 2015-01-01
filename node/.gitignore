@@ -6,6 +6,9 @@ lib-cov
 *.out
 *.pid
 *.gz
+*.backup*
+
+binaryPackets*
  
 node_modules/
 

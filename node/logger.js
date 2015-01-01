@@ -14,6 +14,11 @@ var average = require('./average');
 var bins = require('./bins');
 var connectToDB = require('./dbConnection').connectToDB;
 
+// For logging all binary data to a file
+var binaryPacketsFile = fs.createWriteStream('binaryPackets',{ flags: 'a' });
+var dataBuffer = null;
+var lengthBuffer = new Buffer(2);
+
 // Tracks the last seen data packet sequence number to enable sequencing errors to be detected.
 var lastDataSequenceNumber = 0;
 
@@ -35,7 +40,7 @@ var datesBeingProcessed = [];
 var winston = new (winston_module.Logger)({
 	transports: [
 		new (winston_module.transports.Console)({ level: 'warn' }),
-		new (winston_module.transports.File)({ filename: 'ticktock.log', level: 'verbose' })
+		new (winston_module.transports.File)({ filename: 'ticktock.log', level: 'verbose', handleExceptions : true})
 	]
 });
 
@@ -151,7 +156,7 @@ async.parallel({
 				winston.verbose('Opening device %s...',ttyName);
 				var port = new serial.SerialPort(ttyName, {
 					baudrate: 57600,
-					buffersize: 255,
+					buffersize: 2048,
 					parser: serial.parsers.raw
 				});
 				port.on('open',function(err) {
@@ -187,6 +192,11 @@ async.parallel({
 			config.port.flush();
 			// Handles incoming chunks of binary data from the device.
 			config.port.on('data',function(data) {
+				// Log binary data to a file
+				dataBuffer = new Buffer(data);
+				lengthBuffer.writeUInt16LE(data.length, 0);
+				binaryPacketsFile.write(Buffer.concat([lengthBuffer,dataBuffer]));
+				// Send to receive()
 				receive(data,assembler,averagerCollection,config.db.bootPacketModel,config.db.dataPacketModel,
 					config.db.gpsStatusModel,config.db.averageDataModel);
 			});
@@ -280,8 +290,11 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			var initialReadOffsetWithPhase = initialReadOffset+(rawPhase);
 
 			if(initialReadOffsetWithPhase >= MAX_PACKET_SIZE || initialReadOffsetWithPhase < 0){
-				winston.warn("PROBLEMS!! Phase is " + initialReadOffsetWithPhase);
-				// Probably shouldn't send next packet to fit.py
+				winston.warn("PROBLEMS!! Phase is " + initialReadOffsetWithPhase + " and max packet size is " + MAX_PACKET_SIZE);
+				// Crash and log offending packet.
+				winston.error(JSON.stringify(buf));
+				// throw new Error("Bad Phase (possible corrupted packet)");
+				// Shouldn't send next packet to fit.py so return
 				return;
 			}
 
@@ -462,6 +475,10 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			if(p.sequenceNumber != lastDataSequenceNumber+1) {
 				winston.warn('Got packet #%d when expecting packet #%d',
 					p.sequenceNumber,lastDataSequenceNumber+1);
+				winston.warn(p);
+				// Crash and log offending packet.
+				winston.error(JSON.stringify(buf));
+				// throw new Error("Packets coming in out of order!");
 			}
 			lastDataSequenceNumber = p.sequenceNumber;
 			// Never save the first packet since there is usually a startup glitch
@@ -507,7 +524,7 @@ function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel, averager) {
 	// Pop least recent date off FIFO stack
 	var storeDate = datesBeingProcessed.pop();
 	if(datesBeingProcessed.length !== 0){
-		winston.warn("Length :" + datesBeingProcessed.length);
+		winston.warn("Length :" + datesBeingProcessed.length, datesBeingProcessed);
 	}
 
 	var badPeriod,badAngle = false;

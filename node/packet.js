@@ -26,7 +26,8 @@ function Assembler(headerByte,headerSize,maxPayloadSize,payloadSizes,debugLevel)
 	if(this.debugLevel > 0) {
 		console.log('Initializing packet assembler with max payload size of',maxPayloadSize);
 	}
-	this.buffer = new Buffer(maxPayloadSize);	
+	this.buffer = new Buffer(maxPayloadSize);
+	this.lastBuffer = new Buffer(maxPayloadSize);
 }
 
 Assembler.prototype.addPacketType = function(type,size) {
@@ -82,6 +83,9 @@ Assembler.prototype.ingest = function(data,handler) {
 			else {
 				if(this.debugLevel > 0) {
 					console.log('Skipping unexpected padding');
+					console.log('Last Buffer:');
+					console.log(JSON.stringify(this.lastBuffer));
+					// throw new Error('Assembler: unexpected padding');
 				}
 				// Forget any previously seen header bytes.
 				this.remaining = 0;
@@ -99,6 +103,8 @@ Assembler.prototype.ingest = function(data,handler) {
 				if(this.debugLevel > 0) {
 					console.log('assembled type',this.packetType,this.buffer.slice(0,psize));
 				}
+				// Stores last buffer
+				this.lastBuffer = this.buffer.slice(0,psize);
 				// Calls the specified handler with the assembled packet.
 				handler(this.packetType,this.buffer.slice(0,psize));
 			}
