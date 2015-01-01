@@ -10,7 +10,7 @@ lib-cov
 binaryPackets*
  
 node_modules/
-ipynb_checkpoints/
+.ipynb_checkpoints/
 
 pids
 logs
