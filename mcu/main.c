@@ -54,7 +54,7 @@ volatile uint16_t adcTestTries;
 
 //Declare counter used to keep track of timing
 uint16_t timingCounter = 0;
-volatile uint16_t lastCount = 0;
+volatile uint64_t runningCount = 0;
 
 // Oversampling Counter
 uint8_t oversampleCount = 0;
@@ -161,7 +161,7 @@ int main(void)
             // Updates our sequence number for the next packet
             dataPacket.sequenceNumber++;
 
-            dataPacket.timeSinceLastReading = lastCount;
+            dataPacket.timeSinceLastReading = runningCount;
 
             // Reads the BMP180 sensor values and saves the results in the data packet
             bmpError = readBMP180Sensors(&dataPacket.temperature,&dataPacket.pressure);
@@ -252,7 +252,7 @@ ISR(ADC_vect){
         
             if(adcValue <= THRESHOLD){
                 // Store time since last threshold (max 5.4s for a 16 bit counter)
-                lastCount = timingCounter;
+                runningCount += timingCounter;
                 timingCounter = 0;
                 // start timer
                 timer = 1;
