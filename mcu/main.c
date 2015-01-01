@@ -161,7 +161,7 @@ int main(void)
             // Updates our sequence number for the next packet
             dataPacket.sequenceNumber++;
 
-            dataPacket.timeSinceLastReading = runningCount;
+            dataPacket.timeSinceLastBootPacket = runningCount;
 
             // Reads the BMP180 sensor values and saves the results in the data packet
             bmpError = readBMP180Sensors(&dataPacket.temperature,&dataPacket.pressure);
