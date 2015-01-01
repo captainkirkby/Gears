@@ -371,9 +371,9 @@ class FrameProcessor(object):
 
     def process(self,samplesSinceBoot,samples):
         """
-        Processes the next frame of raw IR ADC samples. The parameter elapsed gives the number
-        of ADC samples elapsed between the first sample of this frame and the first sample of
-        the previous frame, or zero if this information is not available. Returns the estimated
+        Processes the next frame of raw IR ADC samples. The parameter samplesSinceBoot gives the number
+        of ADC samples elapsed between the first sample of this frame and the last boot packet recieved, 
+        or zero if this information is not available. Returns the estimated
         period in seconds (nominally 2 secs) or raises a RuntimeError.
         """
         if len(samples) != self.args.nsamples:
