@@ -35,6 +35,7 @@ var connectToDB = function (callback) {
 			computerTimestamp: { type: Date, index: true },
 			crudePeriod: Number,
 			initialCrudePeriod: Number,
+			samplesSinceBoot: Number,
 			refinedPeriod: Number,
 			angle: Number,
 			sequenceNumber: Number,

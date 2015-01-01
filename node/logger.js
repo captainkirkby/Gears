@@ -432,6 +432,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			// NB: the data packet layout is hardcoded here!
 			dataPacketData = {
 				'timestamp': date,
+				'samplesSinceBoot': samplesSince,
 				'computerTimestamp': computerTimestamp,
 				'sequenceNumber': sequenceNumber,
 				'boardTemperature': boardTemperature,
