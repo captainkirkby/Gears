@@ -11,7 +11,6 @@ lib-cov
 binaryPackets*
  
 node_modules/
-.ipynb_checkpoints/
 
 pids
 logs
