@@ -6,8 +6,11 @@ lib-cov
 *.out
 *.pid
 *.gz
+
+binaryPackets*
  
 node_modules/
+ipynb_checkpoints/
 
 pids
 logs
