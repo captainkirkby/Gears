@@ -20,7 +20,7 @@ var dataBuffer = null;
 var lengthBuffer = new Buffer(2);
 
 // Tracks the last seen data packet sequence number to enable sequencing errors to be detected.
-var lastSamplesSince = 0;
+var lastSamplesSinceBoot = 0;
 
 // Track the time of the initial PPS and then the subsequent packets and the delta
 var lastTime;
@@ -302,9 +302,9 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			}
 
 			// Calculates the time since the last boot packet assuming 10MHz clock with prescaler set to 64.
-			var samplesSince = buf.readUInt16LE(16);
+			var samplesSinceBoot = buf.readUInt16LE(16);
 			// NB: ADC Frequency hardcoded here
-			var timeSince = samplesSince*64.0*13.0/10000.0;	// in ms
+			var timeSince = samplesSinceBoot*64.0*13.0/10000.0;	// in ms
 
 			// Create date object
 			var date = new Date(lastTime.getTime() + timeSince);
@@ -378,7 +378,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 
 			// use nominal 1st order fit from sensor datasheet to calculate RH in %
 			var humidity			= (buf.readUInt16LE(34)/65536.0 - 0.1515)/0.00636;
-			var crudePeriod			= samplesSince - lastSamplesSince;
+			var crudePeriod			= samplesSinceBoot - lastSamplesSinceBoot;
 			var sequenceNumber		= buf.readInt32LE(0);
 			var boardTemperature	= buf.readInt32LE(24)/160.0;
 			var pressure			= buf.readInt32LE(28);
@@ -432,7 +432,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			// NB: the data packet layout is hardcoded here!
 			dataPacketData = {
 				'timestamp': date,
-				'samplesSinceBoot': samplesSince,
+				'samplesSinceBoot': samplesSinceBoot,
 				'computerTimestamp': computerTimestamp,
 				'sequenceNumber': sequenceNumber,
 				'boardTemperature': boardTemperature,
@@ -476,6 +476,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 				// throw new Error("Packets coming in out of order!");
 			}
 			lastDataSequenceNumber = p.sequenceNumber;
+			lastSamplesSinceBoot = samplesSinceBoot;
 			// Never save the first packet since there is usually a startup glitch
 			// where the serial port sees a second boot packet arriving during the first
 			// data packet that still needs to be debugged...
@@ -485,11 +486,11 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			} else{
 				saveMe = true;
 				// Write to first entry in file
-				if(runningData) fs.appendFileSync('runningData.dat', samplesSince + '\n');
+				if(runningData) fs.appendFileSync('runningData.dat', samplesSinceBoot + '\n');
 				// Push most recent date to the top of the FIFO stack
 				datesBeingProcessed.unshift(date);
 				// Write crude period to pipe
-				if(fit.alive) fit.stdin.write(samplesSince + '\n');
+				if(fit.alive) fit.stdin.write(samplesSinceBoot + '\n');
 
 				// Iterate through samples writing them to the fit pipe
 				for(var i = 0; i < 2048; i++){
