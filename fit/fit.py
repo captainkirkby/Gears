@@ -301,6 +301,8 @@ class FrameProcessor(object):
         self.lastOffset = None
         self.lastElapsed = None
         self.lastAmplitude = None
+        self.lastSamplesSinceBoot = None
+        self.nextLastSamplesSinceBoot = None
         # we use python arrays here since we do not know the final size in advance
         # and they are more time efficient for appending than numpy arrays (but
         # less space efficient)
@@ -367,11 +369,11 @@ class FrameProcessor(object):
 
 
 
-    def process(self,elapsed,samples):
+    def process(self,samplesSinceBoot,samples):
         """
-        Processes the next frame of raw IR ADC samples. The parameter elapsed gives the number
-        of ADC samples elapsed between the first sample of this frame and the first sample of
-        the previous frame, or zero if this information is not available. Returns the estimated
+        Processes the next frame of raw IR ADC samples. The parameter samplesSinceBoot gives the number
+        of ADC samples elapsed between the first sample of this frame and the last boot packet recieved, 
+        or zero if this information is not available. Returns the estimated
         period in seconds (nominally 2 secs) or raises a RuntimeError.
         """
         if len(samples) != self.args.nsamples:
@@ -412,8 +414,8 @@ class FrameProcessor(object):
         # which is nominally 2 seconds, and the peak-to-peak angular amplitude of two consecutive
         # swings in opposite directions.
         if direction != self.lastDirection:
-            if self.lastElapsed and self.lastOffset:
-                period = (self.lastElapsed - self.lastOffset + elapsed + offset)*self.args.adc_tick
+            if self.nextLastSamplesSinceBoot and self.lastOffset:
+                period = (samplesSinceBoot - self.nextLastSamplesSinceBoot - self.lastOffset + offset)*self.args.adc_tick
             else:
                 # We must have processed at least two frames before we can calculate a period.
                 period = 0
@@ -429,7 +431,8 @@ class FrameProcessor(object):
         self.lastDirection = direction
         self.lastOffset = self.nextLastOffset
         self.nextLastOffset = offset
-        self.lastElapsed = elapsed
+        self.nextLastSamplesSinceBoot = self.lastSamplesSinceBoot
+        self.lastSamplesSinceBoot = samplesSinceBoot
         self.lastAmplitude = amplitude
         # remember this result
         if abs(period-2) < 0.1 and swing > 0:
@@ -609,9 +612,9 @@ def main():
                 plt.show()
             return 0
         for i,frame in enumerate(frames):
-            elapsed,samples = frame[0],frame[1:]
+            samplesSinceBoot,samples = frame[0],frame[1:]
             try:
-                period,swing = processor.process(elapsed,samples)
+                period,swing = processor.process(samplesSinceBoot,samples)
                 print 'Period = %f secs, swing = %f (%d/%d)' % (period,swing,i,nframe)
                 # check for more recent template
                 processor.updateTemplate()
@@ -632,13 +635,13 @@ def main():
                 line = sys.stdin.readline()
                 value = int(line)
                 if remaining == 0:
-                    elapsed = value
+                    samplesSinceBoot = value
                     remaining = args.nsamples
                 elif remaining > 0:
                     samples[args.nsamples - remaining] = value
                     remaining -= 1
                     if remaining == 0:
-                        period,swing = processor.process(elapsed,samples)
+                        period,swing = processor.process(samplesSinceBoot,samples)
                         # send the calculated period to our STDOUT and flush the buffer!
                         print period,swing
                         sys.stdout.flush()

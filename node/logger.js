@@ -20,7 +20,7 @@ var dataBuffer = null;
 var lengthBuffer = new Buffer(2);
 
 // Tracks the last seen data packet sequence number to enable sequencing errors to be detected.
-var lastDataSequenceNumber = 0;
+var lastSamplesSinceBoot = 0;
 
 // Track the time of the initial PPS and then the subsequent packets and the delta
 var lastTime;
@@ -29,8 +29,11 @@ var runningMicroseconds;
 var runningUs = 0;
 var flag = false;
 
+// Remember the last "timeSinceLastBootPacket" so we can reconstruct the crude period
+var lastTimeSinceLastBootPacket = 0;
+
 // Maximum packet size : change this when you want to modify the number of samples
-var MAX_PACKET_SIZE = 2094;
+var MAX_PACKET_SIZE = 2100;
 
 // Keep track of the dates we are waiting on a fit to process
 // FIFO : unshift on, then pop off
@@ -284,9 +287,9 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			// Gets the raw data from the packet.raw field
 			var raw = [];
 			var rawFill = 0;
-			var rawPhase = buf.readUInt16LE(32);
+			var rawPhase = buf.readUInt16LE(38);
 			// winston.info(rawPhase);
-			var initialReadOffset = 46;
+			var initialReadOffset = 52;
 			var initialReadOffsetWithPhase = initialReadOffset+(rawPhase);
 
 			if(initialReadOffsetWithPhase >= MAX_PACKET_SIZE || initialReadOffsetWithPhase < 0){
@@ -298,22 +301,19 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 				return;
 			}
 
-			// Calculates the time since the last reading assuming 10MHz clock with prescaler set to 128.
-			var samplesSince = buf.readUInt16LE(16);
+			// Get least and most significant parts of 64 bit ADC samples since boot counter
+			var lsn = buf.readUInt32LE(16);		// fast counting part (changes every second)
+			var msn = buf.readUInt32LE(20);		// slow counting part (changes every ~4 days)
+
+			// Use JavaScript's Number to store this 64 bit integer as a double (52 bits of integer precision = plenty)
+			var samplesSinceBoot = lsn + msn*Math.pow(2,32);
+
+			// Calculates the time since the last boot packet assuming 10MHz clock with prescaler set to 64.
 			// NB: ADC Frequency hardcoded here
-			var timeSince = samplesSince*64.0*13.0/10000.0;	// in ms
+			var timeSince = samplesSinceBoot*64.0*13.0/10000.0;	// in ms
 
-			// Keep track of sub-miliseconds ourselves
-			// JS Date object cant handle them
-			var extra = false;
-			runningUs += timeSince%1;		// Get part after decimal
-			if(runningUs >= 1){
-				--runningUs;
-				extra = true;
-			}
-
-			// Create date object (add extra milisecond if sub-ms parts have added up to a milisecond)
-			var date = new Date(lastTime.getTime() + Math.floor(timeSince) + (extra ? 1 : 0));
+			// Create date object
+			var date = new Date(lastTime.getTime() + timeSince);
 
 			// Date sanity check
 			var referenceDate = new Date();
@@ -326,6 +326,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			winston.debug("Delta Time: " + deltaTime);
 			winston.debug("Date: " + date);
 			winston.debug("Reference Date: " + referenceDate);
+			winston.debug("Samples Since Boot: " + samplesSinceBoot);
 
 
 			// Perform test
@@ -334,7 +335,6 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 				winston.info("Running GPS time out of sync!");
 				throw new Error("Running GPS time out of sync!");
 			}
-			lastTime = date;
 			deltaLastTime = deltaTime;
 
 			// Store last buffer entry
@@ -383,21 +383,21 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			}
 
 			// use nominal 1st order fit from sensor datasheet to calculate RH in %
-			var humidity			= (buf.readUInt16LE(28)/65536.0 - 0.1515)/0.00636;
-			var crudePeriod			= buf.readUInt16LE(16);
+			var humidity			= (buf.readUInt16LE(34)/65536.0 - 0.1515)/0.00636;
+			var crudePeriod			= samplesSinceBoot - lastSamplesSinceBoot;
 			var sequenceNumber		= buf.readInt32LE(0);
-			var boardTemperature	= buf.readInt32LE(18)/160.0;
-			var pressure			= buf.readInt32LE(22);
-			var irLevel				= buf.readUInt16LE(30)/65536.0*5.0;				// convert IR level to volts
+			var boardTemperature	= buf.readInt32LE(24)/160.0;
+			var pressure			= buf.readInt32LE(28);
+			var irLevel				= buf.readUInt16LE(36)/65536.0*5.0;				// convert IR level to volts
 			// GPS status
 			var gpsStatusValues = {
-				recieverMode		: buf.readUInt8(34),
-				discipliningMode	: buf.readUInt8(35),
-				criticalAlarms		: buf.readUInt16BE(36),
-				minorAlarms			: buf.readUInt16BE(38),
-				gpsDecodingStatus	: buf.readUInt8(40),
-				discipliningActivity: buf.readUInt8(41),
-				clockOffset			: buf.readFloatBE(42)
+				recieverMode		: buf.readUInt8(40),
+				discipliningMode	: buf.readUInt8(41),
+				criticalAlarms		: buf.readUInt16BE(42),
+				minorAlarms			: buf.readUInt16BE(44),
+				gpsDecodingStatus	: buf.readUInt8(46),
+				discipliningActivity: buf.readUInt8(47),
+				clockOffset			: buf.readFloatBE(48)
 			};
 
 			var expectedValues = {
@@ -430,7 +430,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			winston.debug("Clock Offset: " + gpsStatusValues.clockOffset + " ppb");
 
 			// Calculates the thermistor resistance in ohms assuming 100uA current source.
-			var rtherm = buf.readUInt16LE(26)/65536.0*5.0/100e-6;
+			var rtherm = buf.readUInt16LE(32)/65536.0*5.0/100e-6;
 			// Calculates the corresponding temperature in degC using a Steinhart-Hart model.
 			var logr = Math.log(rtherm);
 			var ttherm = 1.0/(0.000878844 + 0.000231913*logr + 7.70349e-8*logr*logr*logr) - 273.15;
@@ -438,6 +438,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			// NB: the data packet layout is hardcoded here!
 			dataPacketData = {
 				'timestamp': date,
+				'samplesSinceBoot': samplesSinceBoot,
 				'computerTimestamp': computerTimestamp,
 				'sequenceNumber': sequenceNumber,
 				'boardTemperature': boardTemperature,
@@ -481,6 +482,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 				// throw new Error("Packets coming in out of order!");
 			}
 			lastDataSequenceNumber = p.sequenceNumber;
+			lastSamplesSinceBoot = samplesSinceBoot;
 			// Never save the first packet since there is usually a startup glitch
 			// where the serial port sees a second boot packet arriving during the first
 			// data packet that still needs to be debugged...
@@ -490,11 +492,11 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			} else{
 				saveMe = true;
 				// Write to first entry in file
-				if(runningData) fs.appendFileSync('runningData.dat', samplesSince + '\n');
+				if(runningData) fs.appendFileSync('runningData.dat', samplesSinceBoot + '\n');
 				// Push most recent date to the top of the FIFO stack
 				datesBeingProcessed.unshift(date);
 				// Write crude period to pipe
-				if(fit.alive) fit.stdin.write(samplesSince + '\n');
+				if(fit.alive) fit.stdin.write(samplesSinceBoot + '\n');
 
 				// Iterate through samples writing them to the fit pipe
 				for(var i = 0; i < 2048; i++){
@@ -532,7 +534,7 @@ function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel, averager) {
 	var period = Number(periodAndAngle.toString().split(" ")[0].toString());
 	var angle = Number(periodAndAngle.toString()
 		.split(" ")[1].toString());
-	if(period <= 0 || isNaN(period)){
+	if(period <= 0 || period >= 3.0 || isNaN(period)){
 		winston.warn("Bad Period: " + period);
 		badPeriod = true;
 	} else {

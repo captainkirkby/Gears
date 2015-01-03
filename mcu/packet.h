@@ -51,27 +51,28 @@ typedef struct {
     uint16_t weekNumber;            // (10)
     uint32_t timeOfWeek;            // (12)
     // Relative timing info (in ADC conversions (64*13/10MHz = 8.32e-5 s)
-    uint16_t timeSinceLastReading;  // (16) 
+    // Now with respect to the last Boot Packet
+    uint64_t timeSinceLastBootPacket;  // (16) 
     // BMP180 sensor measurements
-    int32_t temperature;            // (18) divide by 160 to get degrees C
-    int32_t pressure;               // (22) in Pascals
+    int32_t temperature;            // (24) divide by 160 to get degrees C
+    int32_t pressure;               // (28) in Pascals
     // block thermistor reading
-    uint16_t thermistor;            // (26)
+    uint16_t thermistor;            // (32)
     // relative humidity reading
-    uint16_t humidity;              // (28)
+    uint16_t humidity;              // (34)
     // PIN diode IR light level
-    uint16_t irLevel;               // (30)
+    uint16_t irLevel;               // (36)
     // IR sensor raw ADC readings
-    uint16_t rawPhase;              // (32)
+    uint16_t rawPhase;              // (38)
     // GPS status updates
-    uint8_t recieverMode;           // (34)
-    uint8_t discipliningMode;       // (35)
-    uint16_t criticalAlarms;        // (36)
-    uint16_t minorAlarms;           // (38)
-    uint8_t gpsDecodingStatus;      // (40)
-    uint8_t discipliningActivity;   // (41)
-    uint32_t clockOffset;           // (42)     // 4 byte float
-    volatile uint8_t raw[PACKET_LENGTH];    // (46)
+    uint8_t recieverMode;           // (40)
+    uint8_t discipliningMode;       // (41)
+    uint16_t criticalAlarms;        // (42)
+    uint16_t minorAlarms;           // (44)
+    uint8_t gpsDecodingStatus;      // (46)
+    uint8_t discipliningActivity;   // (47)
+    uint32_t clockOffset;           // (48)     // 4 byte float
+    volatile uint8_t raw[PACKET_LENGTH];    // (52)
 } DataPacket;
 
 // Command packet for turning auto messages off
