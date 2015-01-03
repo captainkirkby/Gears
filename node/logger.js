@@ -335,7 +335,6 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 				winston.info("Running GPS time out of sync!");
 				throw new Error("Running GPS time out of sync!");
 			}
-			lastTime = date;
 			deltaLastTime = deltaTime;
 
 			// Store last buffer entry
