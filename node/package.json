@@ -1,15 +1,16 @@
 {
-  "name": "gears",
-  "description": "clock metrology data logging and analysis",
-  "version": "0.0.1",
-  "private": true,
-  "dependencies": {
-    "express": "3.4.7",
-    "async": "0.2.9",
-    "mongodb": "1.3.23",
-    "mongoose": "3.8.3",
-    "serialport": "1.2.5",
-    "sprintf": "0.1.3",
-    "winston": "0.7.3"
-  }
+	"name": "gears",
+	"description": "clock metrology data logging and analysis",
+	"version": "0.0.1",
+	"private": true,
+	"dependencies": {
+		// The carat matches the MOST RECENT major version (^1.2.3 matches greater than 1.2.3)
+		"express"		: "^3.4.7",
+		"async"			: "^0.2.9",
+		"mongodb"		: "^1.3.23",
+		"mongoose"		: "^3.8.3",
+		"serialport"	: "^1.2.5",
+		"sprintf"		: "^0.1.3",
+		"winston"		: "^0.7.3"
+	}
 }
