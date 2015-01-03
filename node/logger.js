@@ -302,7 +302,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			}
 
 			// Calculates the time since the last boot packet assuming 10MHz clock with prescaler set to 64.
-			var samplesSinceBoot = buf.readUInt16LE(16);
+			var samplesSinceBoot = buf.readUInt64LE(16);
 			// NB: ADC Frequency hardcoded here
 			var timeSince = samplesSinceBoot*64.0*13.0/10000.0;	// in ms
 
@@ -320,6 +320,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			winston.debug("Delta Time: " + deltaTime);
 			winston.debug("Date: " + date);
 			winston.debug("Reference Date: " + referenceDate);
+			winston.debug("Samples Since Boot: " + samplesSinceBoot);
 
 
 			// Perform test
