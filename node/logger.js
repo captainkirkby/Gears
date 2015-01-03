@@ -301,8 +301,15 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 				return;
 			}
 
+			// Get least and most significant parts of 64 bit ADC samples since boot counter
+			var lsn = buf.readUInt32LE(16);
+			var msn = buf.readUInt32LE(20);
+
+			// One of these should count up, the other should stay at 2^(48-32) for months
+			console.log("LSN: " + lsn + " MSN: " + msn);
+
 			// Calculates the time since the last boot packet assuming 10MHz clock with prescaler set to 64.
-			var samplesSinceBoot = buf.readUInt64LE(16);
+			var samplesSinceBoot = lsn;			// Throw away the non counting bit (guess its lsn)
 			// NB: ADC Frequency hardcoded here
 			var timeSince = samplesSinceBoot*64.0*13.0/10000.0;	// in ms
 
