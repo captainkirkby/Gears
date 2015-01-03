@@ -534,7 +534,7 @@ function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel, averager) {
 	var period = Number(periodAndAngle.toString().split(" ")[0].toString());
 	var angle = Number(periodAndAngle.toString()
 		.split(" ")[1].toString());
-	if(period <= 0 || period >= 3 || isNaN(period)){
+	if(period <= 0 || period >= 3.0 || isNaN(period)){
 		winston.warn("Bad Period: " + period);
 		badPeriod = true;
 	} else {
