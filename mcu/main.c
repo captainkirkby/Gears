@@ -54,7 +54,7 @@ volatile uint16_t adcTestTries;
 
 //Declare counter used to keep track of timing
 uint16_t timingCounter = 0;
-volatile uint64_t runningCount = (1ULL << 48);
+volatile uint64_t runningCount = 0;
 
 // Oversampling Counter
 uint8_t oversampleCount = 0;
