@@ -43,7 +43,7 @@ var datesBeingProcessed = [];
 var winston = new (winston_module.Logger)({
 	transports: [
 		new (winston_module.transports.Console)({ level: 'warn' }),
-		new (winston_module.transports.File)({ filename: 'ticktock.log', level: 'verbose', handleExceptions : true})
+		new (winston_module.transports.DailyRotateFile)({ filename: 'ticktock.log', level: 'verbose', handleExceptions : true})
 	]
 });
 
