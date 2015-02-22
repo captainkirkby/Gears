@@ -505,7 +505,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 				// Write to first entry in file
 				if(runningData) fs.appendFileSync('runningData.dat', samplesSinceBoot + '\n');
 				// Push most recent date to the top of the FIFO stack
-				datesBeingProcessed.unshift(date);
+				datesBeingProcessed.push(date);
 				// Write crude period to pipe
 				if(fit.alive) fit.stdin.write(samplesSinceBoot + '\n');
 
