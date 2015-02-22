@@ -439,7 +439,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 
 			gpsStatusModel.create(unexpectedValues);
 
-			winston.debug("Clock Offset: " + gpsStatusValues.clockOffset + " ppb");
+			//winston.debug("Clock Offset: " + gpsStatusValues.clockOffset + " ppb");
 
 			// Calculates the thermistor resistance in ohms assuming 100uA current source.
 			var rtherm = buf.readUInt16LE(32)/65536.0*5.0/100e-6;
