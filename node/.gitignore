@@ -11,6 +11,7 @@ lib-cov
 binaryPackets*
  
 node_modules/
+winstonLogs/
 
 pids
 logs

@@ -43,7 +43,14 @@ var datesBeingProcessed = [];
 var winston = new (winston_module.Logger)({
 	transports: [
 		new (winston_module.transports.Console)({ level: 'warn' }),
-		new (winston_module.transports.DailyRotateFile)({ filename: 'ticktock.log', level: 'verbose', handleExceptions : true})
+		// Note: logging to a subfolder does not create the subfolder for
+		// you... it needs to already exist.  Future WinstonJS pull request?
+		// For now make sure node/winstonLogs/ exists
+		new (winston_module.transports.DailyRotateFile)({
+			filename: 'winstonLogs/ticktock.log',
+			level: 'verbose',
+			handleExceptions: true
+		})
 	]
 });
 
@@ -62,10 +69,14 @@ process.argv.forEach(function(val,index,array) {
 	if(val == '--no-serial') noSerial = true;
 	else if(val == '--no-database') noDatabase = true;
 	else if(val == '--debug') {
-		winston.transports.console.level = 'debug';
-		winston.transports.file.level = 'debug';
+		// Set all transports to debug level
+		for(var key in winston.transports) {
+			winston.transports[key].level = 'debug';
+		}
+		winston.debug("Done");
 		debug = true;
-	}	else if(val == '--running-data') runningData = true;
+	}	
+	else if(val == '--running-data') runningData = true;
 	else if(val == '--service') service = true;
 	else if(val == '--physical')  pythonFlags = ["--physical"];
 });
