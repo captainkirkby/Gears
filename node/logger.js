@@ -75,7 +75,7 @@ process.argv.forEach(function(val,index,array) {
 		}
 		winston.debug("Done");
 		debug = true;
-	}	
+	}
 	else if(val == '--running-data') runningData = true;
 	else if(val == '--service') service = true;
 	else if(val == '--physical')  pythonFlags = ["--physical"];
