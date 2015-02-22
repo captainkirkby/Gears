@@ -36,8 +36,9 @@ var lastTimeSinceLastBootPacket = 0;
 var MAX_PACKET_SIZE = 2100;
 
 // Keep track of the dates we are waiting on a fit to process
-// FIFO : unshift on, then pop off
+// FIFO : push on, then pop off
 var datesBeingProcessed = [];
+var lastDatesLength = 0;
 
 // Log to file
 var winston = new (winston_module.Logger)({
@@ -536,10 +537,18 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel, averager) {
 	// Pop least recent date off FIFO stack
 	var storeDate = datesBeingProcessed.pop();
-	if(datesBeingProcessed.length !== 0){
+	if(datesBeingProcessed.length !== 0 && lastDatesLength !== datesBeingProcessed.length){
+		// Only log length on a change
 		winston.warn("Length :" + datesBeingProcessed.length, datesBeingProcessed);
+		// Clobber old file
+		var datesBeingProcessedFile = fs.createWriteStream('datesBeingProcessed',{ flags: 'w' });
+		datesBeingProcessed.forEach(function(element){
+			// Write actual dates to a file
+			datesBeingProcessedFile.write(element + '\n');
+		});
 	}
 
+	lastDatesLength = datesBeingProcessed.length;
 	var badPeriod,badAngle = false;
 	var data = {};
 	var period = Number(periodAndAngle.toString().split(" ")[0].toString());
