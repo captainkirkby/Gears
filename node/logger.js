@@ -228,7 +228,6 @@ async.parallel({
 // updated value of remaining that should be used for the next call.
 function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStatusModel,averageDataModel) {
 	assembler.ingest(data,function(ptype,buf) {
-		var saveMe = true;
 		var p = null;
 		var computerTimestamp = null;
 		if(ptype === 0x00) {
@@ -467,6 +466,18 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			}
 			p = new dataPacketModel(dataPacketData);
 
+			// Save Raw Data in separate collection if sequence number is multiple of 100 or is next (i.e. 100 and 101, 200,201)
+			rawData = {
+				'timestamp'		: (((sequenceNumber%100) === 0 || (((sequenceNumber-1)%100) === 0)) ? null : date),
+				'sequenceNumber': sequenceNumber,
+				'raw'			: raw
+			};
+			rawDataModel.collection.insert(rawData, function onInsert(err, docs) {
+				if (err) throw err;
+				// Raw Saved!
+			});
+
+			// Input averageable fields to averager object
 			averager.input({
 				'timestamp': date,
 				'crudePeriod': ((sequenceNumber == 1) ? null : crudePeriod),
@@ -502,7 +513,6 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			if(lastDataSequenceNumber == 1) {
 				// winston.debug("Time: " + timeSince);
 			} else{
-				saveMe = true;
 				// Write to first entry in file
 				if(runningData) fs.appendFileSync('runningData.dat', samplesSinceBoot + '\n');
 				// Push most recent date to the top of the FIFO stack
@@ -521,14 +531,10 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			winston.warn('Got unexpected packet type',ptype);
 			return;
 		}
-		if(saveMe) {
-			p.save(function(err,p) {
-				if(err) winston.warn('Error saving data packet',p);
-			});
-		}
-		else {
-			winston.warn('Packet not saved to db.');
-		}
+
+		p.save(function(err,p) {
+			if(err) winston.warn('Error saving data packet',p);
+		});
 	});
 }
 
