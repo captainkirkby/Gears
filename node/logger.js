@@ -213,7 +213,7 @@ async.parallel({
 				binaryPacketsFile.write(Buffer.concat([lengthBuffer,dataBuffer]));
 				// Send to receive()
 				receive(data,assembler,averagerCollection,config.db.bootPacketModel,config.db.dataPacketModel,
-					config.db.gpsStatusModel,config.db.averageDataModel);
+					config.db.gpsStatusModel,config.db.averageDataModel,config.db.rawDataModel);
 			});
 
 			// Handles incoming data packets from pipe to fit.py
@@ -226,7 +226,7 @@ async.parallel({
 
 // Receives a new chunk of binary data from the serial port and returns the
 // updated value of remaining that should be used for the next call.
-function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStatusModel,averageDataModel) {
+function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStatusModel,averageDataModel,rawDataModel) {
 	assembler.ingest(data,function(ptype,buf) {
 		var p = null;
 		var computerTimestamp = null;

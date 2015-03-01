@@ -93,7 +93,8 @@ var connectToDB = function (callback) {
 			'bootPacketModel':bootPacketModel,
 			'dataPacketModel':dataPacketModel,
 			'gpsStatusModel':gpsStatusModel,
-			'averageDataModel':averageDataModel
+			'averageDataModel':averageDataModel,
+			'rawDataModel':rawDataModel,
 		});
 	});
 };
