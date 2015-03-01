@@ -56,8 +56,9 @@ var connectToDB = function (callback) {
 		var dataPacketModel = mongoose.model('dataPacketModel',dataPacketSchema);
 		// Defines the schema and model for our raw data
 		var rawDataSchema = mongoose.Schema({
-			timestamp		: { type: Date, expires: '1d' },
-			sequenceNumber	: { type: Number, index: true },
+			expiryTimestamp	: { type: Date, expires: '1d' },
+			timestamp		: { type: Date, index: true },
+			sequenceNumber	: Number,
 			raw				: Array
 		});
 		var rawDataModel = mongoose.model('rawDataModel',rawDataSchema);

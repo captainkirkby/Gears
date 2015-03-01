@@ -468,9 +468,10 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 
 			// Save Raw Data in separate collection if sequence number is multiple of 100 or is next (i.e. 100 and 101, 200,201)
 			rawData = {
-				'timestamp'		: (((sequenceNumber%100) === 0 || (((sequenceNumber-1)%100) === 0)) ? null : date),
-				'sequenceNumber': sequenceNumber,
-				'raw'			: raw
+				'expiryTimestamp'	: (((sequenceNumber%100) === 0 || (((sequenceNumber-1)%100) === 0)) ? null : date),
+				'timestamp'			: date,
+				'sequenceNumber'	: sequenceNumber,
+				'raw'				: raw
 			};
 			rawDataModel.collection.insert(rawData, function onInsert(err, docs) {
 				if (err) throw err;
