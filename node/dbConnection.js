@@ -54,6 +54,13 @@ var connectToDB = function (callback) {
 			raw: Array
 		});
 		var dataPacketModel = mongoose.model('dataPacketModel',dataPacketSchema);
+		// Defines the schema and model for our raw data
+		var rawDataSchema = mongoose.Schema({
+			timestamp		: { type: Date, expires: '1d' },
+			sequenceNumber	: { type: Number, index: true },
+			raw				: Array
+		});
+		var rawDataModel = mongoose.model('rawDataModel',rawDataSchema);
 		// Defines the schema and model for the running averages
 		var averageDataSchema = mongoose.Schema({
 			timestamp: { type: Date, index: true },
