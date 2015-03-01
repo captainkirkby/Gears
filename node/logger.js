@@ -545,7 +545,7 @@ function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel, averager) {
 	var storeDate = datesBeingProcessed.pop();
 	if(datesBeingProcessed.length !== 0 && lastDatesLength !== datesBeingProcessed.length){
 		// Only log length on a change
-		winston.warn("Length :" + datesBeingProcessed.length, datesBeingProcessed);
+		winston.warn("Length :" + datesBeingProcessed.length);
 		// Clobber old file
 		var datesBeingProcessedFile = fs.createWriteStream('datesBeingProcessed',{ flags: 'w' });
 		datesBeingProcessed.forEach(function(element){
