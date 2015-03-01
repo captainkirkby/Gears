@@ -100,6 +100,9 @@ function fetch(query, dataPacketModel, bootPacketModel, averageDataModel, gpsSta
 	if(query.db == "gps"){
 		// We need to fetch from gpsStatusModel
 		dbCollection = gpsStatusModel;
+	} else if(query.db == "raw"){
+		// We need to fetch from gpsStatusModel
+		dbCollection = rawDataModel;
 	}
 
 	if(mostRecent){
