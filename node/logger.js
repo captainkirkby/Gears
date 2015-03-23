@@ -456,8 +456,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 				'pressure': pressure,
 				'blockTemperature': ttherm,
 				'humidity': humidity,
-				'irLevel': irLevel,
-				'raw': raw
+				'irLevel': irLevel
 			};
 			if(sequenceNumber == 1) {
 				dataPacketData['initialCrudePeriod'] = crudePeriod;

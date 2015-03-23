@@ -50,8 +50,7 @@ var connectToDB = function (callback) {
 			minorAlarms: Number,
 			gpsDecodingStatus: Number,
 			discipliningActivity: Number,
-			clockOffset: Number,
-			raw: Array
+			clockOffset: Number
 		});
 		var dataPacketModel = mongoose.model('dataPacketModel',dataPacketSchema);
 		// Defines the schema and model for our raw data
