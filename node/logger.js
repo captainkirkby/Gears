@@ -45,7 +45,7 @@ var winston = new (winston_module.Logger)({
 	transports: [
 		new (winston_module.transports.Console)({ level: 'warn' }),
 		// Note: logging to a subfolder does not create the subfolder for
-		// you... it needs to already exist.  Future WinstonJS pull request?
+		// you.... it needs to already exist.  Future WinstonJS pull request?
 		// For now make sure node/winstonLogs/ exists
 		new (winston_module.transports.DailyRotateFile)({
 			filename: 'winstonLogs/ticktock.log',
