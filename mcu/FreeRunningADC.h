@@ -1,6 +1,8 @@
 #ifndef ADC_H
 #define ADC_H
 
+#include "packet.h"
+
 // ADC status constants
 #define ADC_STATUS_CONTINUOUS 1
 #define ADC_STATUS_UNSTABLE 2
@@ -26,7 +28,7 @@ uint8_t analogSensors[NUM_SENSORS] = {ADC_IR_IN, ADC_THERMISTOR, ADC_HUMIDITY};
 #define ADC_ONE_SHOT_OVERSAMPLING 64
 
 // Buffer Length
-#define CIRCULAR_BUFFER_LENGTH 2048
+//#define CIRCULAR_BUFFER_LENGTH 3687       // imported by packet.h
 
 // Set trigger (percent of a 10 bit sample)
 #define THRESHOLD 500
