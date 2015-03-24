@@ -31,10 +31,13 @@ uint8_t analogSensors[NUM_SENSORS] = {ADC_IR_IN, ADC_THERMISTOR, ADC_HUMIDITY};
 // Set trigger (percent of a 10 bit sample)
 #define THRESHOLD 500
 
+// Set time before trigger
+#define SAMPLES_BEFORE_TRIGGER 300
+
 // How much further after the trigger we go
-// CIRCULAR_BUFFER_LENGTH - END_TIMER = time before trigger
-// Percent of a CIRCULAR_BUFFER_LENGTH sample that comes after the trigger
-#define END_TIMER 1748
+// CIRCULAR_BUFFER_LENGTH - END_TIMER = SAMPLES_BEFORE_TRIGGER
+// Portion of a CIRCULAR_BUFFER_LENGTH sample that comes after the trigger
+#define END_TIMER (CIRCULAR_BUFFER_LENGTH - SAMPLES_BEFORE_TRIGGER)
 
 uint16_t testADC(uint8_t channel)
 {	
