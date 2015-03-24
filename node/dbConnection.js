@@ -50,10 +50,17 @@ var connectToDB = function (callback) {
 			minorAlarms: Number,
 			gpsDecodingStatus: Number,
 			discipliningActivity: Number,
-			clockOffset: Number,
-			raw: Array
+			clockOffset: Number
 		});
 		var dataPacketModel = mongoose.model('dataPacketModel',dataPacketSchema);
+		// Defines the schema and model for our raw data
+		var rawDataSchema = mongoose.Schema({
+			expiryTimestamp	: { type: Date, expires: 3600 },
+			timestamp		: { type: Date, index: true },
+			sequenceNumber	: Number,
+			raw				: Array
+		});
+		var rawDataModel = mongoose.model('rawDataModel',rawDataSchema);
 		// Defines the schema and model for the running averages
 		var averageDataSchema = mongoose.Schema({
 			timestamp: { type: Date, index: true },
@@ -86,7 +93,8 @@ var connectToDB = function (callback) {
 			'bootPacketModel':bootPacketModel,
 			'dataPacketModel':dataPacketModel,
 			'gpsStatusModel':gpsStatusModel,
-			'averageDataModel':averageDataModel
+			'averageDataModel':averageDataModel,
+			'rawDataModel':rawDataModel,
 		});
 	});
 };

@@ -67,7 +67,8 @@ $(function() {
 		var dataURL = "fetch?" + $.param({
 			"from" : from,
 			"to" : to,
-			"series" : dataToPlot
+			"series" : dataToPlot,
+			"db" : "raw"
 		});
 
 		lastFrom = from;

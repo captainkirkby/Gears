@@ -45,7 +45,7 @@ var winston = new (winston_module.Logger)({
 	transports: [
 		new (winston_module.transports.Console)({ level: 'warn' }),
 		// Note: logging to a subfolder does not create the subfolder for
-		// you... it needs to already exist.  Future WinstonJS pull request?
+		// you.... it needs to already exist.  Future WinstonJS pull request?
 		// For now make sure node/winstonLogs/ exists
 		new (winston_module.transports.DailyRotateFile)({
 			filename: 'winstonLogs/ticktock.log',
@@ -213,7 +213,7 @@ async.parallel({
 				binaryPacketsFile.write(Buffer.concat([lengthBuffer,dataBuffer]));
 				// Send to receive()
 				receive(data,assembler,averagerCollection,config.db.bootPacketModel,config.db.dataPacketModel,
-					config.db.gpsStatusModel,config.db.averageDataModel);
+					config.db.gpsStatusModel,config.db.averageDataModel,config.db.rawDataModel);
 			});
 
 			// Handles incoming data packets from pipe to fit.py
@@ -226,9 +226,8 @@ async.parallel({
 
 // Receives a new chunk of binary data from the serial port and returns the
 // updated value of remaining that should be used for the next call.
-function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStatusModel,averageDataModel) {
+function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStatusModel,averageDataModel,rawDataModel) {
 	assembler.ingest(data,function(ptype,buf) {
-		var saveMe = true;
 		var p = null;
 		var computerTimestamp = null;
 		if(ptype === 0x00) {
@@ -457,8 +456,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 				'pressure': pressure,
 				'blockTemperature': ttherm,
 				'humidity': humidity,
-				'irLevel': irLevel,
-				'raw': raw
+				'irLevel': irLevel
 			};
 			if(sequenceNumber == 1) {
 				dataPacketData['initialCrudePeriod'] = crudePeriod;
@@ -467,6 +465,19 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			}
 			p = new dataPacketModel(dataPacketData);
 
+			// Save Raw Data in separate collection if sequence number is multiple of 100 or is next (i.e. 100 and 101, 200,201)
+			rawData = {
+				'expiryTimestamp'	: (((sequenceNumber%100) === 0 || (((sequenceNumber-1)%100) === 0)) ? null : date),
+				'timestamp'			: date,
+				'sequenceNumber'	: sequenceNumber,
+				'raw'				: raw
+			};
+			rawDataModel.collection.insert(rawData, function onInsert(err, docs) {
+				if (err) throw err;
+				// Raw Saved!
+			});
+
+			// Input averageable fields to averager object
 			averager.input({
 				'timestamp': date,
 				'crudePeriod': ((sequenceNumber == 1) ? null : crudePeriod),
@@ -502,7 +513,6 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			if(lastDataSequenceNumber == 1) {
 				// winston.debug("Time: " + timeSince);
 			} else{
-				saveMe = true;
 				// Write to first entry in file
 				if(runningData) fs.appendFileSync('runningData.dat', samplesSinceBoot + '\n');
 				// Push most recent date to the top of the FIFO stack
@@ -521,14 +531,10 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			winston.warn('Got unexpected packet type',ptype);
 			return;
 		}
-		if(saveMe) {
-			p.save(function(err,p) {
-				if(err) winston.warn('Error saving data packet',p);
-			});
-		}
-		else {
-			winston.warn('Packet not saved to db.');
-		}
+
+		p.save(function(err,p) {
+			if(err) winston.warn('Error saving data packet',p);
+		});
 	});
 }
 
@@ -539,7 +545,7 @@ function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel, averager) {
 	var storeDate = datesBeingProcessed.pop();
 	if(datesBeingProcessed.length !== 0 && lastDatesLength !== datesBeingProcessed.length){
 		// Only log length on a change
-		winston.warn("Length :" + datesBeingProcessed.length, datesBeingProcessed);
+		winston.warn("Length :" + datesBeingProcessed.length);
 		// Clobber old file
 		var datesBeingProcessedFile = fs.createWriteStream('datesBeingProcessed',{ flags: 'w' });
 		datesBeingProcessed.forEach(function(element){

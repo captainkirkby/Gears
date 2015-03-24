@@ -56,7 +56,7 @@ function dbCallbackFunction(err, config) {
 
 	process.on('message', function(message) {
 		winston.verbose("Starting Fetch");
-		fetch(message.query, config.dataPacketModel, config.bootPacketModel, config.averageDataModel, config.gpsStatusModel);
+		fetch(message.query, config.dataPacketModel, config.bootPacketModel, config.averageDataModel, config.gpsStatusModel, config.rawDataModel);
 	});
 }
 
@@ -67,7 +67,7 @@ var MAX_QUERY_RESULTS = 120;
 var DEFAULT_FETCH = 120;
 
 // Responds to a request to fetch data.
-function fetch(query, dataPacketModel, bootPacketModel, averageDataModel, gpsStatusModel) {
+function fetch(query, dataPacketModel, bootPacketModel, averageDataModel, gpsStatusModel, rawDataModel) {
 	// Gets the date range to fetch.
 	var from = ('from' in query) ? query.from : '-120';
 	var to = ('to' in query) ? query.to : 'now';
@@ -100,6 +100,9 @@ function fetch(query, dataPacketModel, bootPacketModel, averageDataModel, gpsSta
 	if(query.db == "gps"){
 		// We need to fetch from gpsStatusModel
 		dbCollection = gpsStatusModel;
+	} else if(query.db == "raw"){
+		// We need to fetch from gpsStatusModel
+		dbCollection = rawDataModel;
 	}
 
 	if(mostRecent){

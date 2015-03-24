@@ -8,6 +8,8 @@ lib-cov
 *.gz
 *.backup*
 
+datesBeingProcessed
+
 binaryPackets*
  
 node_modules/
