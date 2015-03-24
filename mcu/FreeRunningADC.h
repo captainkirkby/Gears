@@ -41,46 +41,6 @@ uint8_t analogSensors[NUM_SENSORS] = {ADC_IR_IN, ADC_THERMISTOR, ADC_HUMIDITY};
 // Portion of a CIRCULAR_BUFFER_LENGTH sample that comes after the trigger
 #define END_TIMER (CIRCULAR_BUFFER_LENGTH - SAMPLES_BEFORE_TRIGGER)
 
-uint16_t testADC(uint8_t channel)
-{	
-    // clear ADLAR in ADMUX (0x7C) to right-adjust the result
-    // ADCL will contain lower 8 bits, ADCH upper 2 (in last two bits)
-    ADMUX &= 0B11011111;
-    
-    // Set REFS1..0 in ADMUX (0x7C) to change reference voltage to the
-    // proper source (01)
-    ADMUX |= 0B01000000;
-    
-    // Clear MUX3..0 in ADMUX (0x7C) in preparation for setting the analog
-    // input
-    ADMUX &= 0B11110000;
-    
-    // Set MUX3..0 in ADMUX (0x7C) to read from the IR Photodiode
-    // Do not set above 15! You will overrun other parts of ADMUX. A full
-    // list of possible inputs is available in the datasheet
-    ADMUX |= channel;
-
-    // Set ADEN in ADCSRA (0x7A) to enable the ADC.
-    // Note, this instruction takes 12 ADC clocks to execute
-    ADCSRA |= 0B10000000;
-
-    // Set the Prescaler to 64 (10000KHz/64 = 156.25KHz)
-    // Above 200KHz 10-bit results are not reliable.
-    ADCSRA |= 0B00000110;
-
-	
-	// start single convertion
-	// write ’1′ to ADSC
-	ADCSRA |= (1<<ADSC);
-	
-	// wait for conversion to complete
-	// ADSC becomes ’0′ again
-	// till then, run loop continuously
-	while(ADCSRA & (1<<ADSC));
-	
-	return (ADCL | (ADCH << 8));
-}
-
 void switchADCMuxChannel(uint8_t channel)
 {
     // Clear MUX3..0 in ADMUX (0x7C) in preparation for setting the analog
