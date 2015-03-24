@@ -407,6 +407,8 @@ class FrameProcessor(object):
             ax = plt.subplot(1,1,1)
             ax.set_ylim([-4.,1024.])
             plt.plot(self.plotx,samples,'g+')
+            if self.args.show_centers:
+                plt.plot(numpy.zeros(100)+offset,numpy.linspace(0,1000,100),'b+');
             if bestFit is not None:
                 plt.plot(self.plotx,bestFit,'r-')
             plt.draw()
@@ -552,6 +554,8 @@ def main():
         help = 'nominal width of the fiducial marker in milimeters')
     parser.add_argument('--show-plots', action = 'store_true',
         help = 'display analysis plots')
+    parser.add_argument('--show-centers', action = 'store_true',
+        help = 'display center mark on analysis plots')
     parser.add_argument('--physical', action = 'store_true',
         help = 'fit frames to a physical model')
     parser.add_argument('--spline', action = 'store_true',
