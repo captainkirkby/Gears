@@ -180,7 +180,7 @@ def lineFit(y,t1,t2):
     slope, intercept, r_value, p_value, std_err = linregress(t,y[t1:t2])
     return -intercept/slope
 
-def quickFit(samples,smoothing=15,fitsize=5):
+def quickFit(samples,args,smoothing=15,fitsize=5):
     """
     Attempts a quick fit of the specified sample data or returns a RuntimeError.
     Returns the direction (+/-1) of travel, the estimated lo and hi ADC levels,
@@ -205,30 +205,30 @@ def quickFit(samples,smoothing=15,fitsize=5):
     nrise = numpy.count_nonzero(rising)
     nfall = numpy.count_nonzero(falling)
     # check for the expected number of rising and falling edges
-    if nrise != 3:
-        raise RuntimeError("quickFit: expected 3 rising edges but found %d" % numpy.count_nonzero(rising))
-    if nfall != 3:
-        raise RuntimeError("quickFit: expected 3 falling edges but found %d" % numpy.count_nonzero(falling))
+    if nrise != args.nfingers:
+        raise RuntimeError("quickFit: expected %d rising edges but found %d" % (args.nfingers, numpy.count_nonzero(rising)))
+    if nfall != args.nfingers:
+        raise RuntimeError("quickFit: expected %d falling edges but found %d" % (args.nfingers, numpy.count_nonzero(falling)))
     # locate the nearest ADC sample to each edge
-    risePos = numpy.sort(numpy.argsort(rising)[-3:])
-    fallPos = numpy.sort(numpy.argsort(falling)[-3:])
+    risePos = numpy.sort(numpy.argsort(rising)[-1*args.nfingers:])
+    fallPos = numpy.sort(numpy.argsort(falling)[-1*args.nfingers:])
     # perform linear fits to locate each edge to subsample precision
-    riseFit = numpy.empty((3,))
-    fallFit = numpy.empty((3,))
-    for i in range(3):
+    riseFit = numpy.empty((args.nfingers,))
+    fallFit = numpy.empty((args.nfingers,))
+    for i in range(args.nfingers):
         riseFit[i] = lineFit(smooth,risePos[i]-fitsize,risePos[i]+fitsize+1)
         fallFit[i] = lineFit(smooth,fallPos[i]-fitsize,fallPos[i]+fitsize+1)
     # use the distance between the first falling and rising edges to discriminate between
     # the two possible directions of travel and calculate edge times relative to the
     # fiducial, corrected for the direction of travel.
-    if risePos[0] - fallPos[0] > samples.size/6.:
+    if risePos[0] - fallPos[0] > samples.size/(2.0 * args.nfingers):
         direction = +1.
-        t0 = fallFit[1]
+        t0 = (fallFit[2]+riseFit[2])/2
         riseFit -= t0
         fallFit -= t0
     else:
         direction = -1.
-        t0 = riseFit[1]
+        t0 = (fallFit[2]+riseFit[2])/2
         tmp = numpy.copy(riseFit)
         riseFit = (t0 - fallFit)[::-1]
         fallFit = (t0 - tmp)[::-1]
@@ -249,10 +249,10 @@ def buildSplineTemplate(frames,args):
     lovec = numpy.empty((nframes,))
     hivec = numpy.empty((nframes,))
     t0vec = numpy.empty((nframes,))
-    risevec = numpy.empty((nframes,3))
-    fallvec = numpy.empty((nframes,3))
+    risevec = numpy.empty((nframes,args.nfingers))
+    fallvec = numpy.empty((nframes,args.nfingers))
     for i in range(nframes):
-        dirvec[i],lovec[i],hivec[i],t0vec[i],risevec[i],fallvec[i] = quickFit(samples[i])
+        dirvec[i],lovec[i],hivec[i],t0vec[i],risevec[i],fallvec[i] = quickFit(samples[i],args)
     # calculate the mean lo,hi levels
     lo = numpy.mean(lovec)
     hi = numpy.mean(hivec)
@@ -382,7 +382,7 @@ class FrameProcessor(object):
         if self.args.load_template and self.template is None:
             return 0,0
         # always start with a quick fit
-        direction,lo,hi,offset,rise,fall = quickFit(samples)
+        direction,lo,hi,offset,rise,fall = quickFit(samples,self.args)
         if self.args.physical:
             fitParams,bestFit = fitPhysicalModel(samples,self.tabs,self.args,direction,lo,hi,offset)
             offset,amplitude = fitParams[0],fitParams[5]
@@ -544,6 +544,8 @@ def main():
         help = 'number of IR ADC samples per frame')
     parser.add_argument('--adc-tick', type = float, default = 832e-7,
         help = 'ADC sampling period in seconds')
+    parser.add_argument('--nfingers', type = int, default = 5,
+        help = 'number of fingers on the fiducial bob (')
     parser.add_argument('--length', type = float, default = 1020.,
         help = 'nominal length of pendulum to fiducial marker in milimeters')
     parser.add_argument('--width', type = float, default = 30.,
