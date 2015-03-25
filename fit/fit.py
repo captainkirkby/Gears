@@ -550,7 +550,7 @@ def main():
         help = 'number of fingers on the fiducial bob (')
     parser.add_argument('--length', type = float, default = 1020.,
         help = 'nominal length of pendulum to fiducial marker in milimeters')
-    parser.add_argument('--width', type = float, default = 30.,
+    parser.add_argument('--width', type = float, default = 54.,
         help = 'nominal width of the fiducial marker in milimeters')
     parser.add_argument('--show-plots', action = 'store_true',
         help = 'display analysis plots')
