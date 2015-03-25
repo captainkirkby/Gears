@@ -573,7 +573,7 @@ def main():
     args = parser.parse_args()
 
     # define tab geometry
-    tabs = numpy.array([[-15.,-5.],[0.,5.],[10.,15.]])
+    tabs = numpy.array([[-27.,-19.],[-15.,-11.],[-7.,-3.],[3.,7.],[11.,15.],[23.,27.]])
 
     # initialize our database connection
     db = DB(args)
