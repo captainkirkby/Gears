@@ -180,7 +180,7 @@ def lineFit(y,t1,t2):
     slope, intercept, r_value, p_value, std_err = linregress(t,y[t1:t2])
     return -intercept/slope
 
-def quickFit(samples,args,smoothing=15,fitsize=5):
+def quickFit(samples,args,smoothing=15,fitsize=5,avgWindow=50):
     """
     Attempts a quick fit of the specified sample data or returns a RuntimeError.
     Returns the direction (+/-1) of travel, the estimated lo and hi ADC levels,
@@ -232,6 +232,13 @@ def quickFit(samples,args,smoothing=15,fitsize=5):
         tmp = numpy.copy(riseFit)
         riseFit = (t0 - fallFit)[::-1]
         fallFit = (t0 - tmp)[::-1]
+    # calculate the height of the mid-notch by getting the mean value of a window around t0
+    lb = t0 - avgWindow
+    rb = t0 + avgWindow
+    # add one to get same number of samples on both sides of t0
+    # x x x x x x x x x x x x x x x x x
+    #     l-------t0-------r
+    height = numpy.mean(samples[lb:rb+1])
     return direction,lo,hi,t0,riseFit,fallFit
 
 def buildSplineTemplate(frames,args):
