@@ -661,7 +661,7 @@ def main():
                     if remaining == 0:
                         period,swing = processor.process(samplesSinceBoot,samples)
                         # send the calculated period to our STDOUT and flush the buffer!
-                        print period,swing
+                        print period,swing,height
                         sys.stdout.flush()
                         # check for more recent template
                         processor.updateTemplate()
