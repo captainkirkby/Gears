@@ -239,7 +239,7 @@ def quickFit(samples,args,smoothing=15,fitsize=5,avgWindow=50):
     # x x x x x x x x x x x x x x x x x
     #     l-------t0-------r
     height = numpy.mean(samples[lb:rb+1])
-    return direction,lo,hi,t0,riseFit,fallFit
+    return direction,lo,hi,t0,riseFit,fallFit,height
 
 def buildSplineTemplate(frames,args):
     """
@@ -259,7 +259,7 @@ def buildSplineTemplate(frames,args):
     risevec = numpy.empty((nframes,args.nfingers))
     fallvec = numpy.empty((nframes,args.nfingers))
     for i in range(nframes):
-        dirvec[i],lovec[i],hivec[i],t0vec[i],risevec[i],fallvec[i] = quickFit(samples[i],args)
+        dirvec[i],lovec[i],hivec[i],t0vec[i],risevec[i],fallvec[i],unusedHeight = quickFit(samples[i],args)
     # calculate the mean lo,hi levels
     lo = numpy.mean(lovec)
     hi = numpy.mean(hivec)
@@ -389,7 +389,7 @@ class FrameProcessor(object):
         if self.args.load_template and self.template is None:
             return 0,0
         # always start with a quick fit
-        direction,lo,hi,offset,rise,fall = quickFit(samples,self.args)
+        direction,lo,hi,offset,rise,fall,height = quickFit(samples,self.args)
         if self.args.physical:
             fitParams,bestFit = fitPhysicalModel(samples,self.tabs,self.args,direction,lo,hi,offset)
             offset,amplitude = fitParams[0],fitParams[5]
