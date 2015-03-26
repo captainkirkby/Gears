@@ -238,6 +238,7 @@ def quickFit(samples,args,smoothing=15,fitsize=5,avgWindow=50):
     # add one to get same number of samples on both sides of t0
     # x x x x x x x x x x x x x x x x x
     #     l-------t0-------r
+    # note: you can access non integer elements of a numpy array (truncates decimal)
     height = numpy.mean(samples[lb:rb+1])
     return direction,lo,hi,t0,riseFit,fallFit,height
 
