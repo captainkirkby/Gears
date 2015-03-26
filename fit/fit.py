@@ -451,7 +451,7 @@ class FrameProcessor(object):
             self.periods.append(period)
             self.swings.append(swing)
         # return the estimated period in seconds
-        return period,swing
+        return period,swing,height
 
     def finish(self):
         periods = numpy.array(self.periods)
@@ -632,8 +632,8 @@ def main():
         for i,frame in enumerate(frames):
             samplesSinceBoot,samples = frame[0],frame[1:]
             try:
-                period,swing = processor.process(samplesSinceBoot,samples)
-                print 'Period = %f secs, swing = %f (%d/%d)' % (period,swing,i,nframe)
+                period,swing,height = processor.process(samplesSinceBoot,samples)
+                print 'Period = %f secs, swing = %f, height = %f (%d/%d)' % (period,swing,height,i,nframe)
                 # check for more recent template
                 processor.updateTemplate()
             except RuntimeError,e:
