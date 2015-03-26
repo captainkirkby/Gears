@@ -542,7 +542,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 
 // Write refined period and swing arc angle to database
 // Format : period angle
-function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel, averager) {
+function storeRefinedPeriodAndAngle(periodAngleHeight, dataPacketModel, averager) {
 	// Pop least recent date off FIFO stack
 	var storeDate = datesBeingProcessed.pop();
 	if(datesBeingProcessed.length !== 0 && lastDatesLength !== datesBeingProcessed.length){
@@ -557,11 +557,11 @@ function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel, averager) {
 	}
 
 	lastDatesLength = datesBeingProcessed.length;
-	var badPeriod,badAngle = false;
+	var badPeriod,badAngle,badHeight = false;
 	var data = {};
-	var period = Number(periodAndAngle.toString().split(" ")[0].toString());
-	var angle = Number(periodAndAngle.toString()
-		.split(" ")[1].toString());
+	var period = Number(periodAngleHeight.toString().split(" ")[0].toString());
+	var angle = Number(periodAngleHeight.toString().split(" ")[1].toString());
+	var height = Number(periodAngleHeight.toString().split(" ")[2].toString());
 	if(period <= 0 || period >= 3.0 || isNaN(period)){
 		winston.warn("Bad Period: " + period);
 		badPeriod = true;
@@ -575,6 +575,13 @@ function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel, averager) {
 	} else {
 		winston.verbose("Angle: " + angle);
 		data["angle"] = angle;
+	}
+	if(height <= 0 || isNaN(height)){
+		winston.warn("Bad Height: " + height);
+		badHeight = true;
+	} else {
+		winston.verbose("Height: " + height);
+		data["height"] = height;
 	}
 	// if(badPeriod && badAngle) return;
 	// winston.info(storeDate);
