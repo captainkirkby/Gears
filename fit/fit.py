@@ -415,7 +415,9 @@ class FrameProcessor(object):
             ax.set_ylim([-4.,1024.])
             plt.plot(self.plotx,samples,'g+')
             if self.args.show_centers:
-                plt.plot(numpy.zeros(100)+offset,numpy.linspace(0,1000,100),'b+');
+                plt.plot(numpy.zeros(100)+offset,numpy.linspace(0,2**10,100),'b+');
+            if self.args.show_heights:
+                plt.plot(numpy.linspace(0,self.args.nsamples,100),numpy.zeros(100)+height,'y+');
             if bestFit is not None:
                 plt.plot(self.plotx,bestFit,'r-')
             plt.draw()
@@ -563,6 +565,8 @@ def main():
         help = 'display analysis plots')
     parser.add_argument('--show-centers', action = 'store_true',
         help = 'display center mark on analysis plots')
+    parser.add_argument('--show-heights', action = 'store_true',
+        help = 'display height mark on analysis plots')
     parser.add_argument('--physical', action = 'store_true',
         help = 'fit frames to a physical model')
     parser.add_argument('--spline', action = 'store_true',
