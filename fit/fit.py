@@ -348,6 +348,8 @@ class FrameProcessor(object):
         self.template with it and replace self.mostRecentTemplateTimestamp with its
         timestamp
         """
+        if self.args.verbose:
+            print "Attempting to Update Template"
         if self.args.load_template == "db":
             # Try and create a template if one doesn't exist
             if self.template is None:
@@ -356,10 +358,14 @@ class FrameProcessor(object):
                 data = dataTuple[0]
                 timestamp = dataTuple[1]
                 if len(data.shape) != 1:
+                    if self.args.verbose:
+                        print "Bad data shape!"
                     return
                 # loop over data frames
                 nframe = len(data)/(1+self.args.nsamples)
                 if(nframe < self.args.fetch_limit):
+                    if self.args.verbose:
+                        print "Insufficient Data to update template!"
                     return
                 if not (self.args.max_frames == 0 or nframe <= self.args.max_frames):
                     nframe = self.args.max_frames
@@ -514,6 +520,8 @@ class DB(object):
         Saves a given template into the database
         """
         self.templateCollection.insert({self.TIMESTAMP:timestamp, self.TEMPLATE:template.T.tolist()})
+        if self.args.verbose:
+            print "Template Updated!"
 
     def loadTemplate(self):
         """
