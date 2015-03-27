@@ -491,7 +491,7 @@ class DB(object):
     def loadData(self):
         """
         Loads IR data from the database into the expected numpy format
-        Crude Period
+        Crude Period        EDIT 3/27: this is set to zero breaking the --from-db option!
         IR
         IR...
         Returns the tuple (data,timestamp)
@@ -502,7 +502,8 @@ class DB(object):
         # Construct numpy array
         data = numpy.array([], dtype=numpy.uint16)
         for document in results:
-            data = numpy.append(data,document[self.CRUDE_PERIOD])
+            # data = numpy.append(data,document[self.CRUDE_PERIOD])
+            data = numpy.append(data,0)
             data = numpy.append(data,document[self.RAW])
             # Get last timestamp
             timestamp = document[self.TIMESTAMP]
@@ -538,10 +539,10 @@ def main():
         help = 'name of input data file to replay')
 
     parser.add_argument('--from-db', action = 'store_true',
-        help = 'fetch data from a Mongo database')
+        help = 'fetch data from a Mongo database (BROKEN)')
     parser.add_argument('--db-name', type=str, default='TickTock',
         help = 'name of Mongo database to fetch from')
-    parser.add_argument('--collection-name', type=str, default='datapacketmodels',
+    parser.add_argument('--collection-name', type=str, default='rawdatamodels',
         help = 'name of Mongo collection to fetch from')
     parser.add_argument('--template-collection', type = str, default = 'templatemodels',
         help = 'database collection where spline template should be saved and loaded')
