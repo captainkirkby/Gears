@@ -487,6 +487,7 @@ class DB(object):
         self.dataCollection = self.db[args.collection_name]
         self.templateCollection = self.db[self.args.template_collection]
 
+    # We DONT need the crude period data to generate a template
     def loadData(self):
         """
         Loads IR data from the database into the expected numpy format
