@@ -198,7 +198,7 @@ def quickFit(samples,args,smoothing=15,fitsize=5,avgWindow=50):
     margin = int(math.floor(samples.size/16.))
     hi = 0.5*(numpy.mean(smooth[:margin]) + numpy.mean(smooth[-margin:]))
     # find edges as points where the smoothed data crosses the midpoints between lo,hi
-    midpt = 0.5*(lo+hi)
+    midpt = 0.75*(lo+hi)
     smooth -= midpt
     rising = numpy.logical_and(smooth[:-1] <= 0,smooth[1:] > 0)
     falling = numpy.logical_and(smooth[:-1] > 0, smooth[1:] <= 0)
