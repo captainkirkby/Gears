@@ -386,9 +386,9 @@ class FrameProcessor(object):
         """
         if len(samples) != self.args.nsamples:
             # Something is seriously wrong.
-            return -2
+            return -2,-2,-2
         if self.args.load_template and self.template is None:
-            return 0,0
+            return -3,-3,-3
         # always start with a quick fit
         direction,lo,hi,offset,rise,fall,height = quickFit(samples,self.args)
         if self.args.physical:
@@ -659,8 +659,8 @@ def main():
                     samples[args.nsamples - remaining] = value
                     remaining -= 1
                     if remaining == 0:
-                        # period,swing,height = processor.process(samplesSinceBoot,samples)
-                        period,swing,height = 0,0,500
+                        period,swing,height = processor.process(samplesSinceBoot,samples)
+                        # period,swing,height = 0,0,500
                         # send the calculated period to our STDOUT and flush the buffer!
                         print period,swing,height
                         sys.stdout.flush()
