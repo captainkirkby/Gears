@@ -659,7 +659,8 @@ def main():
                     samples[args.nsamples - remaining] = value
                     remaining -= 1
                     if remaining == 0:
-                        period,swing,height = processor.process(samplesSinceBoot,samples)
+                        # period,swing,height = processor.process(samplesSinceBoot,samples)
+                        period,swing,height = 0,0,500
                         # send the calculated period to our STDOUT and flush the buffer!
                         print period,swing,height
                         sys.stdout.flush()
