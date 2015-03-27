@@ -507,6 +507,7 @@ class DB(object):
             self.RAW:True}).sort(self.TIMESTAMP, DESCENDING).limit(self.args.fetch_limit)
         # Construct numpy array
         data = numpy.array([], dtype=numpy.uint16)
+        timestamp = 0
         for document in results:
             # data = numpy.append(data,document[self.CRUDE_PERIOD])
             data = numpy.append(data,0)
