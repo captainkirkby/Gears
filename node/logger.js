@@ -221,6 +221,12 @@ async.parallel({
 			// Handles incoming data packets from pipe to fit.py
 			fit.stdout.on('data', function(data){
 				storeRefinedPeriodAndAngle(data, config.db.dataPacketModel, averagerCollection);
+				console.log("Out!");
+			});
+
+			// Handles incoming data packets from pipe to fit.py
+			fit.stdin.on('data', function(data){
+				console.log("In!");
 			});
 		}
 	}
@@ -521,6 +527,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 				datesBeingProcessed.push(date);
 				// Write crude period to pipe
 				if(fit.alive) fit.stdin.write(samplesSinceBoot + '\n');
+				else console.log("Not Alive!");
 
 				// Iterate through samples writing them to the fit pipe
 				for(var i = 0; i < RAW_LENGTH; i++){
