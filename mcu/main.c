@@ -85,11 +85,11 @@ int main(void)
         bootPacket.bmpSensorStatus = bmpError;
     }
 
-    // Test Point Configuration
-    // Set pin as output
-    DDRA |= 0B00000100;
-    // Set pin to low
-    PORTA &= ~0B00000100;
+    // Test Points Configuration
+    // Set pins as output
+    DDRA |= 0B00000101;
+    // Set all test points to low
+    PORTA &= ~0B00000101;
 
     // PPS Interrupt Configuration
     // Set pin as input
@@ -158,6 +158,10 @@ int main(void)
     while(1) {
         // Store ADC run and transmit data
         if(adcStatus == ADC_STATUS_DONE){
+
+            // Turn on A2 (TP1)
+            PORTA |= 0B00000100;
+
             // Updates our sequence number for the next packet
             dataPacket.sequenceNumber++;
 
@@ -165,6 +169,9 @@ int main(void)
 
             // Reads the BMP180 sensor values and saves the results in the data packet
             bmpError = readBMP180Sensors(&dataPacket.temperature,&dataPacket.pressure);
+
+            // Turn on A0 (TP3)
+            PORTA |= 0B00000001;
             
             if(bmpError) flashNumber(200+bmpError);
 
@@ -174,6 +181,9 @@ int main(void)
 
             // Readout GPS health
             health = getGPSHealth();
+
+            // Turn off A2 (TP1)
+            PORTA &= ~0B00000100;
 
             dataPacket.recieverMode = health.recieverMode;
             dataPacket.discipliningMode = health.discipliningMode;
@@ -185,6 +195,9 @@ int main(void)
             
             // Sends binary packet data synchronously
             serialWriteUSB((const uint8_t*)&dataPacket,sizeof(dataPacket));
+
+            // Turn off A0 (TP3)
+            PORTA &= ~0B00000001;
 
             adcStatus = ADC_STATUS_CONTINUOUS;
         }

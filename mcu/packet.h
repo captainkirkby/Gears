@@ -6,7 +6,7 @@
 #define START_BYTE 0xFE
 #define BOOT_PACKET 0x00
 #define DATA_PACKET 0x01
-#define PACKET_LENGTH 2048
+#define CIRCULAR_BUFFER_LENGTH 3072
 #define TSIP_START_BYTE 0x10
 #define TSIP_STOP_BYTE1 0x10
 #define TSIP_STOP_BYTE2 0x03
@@ -72,7 +72,7 @@ typedef struct {
     uint8_t gpsDecodingStatus;      // (46)
     uint8_t discipliningActivity;   // (47)
     uint32_t clockOffset;           // (48)     // 4 byte float
-    volatile uint8_t raw[PACKET_LENGTH];    // (52)
+    volatile uint8_t raw[CIRCULAR_BUFFER_LENGTH];    // (52)
 } DataPacket;
 
 // Command packet for turning auto messages off

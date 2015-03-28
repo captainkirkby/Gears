@@ -180,7 +180,7 @@ def lineFit(y,t1,t2):
     slope, intercept, r_value, p_value, std_err = linregress(t,y[t1:t2])
     return -intercept/slope
 
-def quickFit(samples,smoothing=15,fitsize=5):
+def quickFit(samples,args,smoothing=15,fitsize=5,avgWindow=50):
     """
     Attempts a quick fit of the specified sample data or returns a RuntimeError.
     Returns the direction (+/-1) of travel, the estimated lo and hi ADC levels,
@@ -198,41 +198,49 @@ def quickFit(samples,smoothing=15,fitsize=5):
     margin = int(math.floor(samples.size/16.))
     hi = 0.5*(numpy.mean(smooth[:margin]) + numpy.mean(smooth[-margin:]))
     # find edges as points where the smoothed data crosses the midpoints between lo,hi
-    midpt = 0.5*(lo+hi)
+    midpt = 0.75*(lo+hi)
     smooth -= midpt
     rising = numpy.logical_and(smooth[:-1] <= 0,smooth[1:] > 0)
     falling = numpy.logical_and(smooth[:-1] > 0, smooth[1:] <= 0)
     nrise = numpy.count_nonzero(rising)
     nfall = numpy.count_nonzero(falling)
     # check for the expected number of rising and falling edges
-    if nrise != 3:
-        raise RuntimeError("quickFit: expected 3 rising edges but found %d" % numpy.count_nonzero(rising))
-    if nfall != 3:
-        raise RuntimeError("quickFit: expected 3 falling edges but found %d" % numpy.count_nonzero(falling))
+    if nrise != args.nfingers:
+        raise RuntimeError("quickFit: expected %d rising edges but found %d" % (args.nfingers, numpy.count_nonzero(rising)))
+    if nfall != args.nfingers:
+        raise RuntimeError("quickFit: expected %d falling edges but found %d" % (args.nfingers, numpy.count_nonzero(falling)))
     # locate the nearest ADC sample to each edge
-    risePos = numpy.sort(numpy.argsort(rising)[-3:])
-    fallPos = numpy.sort(numpy.argsort(falling)[-3:])
+    risePos = numpy.sort(numpy.argsort(rising)[-1*args.nfingers:])
+    fallPos = numpy.sort(numpy.argsort(falling)[-1*args.nfingers:])
     # perform linear fits to locate each edge to subsample precision
-    riseFit = numpy.empty((3,))
-    fallFit = numpy.empty((3,))
-    for i in range(3):
+    riseFit = numpy.empty((args.nfingers,))
+    fallFit = numpy.empty((args.nfingers,))
+    for i in range(args.nfingers):
         riseFit[i] = lineFit(smooth,risePos[i]-fitsize,risePos[i]+fitsize+1)
         fallFit[i] = lineFit(smooth,fallPos[i]-fitsize,fallPos[i]+fitsize+1)
     # use the distance between the first falling and rising edges to discriminate between
     # the two possible directions of travel and calculate edge times relative to the
     # fiducial, corrected for the direction of travel.
-    if risePos[0] - fallPos[0] > samples.size/6.:
+    if risePos[0] - fallPos[0] > samples.size/(2.0 * args.nfingers):
         direction = +1.
-        t0 = fallFit[1]
+        t0 = (fallFit[2]+riseFit[2])/2
         riseFit -= t0
         fallFit -= t0
     else:
         direction = -1.
-        t0 = riseFit[1]
+        t0 = (fallFit[2]+riseFit[2])/2
         tmp = numpy.copy(riseFit)
         riseFit = (t0 - fallFit)[::-1]
         fallFit = (t0 - tmp)[::-1]
-    return direction,lo,hi,t0,riseFit,fallFit
+    # calculate the height of the mid-notch by getting the mean value of a window around t0
+    lb = t0 - avgWindow
+    rb = t0 + avgWindow
+    # add one to get same number of samples on both sides of t0
+    # x x x x x x x x x x x x x x x x x
+    #     l-------t0-------r
+    # note: you can access non integer elements of a numpy array (truncates decimal)
+    height = numpy.mean(samples[lb:rb+1])
+    return direction,lo,hi,t0,riseFit,fallFit,height
 
 def buildSplineTemplate(frames,args):
     """
@@ -249,10 +257,10 @@ def buildSplineTemplate(frames,args):
     lovec = numpy.empty((nframes,))
     hivec = numpy.empty((nframes,))
     t0vec = numpy.empty((nframes,))
-    risevec = numpy.empty((nframes,3))
-    fallvec = numpy.empty((nframes,3))
+    risevec = numpy.empty((nframes,args.nfingers))
+    fallvec = numpy.empty((nframes,args.nfingers))
     for i in range(nframes):
-        dirvec[i],lovec[i],hivec[i],t0vec[i],risevec[i],fallvec[i] = quickFit(samples[i])
+        dirvec[i],lovec[i],hivec[i],t0vec[i],risevec[i],fallvec[i],unusedHeight = quickFit(samples[i],args)
     # calculate the mean lo,hi levels
     lo = numpy.mean(lovec)
     hi = numpy.mean(hivec)
@@ -340,6 +348,8 @@ class FrameProcessor(object):
         self.template with it and replace self.mostRecentTemplateTimestamp with its
         timestamp
         """
+        if self.args.verbose:
+            print "Attempting to Update Template"
         if self.args.load_template == "db":
             # Try and create a template if one doesn't exist
             if self.template is None:
@@ -348,10 +358,14 @@ class FrameProcessor(object):
                 data = dataTuple[0]
                 timestamp = dataTuple[1]
                 if len(data.shape) != 1:
+                    if self.args.verbose:
+                        print "Bad data shape!"
                     return
                 # loop over data frames
                 nframe = len(data)/(1+self.args.nsamples)
                 if(nframe < self.args.fetch_limit):
+                    if self.args.verbose:
+                        print "Insufficient Data to update template!"
                     return
                 if not (self.args.max_frames == 0 or nframe <= self.args.max_frames):
                     nframe = self.args.max_frames
@@ -378,11 +392,11 @@ class FrameProcessor(object):
         """
         if len(samples) != self.args.nsamples:
             # Something is seriously wrong.
-            return -2
+            return -2,-2,-2
         if self.args.load_template and self.template is None:
-            return 0,0
+            return -3,-3,-3
         # always start with a quick fit
-        direction,lo,hi,offset,rise,fall = quickFit(samples)
+        direction,lo,hi,offset,rise,fall,height = quickFit(samples,self.args)
         if self.args.physical:
             fitParams,bestFit = fitPhysicalModel(samples,self.tabs,self.args,direction,lo,hi,offset)
             offset,amplitude = fitParams[0],fitParams[5]
@@ -407,6 +421,10 @@ class FrameProcessor(object):
             ax = plt.subplot(1,1,1)
             ax.set_ylim([-4.,1024.])
             plt.plot(self.plotx,samples,'g+')
+            if self.args.show_centers:
+                plt.plot(numpy.zeros(100)+offset,numpy.linspace(0,2**10,100),'b+');
+            if self.args.show_heights:
+                plt.plot(numpy.linspace(0,self.args.nsamples,100),numpy.zeros(100)+height,'y+');
             if bestFit is not None:
                 plt.plot(self.plotx,bestFit,'r-')
             plt.draw()
@@ -439,7 +457,7 @@ class FrameProcessor(object):
             self.periods.append(period)
             self.swings.append(swing)
         # return the estimated period in seconds
-        return period,swing
+        return period,swing,height
 
     def finish(self):
         periods = numpy.array(self.periods)
@@ -475,10 +493,11 @@ class DB(object):
         self.dataCollection = self.db[args.collection_name]
         self.templateCollection = self.db[self.args.template_collection]
 
+    # We DONT need the crude period data to generate a template
     def loadData(self):
         """
         Loads IR data from the database into the expected numpy format
-        Crude Period
+        Crude Period        EDIT 3/27: this is set to zero breaking the --from-db option!
         IR
         IR...
         Returns the tuple (data,timestamp)
@@ -488,8 +507,10 @@ class DB(object):
             self.RAW:True}).sort(self.TIMESTAMP, DESCENDING).limit(self.args.fetch_limit)
         # Construct numpy array
         data = numpy.array([], dtype=numpy.uint16)
+        timestamp = 0
         for document in results:
-            data = numpy.append(data,document[self.CRUDE_PERIOD])
+            # data = numpy.append(data,document[self.CRUDE_PERIOD])
+            data = numpy.append(data,0)
             data = numpy.append(data,document[self.RAW])
             # Get last timestamp
             timestamp = document[self.TIMESTAMP]
@@ -500,6 +521,8 @@ class DB(object):
         Saves a given template into the database
         """
         self.templateCollection.insert({self.TIMESTAMP:timestamp, self.TEMPLATE:template.T.tolist()})
+        if self.args.verbose:
+            print "Template Updated!"
 
     def loadTemplate(self):
         """
@@ -525,10 +548,10 @@ def main():
         help = 'name of input data file to replay')
 
     parser.add_argument('--from-db', action = 'store_true',
-        help = 'fetch data from a Mongo database')
+        help = 'fetch data from a Mongo database (BROKEN)')
     parser.add_argument('--db-name', type=str, default='TickTock',
         help = 'name of Mongo database to fetch from')
-    parser.add_argument('--collection-name', type=str, default='datapacketmodels',
+    parser.add_argument('--collection-name', type=str, default='rawdatamodels',
         help = 'name of Mongo collection to fetch from')
     parser.add_argument('--template-collection', type = str, default = 'templatemodels',
         help = 'database collection where spline template should be saved and loaded')
@@ -540,16 +563,22 @@ def main():
         help = 'no interactive prompting for each frame during replay')
     parser.add_argument('--max-frames', type = int, default = 0,
         help = 'maximum number of frames to replay (or no limit if zero)')
-    parser.add_argument('--nsamples', type=int, default=2048,
+    parser.add_argument('--nsamples', type=int, default=3072,
         help = 'number of IR ADC samples per frame')
     parser.add_argument('--adc-tick', type = float, default = 832e-7,
         help = 'ADC sampling period in seconds')
+    parser.add_argument('--nfingers', type = int, default = 5,
+        help = 'number of fingers on the fiducial bob (')
     parser.add_argument('--length', type = float, default = 1020.,
         help = 'nominal length of pendulum to fiducial marker in milimeters')
-    parser.add_argument('--width', type = float, default = 30.,
+    parser.add_argument('--width', type = float, default = 54.,
         help = 'nominal width of the fiducial marker in milimeters')
     parser.add_argument('--show-plots', action = 'store_true',
         help = 'display analysis plots')
+    parser.add_argument('--show-centers', action = 'store_true',
+        help = 'display center mark on analysis plots')
+    parser.add_argument('--show-heights', action = 'store_true',
+        help = 'display height mark on analysis plots')
     parser.add_argument('--physical', action = 'store_true',
         help = 'fit frames to a physical model')
     parser.add_argument('--spline', action = 'store_true',
@@ -567,7 +596,7 @@ def main():
     args = parser.parse_args()
 
     # define tab geometry
-    tabs = numpy.array([[-15.,-5.],[0.,5.],[10.,15.]])
+    tabs = numpy.array([[-27.,-19.],[-15.,-11.],[-7.,-3.],[3.,7.],[11.,15.],[23.,27.]])
 
     # initialize our database connection
     db = DB(args)
@@ -614,8 +643,8 @@ def main():
         for i,frame in enumerate(frames):
             samplesSinceBoot,samples = frame[0],frame[1:]
             try:
-                period,swing = processor.process(samplesSinceBoot,samples)
-                print 'Period = %f secs, swing = %f (%d/%d)' % (period,swing,i,nframe)
+                period,swing,height = processor.process(samplesSinceBoot,samples)
+                print 'Period = %f secs, swing = %f, height = %f (%d/%d)' % (period,swing,height,i,nframe)
                 # check for more recent template
                 processor.updateTemplate()
             except RuntimeError,e:
@@ -641,14 +670,16 @@ def main():
                     samples[args.nsamples - remaining] = value
                     remaining -= 1
                     if remaining == 0:
-                        period,swing = processor.process(samplesSinceBoot,samples)
+                        period,swing,height = processor.process(samplesSinceBoot,samples)
+                        # period,swing,height = 0,0,500
                         # send the calculated period to our STDOUT and flush the buffer!
-                        print period,swing
+                        print period,swing,height
                         sys.stdout.flush()
                         # check for more recent template
                         processor.updateTemplate()
             except Exception,e:
                 # Try to keep going silently after any error
+                raise e
                 pass
 
     # clean up

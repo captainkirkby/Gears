@@ -32,8 +32,10 @@ var flag = false;
 // Remember the last "timeSinceLastBootPacket" so we can reconstruct the crude period
 var lastTimeSinceLastBootPacket = 0;
 
-// Maximum packet size : change this when you want to modify the number of samples
-var MAX_PACKET_SIZE = 2100;
+// Packet Sizes : change this when you want to modify the number of samples
+var RAW_LENGTH = 3072;
+var RAW_START = 52;
+var MAX_PACKET_SIZE = RAW_START+RAW_LENGTH;
 
 // Keep track of the dates we are waiting on a fit to process
 // FIFO : push on, then pop off
@@ -300,7 +302,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			var rawFill = 0;
 			var rawPhase = buf.readUInt16LE(38);
 			// winston.info(rawPhase);
-			var initialReadOffset = 52;
+			var initialReadOffset = RAW_START;
 			var initialReadOffsetWithPhase = initialReadOffset+(rawPhase);
 
 			if(initialReadOffsetWithPhase >= MAX_PACKET_SIZE || initialReadOffsetWithPhase < 0){
@@ -521,7 +523,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 				if(fit.alive) fit.stdin.write(samplesSinceBoot + '\n');
 
 				// Iterate through samples writing them to the fit pipe
-				for(var i = 0; i < 2048; i++){
+				for(var i = 0; i < RAW_LENGTH; i++){
 					if(fit.alive) fit.stdin.write(raw[i] + '\n');
 					if(runningData) fs.appendFileSync('runningData.dat', raw[i] + '\n');
 				}
@@ -540,7 +542,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 
 // Write refined period and swing arc angle to database
 // Format : period angle
-function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel, averager) {
+function storeRefinedPeriodAndAngle(periodAngleHeight, dataPacketModel, averager) {
 	// Pop least recent date off FIFO stack
 	var storeDate = datesBeingProcessed.pop();
 	if(datesBeingProcessed.length !== 0 && lastDatesLength !== datesBeingProcessed.length){
@@ -555,11 +557,11 @@ function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel, averager) {
 	}
 
 	lastDatesLength = datesBeingProcessed.length;
-	var badPeriod,badAngle = false;
+	var badPeriod,badAngle,badHeight = false;
 	var data = {};
-	var period = Number(periodAndAngle.toString().split(" ")[0].toString());
-	var angle = Number(periodAndAngle.toString()
-		.split(" ")[1].toString());
+	var period = Number(periodAngleHeight.toString().split(" ")[0].toString());
+	var angle = Number(periodAngleHeight.toString().split(" ")[1].toString());
+	var height = Number(periodAngleHeight.toString().split(" ")[2].toString());
 	if(period <= 0 || period >= 3.0 || isNaN(period)){
 		winston.warn("Bad Period: " + period);
 		badPeriod = true;
@@ -573,6 +575,13 @@ function storeRefinedPeriodAndAngle(periodAndAngle, dataPacketModel, averager) {
 	} else {
 		winston.verbose("Angle: " + angle);
 		data["angle"] = angle;
+	}
+	if(height <= 0 || isNaN(height)){
+		winston.warn("Bad Height: " + height);
+		badHeight = true;
+	} else {
+		winston.verbose("Height: " + height);
+		data["height"] = height;
 	}
 	// if(badPeriod && badAngle) return;
 	// winston.info(storeDate);

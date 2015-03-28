@@ -1,6 +1,8 @@
 #ifndef ADC_H
 #define ADC_H
 
+#include "packet.h"
+
 // ADC status constants
 #define ADC_STATUS_CONTINUOUS 1
 #define ADC_STATUS_UNSTABLE 2
@@ -11,7 +13,7 @@
 #define ADC_STATUS_ERROR 255
 
 // ADC test constants
-#define ADC_MAX_TEST_TRIES 1000    // This number determines how many tries the ADC gets to not be covered
+#define ADC_MAX_TEST_TRIES 10000    // This number determines how many tries the ADC gets to not be covered
 
 // ADC inputs
 // These are ADC channel numbers, not Arduino pin numbers.
@@ -26,55 +28,18 @@ uint8_t analogSensors[NUM_SENSORS] = {ADC_IR_IN, ADC_THERMISTOR, ADC_HUMIDITY};
 #define ADC_ONE_SHOT_OVERSAMPLING 64
 
 // Buffer Length
-#define CIRCULAR_BUFFER_LENGTH 2048
+//#define CIRCULAR_BUFFER_LENGTH 3687       // imported by packet.h
 
 // Set trigger (percent of a 10 bit sample)
 #define THRESHOLD 500
 
+// Set time before trigger
+#define SAMPLES_BEFORE_TRIGGER 50
+
 // How much further after the trigger we go
-// CIRCULAR_BUFFER_LENGTH - END_TIMER = time before trigger
-// Percent of a CIRCULAR_BUFFER_LENGTH sample that comes after the trigger
-#define END_TIMER 1748
-
-uint16_t testADC(uint8_t channel)
-{	
-    // clear ADLAR in ADMUX (0x7C) to right-adjust the result
-    // ADCL will contain lower 8 bits, ADCH upper 2 (in last two bits)
-    ADMUX &= 0B11011111;
-    
-    // Set REFS1..0 in ADMUX (0x7C) to change reference voltage to the
-    // proper source (01)
-    ADMUX |= 0B01000000;
-    
-    // Clear MUX3..0 in ADMUX (0x7C) in preparation for setting the analog
-    // input
-    ADMUX &= 0B11110000;
-    
-    // Set MUX3..0 in ADMUX (0x7C) to read from the IR Photodiode
-    // Do not set above 15! You will overrun other parts of ADMUX. A full
-    // list of possible inputs is available in the datasheet
-    ADMUX |= channel;
-
-    // Set ADEN in ADCSRA (0x7A) to enable the ADC.
-    // Note, this instruction takes 12 ADC clocks to execute
-    ADCSRA |= 0B10000000;
-
-    // Set the Prescaler to 64 (10000KHz/64 = 156.25KHz)
-    // Above 200KHz 10-bit results are not reliable.
-    ADCSRA |= 0B00000110;
-
-	
-	// start single convertion
-	// write ’1′ to ADSC
-	ADCSRA |= (1<<ADSC);
-	
-	// wait for conversion to complete
-	// ADSC becomes ’0′ again
-	// till then, run loop continuously
-	while(ADCSRA & (1<<ADSC));
-	
-	return (ADCL | (ADCH << 8));
-}
+// CIRCULAR_BUFFER_LENGTH - END_TIMER = SAMPLES_BEFORE_TRIGGER
+// Portion of a CIRCULAR_BUFFER_LENGTH sample that comes after the trigger
+#define END_TIMER (CIRCULAR_BUFFER_LENGTH - SAMPLES_BEFORE_TRIGGER)
 
 void switchADCMuxChannel(uint8_t channel)
 {
