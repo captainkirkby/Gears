@@ -87,9 +87,9 @@ int main(void)
 
     // Test Points Configuration
     // Set pins as output
-    DDRA |= 0B00000111;
+    DDRA |= 0B00000101;
     // Set all test points to low
-    PORTA &= ~0B00000111;
+    PORTA &= ~0B00000101;
 
     // PPS Interrupt Configuration
     // Set pin as input
@@ -170,8 +170,8 @@ int main(void)
             // Reads the BMP180 sensor values and saves the results in the data packet
             bmpError = readBMP180Sensors(&dataPacket.temperature,&dataPacket.pressure);
 
-            // Turn on A1 (TP2)
-            PORTA |= 0B00000010;
+            // Turn on A0 (TP3)
+            PORTA |= 0B00000001;
             
             if(bmpError) flashNumber(200+bmpError);
 
@@ -182,8 +182,8 @@ int main(void)
             // Readout GPS health
             health = getGPSHealth();
 
-            // Turn on A0 (TP3)
-            PORTA |= 0B00000001;
+            // Turn off A2 (TP1)
+            PORTA &= ~0B00000100;
 
             dataPacket.recieverMode = health.recieverMode;
             dataPacket.discipliningMode = health.discipliningMode;
@@ -196,8 +196,8 @@ int main(void)
             // Sends binary packet data synchronously
             serialWriteUSB((const uint8_t*)&dataPacket,sizeof(dataPacket));
 
-            // Set all test points to low
-            PORTA &= ~0B00000111;
+            // Turn off A0 (TP3)
+            PORTA &= ~0B00000001;
 
             adcStatus = ADC_STATUS_CONTINUOUS;
         }
