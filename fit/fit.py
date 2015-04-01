@@ -171,6 +171,50 @@ def runningAvg(data,wlen=31):
     # remove the padding so the returned array has the same size and alignment as the input data
     return smooth[whalf:-whalf]
 
+def findNMaxes(hist,npeaks):
+    """
+    Given a histogram and the expected number of peaks, returns an array of
+    the approximate center of each of the peaks.
+    """
+    lastE = 0
+    # Define shape (n,2)
+    largest = numpy.zeros((0,2),dtype='int16')
+    # Loop over elements in the differences of the histogram of the smoothed graph
+    for i,e in enumerate(numpy.diff(hist)):
+        # Looking for a sharp sign change
+        if (e <= 0 and lastE >= 0) or (e >= 0 and lastE <= 0):
+            if e-lastE < 0:
+                # Add potential candidates to an array
+                largest = numpy.append(largest,[[e-lastE,i]],axis=0)
+        lastE = e
+    # Choose indices of best n candidates
+    return largest[numpy.argsort(largest[:,0])][:,1][0:npeaks]
+
+def findPeakValues(smooth,npeaks=3):
+    """
+    Given a smoothed array of data with 3 discrete levels (low-mid-hi) returns a sorted
+    tuple low,mid,hi
+    """
+    hist = numpy.histogram(smooth,bins=1023,range=(0,1023))
+    # Find 3 maxes
+    findNMaxes(hist[0],npeaks)
+    # Find windows on each side
+    window = 10
+    # Average values
+    averages = numpy.zeros(npeaks)
+    i = 0
+    for max in findNMaxes(hist[0],npeaks):
+        lowerBound = max - window
+        upperBound = max + window
+        # Bounds Checking
+        if lowerBound < 0:
+            lowerBound = 0
+        if upperBound > len(hist[0]):
+            upperBound = len(hist[0])
+        averages[i] = numpy.average(hist[1][lowerBound:upperBound],weights=hist[0][lowerBound:upperBound])
+        i = i+1
+    return tuple(numpy.sort(averages))
+
 def lineFit(y,t1,t2):
     """
     Performs a linear fit to determine the value of t where y(t) crosses zero
@@ -194,9 +238,7 @@ def quickFit(samples,args,smoothing=15,fitsize=5,avgWindow=50):
     # lo value. Use the mean of the left and right margins to estimate the hi value. The
     # reason why don't use the max of the smooth samples to estimate the hi value is that we
     # observe some peaking (transmission > 1) near the edges.
-    lo = numpy.min(smooth)
-    margin = int(math.floor(samples.size/16.))
-    hi = 0.5*(numpy.mean(smooth[:margin]) + numpy.mean(smooth[-margin:]))
+    lo,mid,hi = findPeakValues(smooth)
     # find edges as points where the smoothed data crosses the midpoints between lo,hi
     midpt = 0.75*(lo+hi)
     smooth -= midpt
@@ -240,6 +282,8 @@ def quickFit(samples,args,smoothing=15,fitsize=5,avgWindow=50):
     #     l-------t0-------r
     # note: you can access non integer elements of a numpy array (truncates decimal)
     height = numpy.mean(samples[lb:rb+1])
+    if args.verbose:
+        print direction,lo,hi,t0,riseFit,fallFit,height
     return direction,lo,hi,t0,riseFit,fallFit,height
 
 def buildSplineTemplate(frames,args):
@@ -318,7 +362,7 @@ class FrameProcessor(object):
         self.swings = [ ]
         # initialize plot display if requested
         if self.args.show_plots:
-            self.fig = plt.figure(figsize=(12,12))
+            self.fig = plt.figure(figsize=(8,8))
             plt.ion()
             plt.show()
             self.plotx = numpy.arange(self.args.nsamples)
