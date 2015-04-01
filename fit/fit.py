@@ -96,30 +96,6 @@ def fitTemplateModel(samples,args,direction,lo,hi,offset,rise,fall,template):
         residuals = samples - prediction
         return numpy.dot(residuals,residuals)
 
-    # define chi-square function to use
-    def chiSquareClone(t0,duration,lo,rng):
-        global prediction
-        # convert this frame's ADC timing to s values, correcting for the direction of
-        # travel, the estimate fiducial crossing time, and the stretch factor.
-        svec = direction*(tadc - t0)/duration
-        # evaluate the template at these s values
-        prediction[:] = 1.
-        mask = numpy.abs(svec) < 1 + args.spline_pad
-        prediction[mask] = template(svec[mask])
-        # rescale from [0,1] to [lo,hi]
-        prediction = lo + rng*prediction
-        # evaluate the chi-square
-        residuals = samples - prediction
-        plt.clf()
-        ax = plt.subplot(1,1,1)
-        ax.plot(samples,'g+')
-        ax.plot(prediction,'b-')
-        # ax.plot(residuals,'r-')
-        plt.draw()
-        while True:
-            pass
-        return numpy.dot(residuals,residuals)
-
     # initialize fitter
     print_level = 1 if args.verbose else 0
     engine = Minuit(chiSquare,errordef=1.0,print_level=print_level,
@@ -133,13 +109,6 @@ def fitTemplateModel(samples,args,direction,lo,hi,offset,rise,fall,template):
     minimum = engine.migrad()
     if not minimum[0]['has_valid_parameters']:
         raise RuntimeError('Fit failed!')
-
-    # calculate the best fit model
-    chiSquareClone(offset,(rise[-1] - fall[0])/2.,lo,hi-lo)
-
-    print "@@@@@@@@@@@"
-    print (offset,(rise[-1] - fall[0])/2.,lo,hi-lo)
-    print engine.args,prediction
 
     # return best-fit parameter values and best-fit model prediction
     return engine.args,prediction
