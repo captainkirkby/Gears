@@ -96,6 +96,30 @@ def fitTemplateModel(samples,args,direction,lo,hi,offset,rise,fall,template):
         residuals = samples - prediction
         return numpy.dot(residuals,residuals)
 
+    # define chi-square function to use
+    def chiSquareClone(t0,duration,lo,rng):
+        global prediction
+        # convert this frame's ADC timing to s values, correcting for the direction of
+        # travel, the estimate fiducial crossing time, and the stretch factor.
+        svec = direction*(tadc - t0)/duration
+        # evaluate the template at these s values
+        prediction[:] = 1.
+        mask = numpy.abs(svec) < 1 + args.spline_pad
+        prediction[mask] = template(svec[mask])
+        # rescale from [0,1] to [lo,hi]
+        prediction = lo + rng*prediction
+        # evaluate the chi-square
+        residuals = samples - prediction
+        plt.clf()
+        ax = plt.subplot(1,1,1)
+        ax.plot(samples,'g+')
+        ax.plot(prediction,'b-')
+        # ax.plot(residuals,'r-')
+        plt.draw()
+        while True:
+            pass
+        return numpy.dot(residuals,residuals)
+
     # initialize fitter
     print_level = 1 if args.verbose else 0
     engine = Minuit(chiSquare,errordef=1.0,print_level=print_level,
@@ -111,7 +135,11 @@ def fitTemplateModel(samples,args,direction,lo,hi,offset,rise,fall,template):
         raise RuntimeError('Fit failed!')
 
     # calculate the best fit model
-    chiSquare(*engine.args)
+    chiSquareClone(offset,(rise[-1] - fall[0])/2.,lo,hi-lo)
+
+    print "@@@@@@@@@@@"
+    print (offset,(rise[-1] - fall[0])/2.,lo,hi-lo)
+    print engine.args,prediction
 
     # return best-fit parameter values and best-fit model prediction
     return engine.args,prediction
@@ -283,7 +311,7 @@ def quickFit(samples,args,smoothing=15,fitsize=5,avgWindow=50):
     # note: you can access non integer elements of a numpy array (truncates decimal)
     height = numpy.mean(samples[lb:rb+1])
     if args.verbose:
-        print direction,lo,hi,t0,riseFit,fallFit,height
+        print direction,lo,mid,hi,t0,riseFit,fallFit,height
     return direction,lo,hi,t0,riseFit,fallFit,height
 
 def buildSplineTemplate(frames,args):
@@ -466,9 +494,11 @@ class FrameProcessor(object):
             ax.set_ylim([-4.,1024.])
             plt.plot(self.plotx,samples,'g+')
             if self.args.show_centers:
-                plt.plot(numpy.zeros(100)+offset,numpy.linspace(0,2**10,100),'b+');
-            if self.args.show_heights:
-                plt.plot(numpy.linspace(0,self.args.nsamples,100),numpy.zeros(100)+height,'y+');
+                plt.plot(numpy.zeros(100)+offset,numpy.linspace(0,2**10,100),'b-');
+            if self.args.show_levels:
+                plt.plot(numpy.linspace(0,self.args.nsamples,100),numpy.zeros(100)+lo,'y-');
+                plt.plot(numpy.linspace(0,self.args.nsamples,100),numpy.zeros(100)+height,'y-');
+                plt.plot(numpy.linspace(0,self.args.nsamples,100),numpy.zeros(100)+hi,'y-');
             if bestFit is not None:
                 plt.plot(self.plotx,bestFit,'r-')
             plt.draw()
@@ -567,6 +597,9 @@ class DB(object):
         self.templateCollection.insert({self.TIMESTAMP:timestamp, self.TEMPLATE:template.T.tolist()})
         if self.args.verbose:
             print "Template Updated!"
+        if self.args.show_plots:
+            plt.plot(template[0],template[1])
+            plt.draw()
 
     def loadTemplate(self):
         """
@@ -621,7 +654,7 @@ def main():
         help = 'display analysis plots')
     parser.add_argument('--show-centers', action = 'store_true',
         help = 'display center mark on analysis plots')
-    parser.add_argument('--show-heights', action = 'store_true',
+    parser.add_argument('--show-levels', action = 'store_true',
         help = 'display height mark on analysis plots')
     parser.add_argument('--physical', action = 'store_true',
         help = 'fit frames to a physical model')
