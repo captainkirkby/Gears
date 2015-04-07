@@ -241,13 +241,13 @@ def quickFit(samples,args,smoothing=15,fitsize=5,avgWindow=50):
     smooth -= midpt
     rising = numpy.logical_and(smooth[:-1] <= 0,smooth[1:] > 0)
     falling = numpy.logical_and(smooth[:-1] > 0, smooth[1:] <= 0)
-    nrise = numpy.count_nonzero(rising)
-    nfall = numpy.count_nonzero(falling)
-    # check for the expected number of rising and falling edges
-    if nrise != args.nfingers:
-        raise RuntimeError("quickFit: expected %d rising edges but found %d" % (args.nfingers, numpy.count_nonzero(rising)))
-    if nfall != args.nfingers:
-        raise RuntimeError("quickFit: expected %d falling edges but found %d" % (args.nfingers, numpy.count_nonzero(falling)))
+    # nrise = numpy.count_nonzero(rising)
+    # nfall = numpy.count_nonzero(falling)
+    # # check for the expected number of rising and falling edges
+    # if nrise != args.nfingers:
+    #     raise RuntimeError("quickFit: expected %d rising edges but found %d" % (args.nfingers, numpy.count_nonzero(rising)))
+    # if nfall != args.nfingers:
+    #     raise RuntimeError("quickFit: expected %d falling edges but found %d" % (args.nfingers, numpy.count_nonzero(falling)))
     # locate the nearest ADC sample to each edge
     risePos = numpy.sort(numpy.argsort(rising)[-1*args.nfingers:])
     fallPos = numpy.sort(numpy.argsort(falling)[-1*args.nfingers:])
