@@ -212,6 +212,36 @@ def findPeakValues(smooth,npeaks=3):
         i = i+1
     return tuple(numpy.sort(averages))
 
+def findRiseAndFallPositions(smooth,lo,mid,hi,threshold=2):
+    riseMask = numpy.zeros_like(smooth[1:])
+    fallMask = numpy.zeros_like(smooth[1:])
+    # Create boolean Mask where we expect falling edges
+    booleanValue = 1
+    for index,val in enumerate(smooth[1:]):
+        if abs(val-mid) < threshold and booleanValue is 0:
+            booleanValue = 1
+        elif abs(val+mid) < threshold and booleanValue is 1:
+            booleanValue = 0
+        fallMask[index] = booleanValue
+    # Create boolean Mask where we expect rising edges
+    booleanValue = 1
+    for index,val in enumerate(smooth[1:][::-1]):
+        if abs(val-mid) < threshold and booleanValue is 0:
+            booleanValue = 1
+        elif abs(val+mid) < threshold and booleanValue is 1:
+            booleanValue = 0
+        riseMask[-index] = booleanValue
+    # Get Rising Edges
+    rising = numpy.logical_and(numpy.logical_and(smooth[:-1] <= 0,smooth[1:] > 0),riseMask)
+    nrise = numpy.count_nonzero(rising)
+    risePos = numpy.sort(numpy.argsort(rising)[-1*nrise:])
+    # Get Falling Edges
+    falling = numpy.logical_and(numpy.logical_and(smooth[:-1] > 0, smooth[1:] <= 0),fallMask)
+    nfall = numpy.count_nonzero(falling)
+    fallPos = numpy.sort(numpy.argsort(falling)[-1*nfall:])
+
+    return risePos,fallPos
+
 def lineFit(y,t1,t2):
     """
     Performs a linear fit to determine the value of t where y(t) crosses zero
@@ -235,22 +265,25 @@ def quickFit(samples,args,smoothing=15,fitsize=5,avgWindow=50):
     # lo value. Use the mean of the left and right margins to estimate the hi value. The
     # reason why don't use the max of the smooth samples to estimate the hi value is that we
     # observe some peaking (transmission > 1) near the edges.
-    lo,mid,hi = findPeakValues(smooth)
+    lo,height,hi = findPeakValues(smooth)
     # find edges as points where the smoothed data crosses the midpoints between lo,hi
-    midpt = 0.75*(lo+hi)
+    midpt = 0.5*(lo+hi)
     smooth -= midpt
-    rising = numpy.logical_and(smooth[:-1] <= 0,smooth[1:] > 0)
-    falling = numpy.logical_and(smooth[:-1] > 0, smooth[1:] <= 0)
-    # nrise = numpy.count_nonzero(rising)
-    # nfall = numpy.count_nonzero(falling)
-    # # check for the expected number of rising and falling edges
-    # if nrise != args.nfingers:
-    #     raise RuntimeError("quickFit: expected %d rising edges but found %d" % (args.nfingers, numpy.count_nonzero(rising)))
-    # if nfall != args.nfingers:
-    #     raise RuntimeError("quickFit: expected %d falling edges but found %d" % (args.nfingers, numpy.count_nonzero(falling)))
-    # locate the nearest ADC sample to each edge
-    risePos = numpy.sort(numpy.argsort(rising)[-1*args.nfingers:])
-    fallPos = numpy.sort(numpy.argsort(falling)[-1*args.nfingers:])
+    risePos,fallPos = findRiseAndFallPositions(smooth,lo,midpt,hi)
+
+    # rising = numpy.logical_and(smooth[:-1] <= 0,smooth[1:] > 0)
+    # falling = numpy.logical_and(smooth[:-1] > 0, smooth[1:] <= 0)
+    # # nrise = numpy.count_nonzero(rising)
+    # # nfall = numpy.count_nonzero(falling)
+    # # # check for the expected number of rising and falling edges
+    # # if nrise != args.nfingers:
+    # #     raise RuntimeError("quickFit: expected %d rising edges but found %d" % (args.nfingers, numpy.count_nonzero(rising)))
+    # # if nfall != args.nfingers:
+    # #     raise RuntimeError("quickFit: expected %d falling edges but found %d" % (args.nfingers, numpy.count_nonzero(falling)))
+    # # locate the nearest ADC sample to each edge
+    # risePos = numpy.sort(numpy.argsort(rising)[-1*args.nfingers:])
+    # fallPos = numpy.sort(numpy.argsort(falling)[-1*args.nfingers:])
+
     # perform linear fits to locate each edge to subsample precision
     riseFit = numpy.empty((args.nfingers,))
     fallFit = numpy.empty((args.nfingers,))
@@ -271,16 +304,16 @@ def quickFit(samples,args,smoothing=15,fitsize=5,avgWindow=50):
         tmp = numpy.copy(riseFit)
         riseFit = (t0 - fallFit)[::-1]
         fallFit = (t0 - tmp)[::-1]
-    # calculate the height of the mid-notch by getting the mean value of a window around t0
-    lb = t0 - avgWindow
-    rb = t0 + avgWindow
-    # add one to get same number of samples on both sides of t0
-    # x x x x x x x x x x x x x x x x x
-    #     l-------t0-------r
-    # note: you can access non integer elements of a numpy array (truncates decimal)
-    height = numpy.mean(samples[lb:rb+1])
+    # # calculate the height of the mid-notch by getting the mean value of a window around t0
+    # lb = t0 - avgWindow
+    # rb = t0 + avgWindow
+    # # add one to get same number of samples on both sides of t0
+    # # x x x x x x x x x x x x x x x x x
+    # #     l-------t0-------r
+    # # note: you can access non integer elements of a numpy array (truncates decimal)
+    # height = numpy.mean(samples[lb:rb+1])
     if args.verbose:
-        print direction,lo,mid,hi,t0,riseFit,fallFit,height
+        print direction,lo,hi,t0,riseFit,fallFit,height
     return direction,lo,hi,t0,riseFit,fallFit,height
 
 def buildSplineTemplate(frames,args):
