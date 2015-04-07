@@ -66,7 +66,7 @@ var noDatabase = false;
 var debug = false;
 var debugLevel2 = false;
 var runningData = false;
-var pythonFlags = ["--load-template", templateFile];
+var pythonFlags = ["--load-template", templateFile, "--spline-pad", "0.03"];
 var service = false;
 process.argv.forEach(function(val,index,array) {
 	if(val == '--no-serial') noSerial = true;
