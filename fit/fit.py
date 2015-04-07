@@ -270,20 +270,6 @@ def quickFit(samples,args,smoothing=15,fitsize=5,avgWindow=50):
     midpt = 0.5*(lo+hi)
     smooth -= midpt
     risePos,fallPos = findRiseAndFallPositions(smooth,lo,midpt,hi)
-
-    # rising = numpy.logical_and(smooth[:-1] <= 0,smooth[1:] > 0)
-    # falling = numpy.logical_and(smooth[:-1] > 0, smooth[1:] <= 0)
-    # # nrise = numpy.count_nonzero(rising)
-    # # nfall = numpy.count_nonzero(falling)
-    # # # check for the expected number of rising and falling edges
-    # # if nrise != args.nfingers:
-    # #     raise RuntimeError("quickFit: expected %d rising edges but found %d" % (args.nfingers, numpy.count_nonzero(rising)))
-    # # if nfall != args.nfingers:
-    # #     raise RuntimeError("quickFit: expected %d falling edges but found %d" % (args.nfingers, numpy.count_nonzero(falling)))
-    # # locate the nearest ADC sample to each edge
-    # risePos = numpy.sort(numpy.argsort(rising)[-1*args.nfingers:])
-    # fallPos = numpy.sort(numpy.argsort(falling)[-1*args.nfingers:])
-
     # perform linear fits to locate each edge to subsample precision
     riseFit = numpy.empty((args.nfingers,))
     fallFit = numpy.empty((args.nfingers,))
@@ -304,14 +290,6 @@ def quickFit(samples,args,smoothing=15,fitsize=5,avgWindow=50):
         tmp = numpy.copy(riseFit)
         riseFit = (t0 - fallFit)[::-1]
         fallFit = (t0 - tmp)[::-1]
-    # # calculate the height of the mid-notch by getting the mean value of a window around t0
-    # lb = t0 - avgWindow
-    # rb = t0 + avgWindow
-    # # add one to get same number of samples on both sides of t0
-    # # x x x x x x x x x x x x x x x x x
-    # #     l-------t0-------r
-    # # note: you can access non integer elements of a numpy array (truncates decimal)
-    # height = numpy.mean(samples[lb:rb+1])
     if args.verbose:
         print direction,lo,hi,t0,riseFit,fallFit,height
     return direction,lo,hi,t0,riseFit,fallFit,height
