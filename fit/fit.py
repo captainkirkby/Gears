@@ -659,7 +659,7 @@ def main():
         help = 'filename of spline template to load and use')
     parser.add_argument('--nspline', type = int, default = 1024,
         help = 'number of spline knots used to build spline template')
-    parser.add_argument('--spline-pad', type = float, default = 0.25,
+    parser.add_argument('--spline-pad', type = float, default = 0.03,
         help = 'amount of padding to use for spline fit region')
     parser.add_argument('--verbose', action = 'store_true',
         help = 'generate verbose output')
