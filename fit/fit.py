@@ -194,6 +194,7 @@ def findNMaxes(hist,npeaks,sharpThreshold=20,levelThreshold=10):
             if d < levelThreshold:
                 # Collapse two rows into one
                 largest = numpy.delete(largest,index+1-nDeleted,axis=0)
+                nDeleted = nDeleted + 1
     # Choose indices of best n candidates
     return largest[numpy.argsort(largest[:,0])][:,1][0:npeaks]
 
