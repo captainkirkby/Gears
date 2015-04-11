@@ -168,7 +168,7 @@ def runningAvg(data,wlen=31):
     # remove the padding so the returned array has the same size and alignment as the input data
     return smooth[whalf:-whalf]
 
-def findNMaxes(hist,npeaks,sharpThreshold=90,levelThreshold=10):
+def findNMaxes(hist,npeaks,sharpThreshold=20,levelThreshold=10):
     """
     Given a histogram and the expected number of peaks, returns an array of
     the approximate center of each of the peaks.
