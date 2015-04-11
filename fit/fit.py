@@ -195,7 +195,7 @@ def findNMaxes(hist,npeaks):
     # Choose indices of best n candidates
     return largest[numpy.argsort(largest[:,0])][:,1][0:npeaks]
 
-def findPeakValues(smooth,npeaks=3):
+def findPeakValues(smooth,npeaks=3,window=10):
     """
     Given a smoothed array of data with 3 discrete levels (low-mid-hi) returns a sorted
     tuple low,mid,hi
@@ -203,8 +203,6 @@ def findPeakValues(smooth,npeaks=3):
     hist = numpy.histogram(smooth,bins=1023,range=(0,1023))
     # Find 3 maxes
     findNMaxes(hist[0],npeaks)
-    # Find windows on each side
-    window = 10
     # Average values
     averages = numpy.zeros(npeaks)
     i = 0
