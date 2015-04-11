@@ -184,6 +184,14 @@ def findNMaxes(hist,npeaks):
                 # Add potential candidates to an array
                 largest = numpy.append(largest,[[e-lastE,i]],axis=0)
         lastE = e
+    # If greater than n choices, choose the best n
+    if count > n:
+        # Get rid of any indices that are too close to each other
+        nDeleted = 0
+        for index,d in enumerate(diff(largest[:,1])):
+            if d < levelThreshold:
+                # Collapse two rows into one
+                largest = numpy.delete(largest,index+1-nDeleted,axis=0)
     # Choose indices of best n candidates
     return largest[numpy.argsort(largest[:,0])][:,1][0:npeaks]
 
