@@ -748,7 +748,8 @@ def main():
                         processor.updateTemplate()
             except Exception,e:
                 # Try to keep going silently after any error
-                raise e
+                if args.verbose:
+                    raise e
                 pass
 
     # clean up
