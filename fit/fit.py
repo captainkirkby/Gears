@@ -168,7 +168,7 @@ def runningAvg(data,wlen=31):
     # remove the padding so the returned array has the same size and alignment as the input data
     return smooth[whalf:-whalf]
 
-def findNMaxes(hist,npeaks):
+def findNMaxes(hist,npeaks,sharpThreshold=90,levelThreshold=10):
     """
     Given a histogram and the expected number of peaks, returns an array of
     the approximate center of each of the peaks.
@@ -181,16 +181,16 @@ def findNMaxes(hist,npeaks):
     for i,e in enumerate(numpy.diff(hist)):
         # Looking for a sharp sign change
         if (e <= 0 and lastE >= 0) or (e >= 0 and lastE <= 0):
-            if e-lastE < 0:
+            if lastE-e > sharpThreshold:
                 # Add potential candidates to an array
                 largest = numpy.append(largest,[[e-lastE,i]],axis=0)
                 count = count + 1
         lastE = e
     # If greater than n choices, choose the best n
-    if count > n:
+    if count > npeaks:
         # Get rid of any indices that are too close to each other
         nDeleted = 0
-        for index,d in enumerate(diff(largest[:,1])):
+        for index,d in enumerate(numpy.diff(largest[:,1])):
             if d < levelThreshold:
                 # Collapse two rows into one
                 largest = numpy.delete(largest,index+1-nDeleted,axis=0)
