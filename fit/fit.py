@@ -177,12 +177,14 @@ def findNMaxes(hist,npeaks):
     # Define shape (n,2)
     largest = numpy.zeros((0,2),dtype='int16')
     # Loop over elements in the differences of the histogram of the smoothed graph
+    count = 0
     for i,e in enumerate(numpy.diff(hist)):
         # Looking for a sharp sign change
         if (e <= 0 and lastE >= 0) or (e >= 0 and lastE <= 0):
             if e-lastE < 0:
                 # Add potential candidates to an array
                 largest = numpy.append(largest,[[e-lastE,i]],axis=0)
+                count = count + 1
         lastE = e
     # If greater than n choices, choose the best n
     if count > n:
