@@ -219,7 +219,7 @@ def findPeakValues(smooth,npeaks=3,window=10):
         i = i+1
     return tuple(numpy.sort(averages))
 
-def findRiseAndFallPositions(smooth,lo,mid,hi,args,threshold=2):
+def findRiseAndFallPositions(smooth,lo,mid,hi,nfingers=5,threshold=2):
     riseMask = numpy.zeros_like(smooth[1:])
     fallMask = numpy.zeros_like(smooth[1:])
     # Create boolean Mask where we expect falling edges
@@ -247,10 +247,10 @@ def findRiseAndFallPositions(smooth,lo,mid,hi,args,threshold=2):
     nfall = numpy.count_nonzero(falling)
     fallPos = numpy.sort(numpy.argsort(falling)[-1*nfall:])
     # Raise Exception if there is a problem
-    if nrise != args.nfingers:
-        raise RuntimeError("quickFit: expected %d rising edges but found %d" % (args.nfingers, nrise))
-    if nfall != args.nfingers:
-        raise RuntimeError("quickFit: expected %d falling edges but found %d" % (args.nfingers, nfall))
+    if nrise != nfingers:
+        raise RuntimeError("quickFit: expected %d rising edges but found %d" % (nfingers, nrise))
+    if nfall != nfingers:
+        raise RuntimeError("quickFit: expected %d falling edges but found %d" % (nfingers, nfall))
     return risePos,fallPos
 
 def lineFit(y,t1,t2):
@@ -280,7 +280,7 @@ def quickFit(samples,args,smoothing=15,fitsize=5,avgWindow=50):
     # find edges as points where the smoothed data crosses the midpoints between lo,hi
     midpt = 0.5*(lo+hi)
     smooth -= midpt
-    risePos,fallPos = findRiseAndFallPositions(smooth,lo,midpt,hi,args)
+    risePos,fallPos = findRiseAndFallPositions(smooth,lo,midpt,hi,nfingers=args.nfingers)
     # perform linear fits to locate each edge to subsample precision
     riseFit = numpy.empty((args.nfingers,))
     fallFit = numpy.empty((args.nfingers,))
