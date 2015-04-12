@@ -168,7 +168,7 @@ def runningAvg(data,wlen=31):
     # remove the padding so the returned array has the same size and alignment as the input data
     return smooth[whalf:-whalf]
 
-def findNMaxes(hist,npeaks,sharpThreshold=20,levelThreshold=10):
+def findNMaxes(hist,npeaks=3,sharpThreshold=20,levelThreshold=10):
     """
     Given a histogram and the expected number of peaks, returns an array of
     the approximate center of each of the peaks.
@@ -204,12 +204,10 @@ def findPeakValues(smooth,npeaks=3,window=10):
     tuple low,mid,hi
     """
     hist = numpy.histogram(smooth,bins=1023,range=(0,1023))
-    # Find 3 maxes
-    findNMaxes(hist[0],npeaks)
     # Average values
     averages = numpy.zeros(npeaks)
     i = 0
-    for max in findNMaxes(hist[0],npeaks):
+    for max in findNMaxes(hist[0],npeaks=npeaks):
         lowerBound = max - window
         upperBound = max + window
         # Bounds Checking
