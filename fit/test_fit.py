@@ -5,7 +5,7 @@ import fit
 import numpy
 import argparse
 
-class TestQuickFit(unittest.TestCase):
+class TestFrame(unittest.TestCase):
 
     def setUp(self):
         """
@@ -19,7 +19,7 @@ class TestQuickFit(unittest.TestCase):
         #     (self.nframe,1+self.args.nsamples))
         # print numpy.shape(self.frames)
 
-    def test_FrameConstructor(self):
+    def test_frameConstructor(self):
         self.assertTrue(numpy.array_equal(self.frame.samples,samples()),
             msg="Frame Constructor Test Failed")
         self.assertFalse(numpy.array_equal(self.frame.samples,smoothSamples()),
@@ -31,6 +31,9 @@ class TestQuickFit(unittest.TestCase):
         # NOTE: floating point errors.  Use np.allclose()
         self.assertTrue(numpy.allclose(smooth,smoothSamples(),rtol=1e-7),
             msg="Running Average test Failed")
+        # FAILS
+        # self.assertTrue(numpy.array_equal(smooth,smoothSamples()),
+        #     msg="Running Average test Failed")
 
     def test_testFindNMaxes(self):
         hist = numpy.histogram(smoothSamples(),bins=1023,range=(0,1023))
@@ -52,7 +55,7 @@ class TestQuickFit(unittest.TestCase):
     def test_findRiseAndFallPositions(self):
         midpt = 0.5*(loVal()+hiVal())
         # Find sample rise and fall positions
-        risePos,fallPos = self.findRiseAndFallPositions(smoothSamples()-midpt,
+        risePos,fallPos = self.frame.findRiseAndFallPositions(smoothSamples()-midpt,
             loVal(),midpt,hiVal(),nfingers=5)
         self.assertTrue(numpy.array_equal(risePos,risePositionsSamples()),
             msg="Rise Positions test failed")
@@ -66,10 +69,10 @@ class TestQuickFit(unittest.TestCase):
         fallFit = numpy.empty((5,))
         # Find sample rise and fall positions
         for i in range(5):
-            riseFit[i] = self.lineFit(smoothSamples(),
+            riseFit[i] = self.frame.lineFit(smoothSamples(),
                 risePositionsSamples()[i]-fitsize,
                 risePositionsSamples()[i]+fitsize+1)
-            fallFit[i] = self.lineFit(smoothSamples(),
+            fallFit[i] = self.frame.lineFit(smoothSamples(),
                 fallPositionsSamples()[i]-fitsize,
                 fallPositionsSamples()[i]+fitsize+1)
         # NOTE: floating point errors.  Use np.allclose()
@@ -81,6 +84,31 @@ class TestQuickFit(unittest.TestCase):
             msg="Fall Positions (Subsamples) test failed")
         self.assertTrue(numpy.allclose(fallFit,fallPositionsSubsamples(),rtol=10),
             msg="Fall Positions test failed. Subsamples != samples")
+
+    def test_quickFit(self):
+        class Object(object):
+            pass
+        args = Object()
+        args.nfingers = 5
+        args.verbose = False
+        direction,lo,hi,t0,riseFit,fallFit,height = self.frame.quickFit(args,
+            smoothing=15,fitsize=5,avgWindow=50)
+
+        self.assertEquals(direction,1.0,
+            msg="Quick Fit (direction) test failed")
+        self.assertAlmostEquals(lo,loVal(),
+            msg="Quick Fit (lo) test failed",places=2)
+        self.assertAlmostEquals(hi,hiVal(),
+            msg="Quick Fit (hi) test failed",places=2)
+        self.assertAlmostEquals(t0,1.468768771396748889e+03,
+            msg="Quick Fit (t0) test failed",places=5)
+        # self.assertTrue(numpy.allclose(riseFit,risePositionsSubsamples()-t0,rtol=1e-7),
+        #     msg="Quick Fit (rise fit) test failed")
+        # self.assertTrue(numpy.allclose(fallFit,fallPositionsSubsamples()-t0,rtol=1e-7),
+        #     msg="Quick Fit (fall fit) test failed")
+        self.assertAlmostEquals(height,heightVal(),
+            msg="Quick Fit (height) test failed",places=2)
+
 
     # def test_quickFit(self):
     #     results = numpy.loadtxt("NotchedFingersQuickFit.out")
@@ -192,5 +220,5 @@ def fallPositionsSubsamples():
     return a
 
 if __name__ == '__main__':
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestQuickFit)
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestFrame)
     unittest.TextTestRunner(verbosity=2).run(suite)

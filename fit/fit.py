@@ -211,7 +211,7 @@ class Frame(object):
         # Average values
         averages = numpy.zeros(npeaks)
         i = 0
-        for max in findNMaxes(hist[0],npeaks=npeaks):
+        for max in self.findNMaxes(hist[0],npeaks=npeaks):
             lowerBound = max - window
             upperBound = max + window
             # Bounds Checking
@@ -257,7 +257,7 @@ class Frame(object):
             raise RuntimeError("quickFit: expected %d falling edges but found %d" % (nfingers, nfall))
         return risePos,fallPos
     
-    def lineFit(self,t1,t2):
+    def lineFit(self,y,t1,t2):
         """
         Performs a linear fit to determine the value of t where y(t) crosses zero
         using samples y[t1:t2].
@@ -266,7 +266,7 @@ class Frame(object):
         slope, intercept, r_value, p_value, std_err = linregress(t,y[t1:t2])
         return -intercept/slope
     
-    def quickFit(self,samples,args,smoothing=15,fitsize=5,avgWindow=50):
+    def quickFit(self,args,smoothing=15,fitsize=5,avgWindow=50):
         """
         Attempts a quick fit of the specified sample data or returns a RuntimeError.
         Returns the direction (+/-1) of travel, the estimated lo and hi ADC levels,
@@ -275,26 +275,26 @@ class Frame(object):
         the direction of travel. All times are measured in ADC samples.
         """
         # perform a running-average smoothing of the frame's raw sample data
-        smooth = runningAvg(samples,wlen=1+2*smoothing)
+        smooth = self.runningAvg(wlen=1+2*smoothing)
         # Find the range of the smoothed data. Use the min of the smooth samples to estimate the
         # lo value. Use the mean of the left and right margins to estimate the hi value. The
         # reason why don't use the max of the smooth samples to estimate the hi value is that we
         # observe some peaking (transmission > 1) near the edges.
-        lo,height,hi = findPeakValues(smooth)
+        lo,height,hi = self.findPeakValues(smooth)
         # find edges as points where the smoothed data crosses the midpoints between lo,hi
         midpt = 0.5*(lo+hi)
         smooth -= midpt
-        risePos,fallPos = findRiseAndFallPositions(smooth,lo,midpt,hi,nfingers=args.nfingers)
+        risePos,fallPos = self.findRiseAndFallPositions(smooth,lo,midpt,hi,nfingers=args.nfingers)
         # perform linear fits to locate each edge to subsample precision
         riseFit = numpy.empty((args.nfingers,))
         fallFit = numpy.empty((args.nfingers,))
         for i in range(args.nfingers):
-            riseFit[i] = lineFit(smooth,risePos[i]-fitsize,risePos[i]+fitsize+1)
-            fallFit[i] = lineFit(smooth,fallPos[i]-fitsize,fallPos[i]+fitsize+1)
+            riseFit[i] = self.lineFit(smooth,risePos[i]-fitsize,risePos[i]+fitsize+1)
+            fallFit[i] = self.lineFit(smooth,fallPos[i]-fitsize,fallPos[i]+fitsize+1)
         # use the distance between the first falling and rising edges to discriminate between
         # the two possible directions of travel and calculate edge times relative to the
         # fiducial, corrected for the direction of travel.
-        if risePos[0] - fallPos[0] > samples.size/(2.0 * args.nfingers):
+        if risePos[0] - fallPos[0] > self.samples.size/(2.0 * args.nfingers):
             direction = +1.
             t0 = (fallFit[2]+riseFit[2])/2
             riseFit -= t0
