@@ -160,18 +160,24 @@ def fitPhysicalModel(samples,tabs,args,direction,lo,hi,offset):
 class Frame(object):
     def __init__(self,samples):
         self.samples = samples
-    
+
+    def padded(self,whalf):
+        return numpy.r_[[self.samples[0]]*whalf,self.samples,[self.samples[-1]]*whalf]
+
+    def kernel(self,wlen):
+        return numpy.ones(wlen,'d')/wlen
+
     def runningAvg(self,wlen=31):
         # returns a running-average smoothing of self.samples
         assert self.samples.size > wlen and wlen % 2 == 1
         whalf = (wlen-1)/2
         # pad the input self.samples by repeating the first and last elements
-        padded = numpy.r_[[self.samples[0]]*whalf,self.samples,[self.samples[-1]]*whalf]
-        kernel = numpy.ones(wlen,'d')/wlen
-        smooth = numpy.convolve(kernel,padded,mode='same')
+        # padded = numpy.r_[[self.samples[0]]*whalf,self.samples,[self.samples[-1]]*whalf]
+        # kernel = numpy.ones(wlen,'d')/wlen
+        smooth = numpy.convolve(self.kernel(wlen),self.padded(whalf),mode='same')
         # remove the padding so the returned array has the same size and alignment as the input data
         return smooth[whalf:-whalf]
-    
+
     def findNMaxes(self,hist,npeaks=3,sharpThreshold=20,levelThreshold=10):
         """
         Given a histogram and the expected number of peaks, returns an array of
@@ -265,6 +271,22 @@ class Frame(object):
         t = numpy.arange(t1,t2)
         slope, intercept, r_value, p_value, std_err = linregress(t,y[t1:t2])
         return -intercept/slope
+
+    def getDirection(self,risePos,fallPos,nfingers=5):
+        if risePos[0] - fallPos[0] > self.samples.size/(2.0 * nfingers):
+            direction = +1.
+        else:
+            direction = -1.
+        return direction
+
+    def normalizeWithCenter(self,direction,t0,riseFit,fallFit):
+        if direction == +1:
+            riseFit -= t0
+            fallFit -= t0
+        elif direction == -1:
+            riseFit = (t0 - fallFit)[::-1]
+            fallFit = (t0 - tmp)[::-1]
+        return riseFit,fallFit
     
     def quickFit(self,args,smoothing=15,fitsize=5,avgWindow=50):
         """
@@ -291,20 +313,13 @@ class Frame(object):
         for i in range(args.nfingers):
             riseFit[i] = self.lineFit(smooth,risePos[i]-fitsize,risePos[i]+fitsize+1)
             fallFit[i] = self.lineFit(smooth,fallPos[i]-fitsize,fallPos[i]+fitsize+1)
-        # use the distance between the first falling and rising edges to discriminate between
-        # the two possible directions of travel and calculate edge times relative to the
-        # fiducial, corrected for the direction of travel.
-        if risePos[0] - fallPos[0] > self.samples.size/(2.0 * args.nfingers):
-            direction = +1.
-            t0 = (fallFit[2]+riseFit[2])/2
-            riseFit -= t0
-            fallFit -= t0
-        else:
-            direction = -1.
-            t0 = (fallFit[2]+riseFit[2])/2
-            tmp = numpy.copy(riseFit)
-            riseFit = (t0 - fallFit)[::-1]
-            fallFit = (t0 - tmp)[::-1]
+        # t0 is the time between the 3rd falling and the 3rd rising edge
+        t0 = (fallFit[2]+riseFit[2])/2
+        # use the distance between the first falling and rising edges to 
+        # discriminate between the two possible directions of travel
+        direction = self.getDirection(risePos,fallPos,nfingers=args.nfingers)
+        # calculate edge times relative to the fiducial, corrected for the direction of travel.
+        riseFit,fallFit = self.normalizeWithCenter(direction,t0,riseFit,fallFit)
         if args.verbose:
             print direction,lo,hi,t0,riseFit,fallFit,height
         return direction,lo,hi,t0,riseFit,fallFit,height
