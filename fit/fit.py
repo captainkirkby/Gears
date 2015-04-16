@@ -253,9 +253,9 @@ class Frame(object):
         fallPos = numpy.sort(numpy.argsort(falling)[-1*nfall:])
         # Raise Exception if there is a problem
         if nrise != nfingers:
-            raise RuntimeError("quickFit: expected %d rising edges but found %d" % (nfingers, nrise))
+            raise RuntimeError("findRiseAndFallPositions: expected %d rising edges but found %d" % (nfingers, nrise))
         if nfall != nfingers:
-            raise RuntimeError("quickFit: expected %d falling edges but found %d" % (nfingers, nfall))
+            raise RuntimeError("findRiseAndFallPositions: expected %d falling edges but found %d" % (nfingers, nfall))
         return risePos,fallPos
     
     def lineFit(self,y,t1,t2):
