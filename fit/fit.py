@@ -170,13 +170,8 @@ class Frame(object):
     def runningAvg(self,wlen=31):
         # returns a running-average smoothing of self.samples
         assert self.samples.size > wlen and wlen % 2 == 1
-        whalf = (wlen-1)/2
-        # pad the input self.samples by repeating the first and last elements
-        # padded = numpy.r_[[self.samples[0]]*whalf,self.samples,[self.samples[-1]]*whalf]
-        # kernel = numpy.ones(wlen,'d')/wlen
-        smooth = numpy.convolve(self.kernel(wlen),self.padded(whalf),mode='same')
-        # remove the padding so the returned array has the same size and alignment as the input data
-        return smooth[whalf:-whalf]
+        cumulativeSum = numpy.cumsum(numpy.insert(self.padded((wlen-1)/2),0,0))
+        return (cumulativeSum[wlen:] - cumulativeSum[:-wlen])/float(wlen)
 
     def findNMaxes(self,hist,npeaks=3,sharpThreshold=20,levelThreshold=10):
         """
