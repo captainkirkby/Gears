@@ -279,6 +279,7 @@ class Frame(object):
             riseFit -= t0
             fallFit -= t0
         elif direction == -1:
+            tmp = numpy.copy(riseFit)
             riseFit = (t0 - fallFit)[::-1]
             fallFit = (t0 - tmp)[::-1]
         return riseFit,fallFit
@@ -460,25 +461,25 @@ class FrameProcessor(object):
 
 
 
-    def process(self,samplesSinceBoot,samples):
+    def process(self,samplesSinceBoot,frame):
         """
         Processes the next frame of raw IR ADC samples. The parameter samplesSinceBoot gives the number
         of ADC samples elapsed between the first sample of this frame and the last boot packet recieved, 
         or zero if this information is not available. Returns the estimated
         period in seconds (nominally 2 secs) or raises a RuntimeError.
         """
-        if len(samples) != self.args.nsamples:
+        if len(frame.samples) != self.args.nsamples:
             # Something is seriously wrong.
             return -2,-2,-2
         if self.args.load_template and self.template is None:
             return -3,-3,-3
         # always start with a quick fit
-        direction,lo,hi,offset,rise,fall,height = quickFit(samples,self.args)
+        direction,lo,hi,offset,rise,fall,height = frame.quickFit(self.args)
         if self.args.physical:
-            fitParams,bestFit = fitPhysicalModel(samples,self.tabs,self.args,direction,lo,hi,offset)
+            fitParams,bestFit = fitPhysicalModel(frame.samples,self.tabs,self.args,direction,lo,hi,offset)
             offset,amplitude = fitParams[0],fitParams[5]
         elif self.template is not None:
-            fitParams,bestFit = fitTemplateModel(samples,self.args,
+            fitParams,bestFit = fitTemplateModel(frame.samples,self.args,
                 direction,lo,hi,offset,rise,fall,self.template)
             offset,duration = fitParams[0],fitParams[1]
             # convert duration in ADC ticks to a swing amplitude
@@ -497,7 +498,7 @@ class FrameProcessor(object):
             plt.clf()
             ax = plt.subplot(1,1,1)
             ax.set_ylim([-4.,1024.])
-            plt.plot(self.plotx,samples,'g+')
+            plt.plot(self.plotx,frame.samples,'g+')
             if self.args.show_centers:
                 plt.plot(numpy.zeros(100)+offset,numpy.linspace(0,2**10,100),'b-');
             if self.args.show_levels:
@@ -724,8 +725,9 @@ def main():
             return 0
         for i,frame in enumerate(frames):
             samplesSinceBoot,samples = frame[0],frame[1:]
+            frame = Frame(samples)
             try:
-                period,swing,height = processor.process(samplesSinceBoot,samples)
+                period,swing,height = processor.process(samplesSinceBoot,Frame(samples))
                 print 'Period = %f secs, swing = %f, height = %f (%d/%d)' % (period,swing,height,i,nframe)
                 # check for more recent template
                 processor.updateTemplate()
@@ -752,7 +754,7 @@ def main():
                     samples[args.nsamples - remaining] = value
                     remaining -= 1
                     if remaining == 0:
-                        period,swing,height = processor.process(samplesSinceBoot,samples)
+                        period,swing,height = processor.process(samplesSinceBoot,Frame(samples))
                         # period,swing,height = 0,0,500
                         # send the calculated period to our STDOUT and flush the buffer!
                         print period,swing,height
