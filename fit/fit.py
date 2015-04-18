@@ -338,7 +338,8 @@ def buildSplineTemplate(frames,args):
     risevec = numpy.empty((nframes,args.nfingers))
     fallvec = numpy.empty((nframes,args.nfingers))
     for i in range(nframes):
-        dirvec[i],lovec[i],hivec[i],t0vec[i],risevec[i],fallvec[i],unusedHeight = quickFit(samples[i],args)
+        frame = Frame(samples[i])
+        dirvec[i],lovec[i],hivec[i],t0vec[i],risevec[i],fallvec[i],unusedHeight = frame.quickFit(args)
     # calculate the mean lo,hi levels
     lo = numpy.mean(lovec)
     hi = numpy.mean(hivec)
@@ -572,6 +573,9 @@ class DB(object):
         # Get collection object
         self.dataCollection = self.db[args.collection_name]
         self.templateCollection = self.db[self.args.template_collection]
+
+    def getNumTemplates(self):
+        return self.templateCollection.count()
 
     # We DONT need the crude period data to generate a template
     def loadData(self):
