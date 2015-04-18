@@ -4,6 +4,7 @@ import unittest
 import fit
 import numpy
 import argparse
+import test_Template
 
 class TestFrame(unittest.TestCase):
 
@@ -12,12 +13,6 @@ class TestFrame(unittest.TestCase):
         Override setup method to load input data
         """
         self.frame = fit.Frame(samples())
-        # self.args = parseArguments()
-        # self.data = numpy.loadtxt(self.args.replay)
-        # self.nframe = len(self.data)/(1+self.args.nsamples)
-        # self.frames = self.data[:self.nframe*(1+self.args.nsamples)].reshape(
-        #     (self.nframe,1+self.args.nsamples))
-        # print numpy.shape(self.frames)
 
     def test_frameConstructor(self):
         self.assertTrue(numpy.array_equal(self.frame.samples,samples()),
@@ -41,9 +36,6 @@ class TestFrame(unittest.TestCase):
             msg="Running Average test Failed (almost)")
         if not numpy.array_equal(smooth,smoothSamples()):
             print "Not Exact!"
-        # FAILS Sometimes
-        # self.assertTrue(numpy.array_equal(smooth,smoothSamples()),
-        #     msg="Running Average test Failed (exact)")
 
     def test_testFindNMaxes(self):
         hist = numpy.histogram(smoothSamples(),bins=1023,range=(0,1023))
@@ -55,7 +47,6 @@ class TestFrame(unittest.TestCase):
     def test_findPeakValues(self):
         # Get hi/lo values
         lo,height,hi = self.frame.findPeakValues(smoothSamples())
-        print repr(lo),repr(height),repr(hi)
         self.assertEquals(lo,loVal(),
             msg="Low Light Level test failed")
         self.assertEquals(height,heightVal(),
@@ -95,17 +86,6 @@ class TestFrame(unittest.TestCase):
             msg="Fall Positions (Subsamples) test failed")
         self.assertTrue(numpy.allclose(fallFit,fallPositionsSubsamples(),rtol=1),
             msg="Fall Positions test failed. Subsamples != samples")
-        # FAILS always
-        # if not numpy.array_equal(riseFit,risePositionsSubsamples()):
-        #     print "Rise not Exact!"
-        #     print riseFit
-        #     print risePositionsSubsamples()
-        #     print riseFit - risePositionsSubsamples()
-        # if not numpy.array_equal(fallFit,fallPositionsSubsamples()):
-        #     print "Fall not Exact!"
-        #     print fallFit
-        #     print fallPositionsSubsamples()
-
 
     def test_getDirection(self):
         direction = self.frame.getDirection(risePositionsSamples(),
@@ -130,16 +110,10 @@ class TestFrame(unittest.TestCase):
         direction,lo,hi,t0,riseFit,fallFit,height = self.frame.quickFit(args,
             smoothing=15,fitsize=5,avgWindow=50)
 
-        # print ""
-        # print "From test_quickFit"
-        # # print direction,t0,riseFit,fallFit
-        # print riseFit,fallFit
-        # print risePositionsSubsamples()-t0,fallPositionsSubsamples()-t0
-
         # Note: the running average function does not always return the same values for the same input
         # and that error 10e-12 propagates to 10e-2 for the values below.  Sometimes the test passes above
         # and this fails because the method is called twice.  Each call means a new dice roll if it is
-        # accurate or not...
+        # accurate or not...  EDIT 4/17 method was rewritten!
 
         self.assertEquals(direction,1.0,
             msg="Quick Fit (direction) test failed")
@@ -155,82 +129,6 @@ class TestFrame(unittest.TestCase):
             msg="Quick Fit (fall fit) test failed")
         self.assertAlmostEquals(height,heightVal(),
             msg="Quick Fit (height) test failed",places=7)
-
-
-    # def test_quickFitFunctional(self):
-    #     class Object(object):
-    #         pass
-    #     args = Object()
-    #     args.nfingers = 5
-    #     args.verbose = False
-    #     results = numpy.loadtxt("NotchedFingersQuickFit.out")
-    #     riseResults = numpy.loadtxt("NotchedFingersQuickFitRise.out")
-    #     fallResults = numpy.loadtxt("NotchedFingersQuickFitFall.out")
-    #     for i,frame in enumerate(self.frames):
-    #         samplesSinceBoot,samples = frame[0],frame[1:]
-    #         self.frame.samples = samples
-    #         direction,lo,hi,t0,riseFit,fallFit,height = fit.quickFit(samples,
-    #             self.args,smoothing=15,fitsize=5,avgWindow=50)
-    #         self.assertEquals(results[i][0],direction)
-    #         self.assertEquals(results[i][1],lo)
-    #         self.assertEquals(results[i][2],hi)
-    #         self.assertEquals(results[i][3],t0)
-    #         self.assertEquals(results[i][4],height)
-    #         self.assertEquals(riseResults[i].all(),riseFit.all())
-    #         self.assertEquals(fallResults[i].all(),fallFit.all())
-
-def parseArguments():    # parse command-line args
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--replay', type=str, default='',
-        help = 'name of input data file to replay')
-
-    parser.add_argument('--from-db', action = 'store_true',
-        help = 'fetch data from a Mongo database (BROKEN)')
-    parser.add_argument('--db-name', type=str, default='TickTock',
-        help = 'name of Mongo database to fetch from')
-    parser.add_argument('--collection-name', type=str, default='rawdatamodels',
-        help = 'name of Mongo collection to fetch from')
-    parser.add_argument('--template-collection', type = str, default = 'templatemodels',
-        help = 'database collection where spline template should be saved and loaded')
-    parser.add_argument('--fetch-limit', type=int, default=100,
-        help = 'how many documents to fetch from Mongo database')
-    parser.add_argument('--mongo-port', type=int, default=27017,
-        help = 'port to use when connecting to a Mongo database')
-    parser.add_argument('--batch-replay', action = 'store_true',
-        help = 'no interactive prompting for each frame during replay')
-    parser.add_argument('--max-frames', type = int, default = 0,
-        help = 'maximum number of frames to replay (or no limit if zero)')
-    parser.add_argument('--nsamples', type=int, default=3072,
-        help = 'number of IR ADC samples per frame')
-    parser.add_argument('--adc-tick', type = float, default = 832e-7,
-        help = 'ADC sampling period in seconds')
-    parser.add_argument('--nfingers', type = int, default = 5,
-        help = 'number of fingers on the fiducial bob (')
-    parser.add_argument('--length', type = float, default = 1020.,
-        help = 'nominal length of pendulum to fiducial marker in milimeters')
-    parser.add_argument('--width', type = float, default = 54.,
-        help = 'nominal width of the fiducial marker in milimeters')
-    parser.add_argument('--show-plots', action = 'store_true',
-        help = 'display analysis plots')
-    parser.add_argument('--show-centers', action = 'store_true',
-        help = 'display center mark on analysis plots')
-    parser.add_argument('--show-levels', action = 'store_true',
-        help = 'display height mark on analysis plots')
-    parser.add_argument('--physical', action = 'store_true',
-        help = 'fit frames to a physical model')
-    parser.add_argument('--spline', action = 'store_true',
-        help = 'fit frames to a spline model')
-    parser.add_argument('--save-template', type = str, default = None,
-        help = 'filename where spline template should be saved')
-    parser.add_argument('--load-template', type = str, default = None,
-        help = 'filename of spline template to load and use')
-    parser.add_argument('--nspline', type = int, default = 1024,
-        help = 'number of spline knots used to build spline template')
-    parser.add_argument('--spline-pad', type = float, default = 0.25,
-        help = 'amount of padding to use for spline fit region')
-    parser.add_argument('--verbose', action = 'store_true',
-        help = 'generate verbose output')
-    return parser.parse_args()
 
 def samples():
     a = numpy.array([899,900,901,903,899,903,900,897,900,894,901,893,893,888,883,888,875,875,868,861,857,845,849,836,828,822,812,808,792,790,772,763,757,741,732,717,706,690,676,670,648,634,619,606,591,574,560,544,527,515,496,483,467,450,434,417,408,388,370,361,344,335,313,306,291,272,265,248,242,225,214,202,189,189,166,162,152,143,136,120,121,104,99,89,83,81,69,67,55,54,48,36,39,32,29,19,19,17,10,14,1,6,2,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,1,5,15,14,19,24,26,36,38,45,52,55,68,70,90,90,97,110,123,136,136,159,168,177,192,206,227,230,252,263,278,294,308,330,338,358,372,389,413,422,440,454,475,488,501,525,533,548,565,581,598,608,623,637,649,662,672,691,698,710,719,733,748,752,764,774,779,791,796,811,812,817,828,833,844,847,853,858,863,873,869,883,884,883,888,890,899,892,897,898,897,899,895,903,898,899,898,897,904,898,901,896,901,901,894,901,900,897,896,898,903,896,899,898,899,900,896,899,899,897,896,896,903,898,893,896,898,897,894,899,899,893,898,895,901,896,897,896,893,900,894,895,898,897,896,892,905,896,894,898,897,899,892,901,896,895,899,893,903,896,898,896,896,900,892,897,896,899,896,896,903,896,898,898,899,902,898,898,898,901,899,896,902,902,898,896,900,905,896,897,902,899,898,898,903,898,897,900,895,904,898,898,899,900,902,893,901,896,891,890,886,891,875,875,871,863,860,849,849,836,833,822,813,809,791,785,772,765,752,734,732,713,696,683,673,657,637,629,609,593,578,562,548,529,513,494,480,465,447,431,414,398,381,365,357,338,319,307,293,279,261,256,239,224,216,199,195,178,171,159,145,141,124,121,109,101,94,86,85,69,66,61,51,48,38,41,28,26,21,14,19,8,15,1,3,1,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,23,12,10,19,22,26,31,32,49,46,53,62,70,81,83,103,105,116,130,140,157,160,179,188,202,217,228,250,260,276,287,307,328,335,357,373,390,402,421,445,453,470,489,504,521,532,550,563,580,595,606,628,639,649,664,678,691,696,712,726,733,741,755,769,772,782,793,798,811,813,825,831,835,843,846,863,861,865,872,875,880,879,893,890,889,896,894,903,896,903,899,899,900,898,905,900,902,899,897,904,897,902,899,901,896,897,905,896,899,901,901,900,897,903,899,899,898,896,902,897,899,896,899,899,895,900,899,897,897,897,900,895,899,898,895,898,897,900,896,896,899,893,901,897,899,896,898,900,892,904,896,895,896,896,901,892,901,898,896,899,896,904,896,898,897,895,900,893,899,898,899,896,895,905,895,898,899,901,898,895,903,896,897,900,899,900,898,899,896,899,901,897,900,902,900,898,899,905,899,898,900,899,898,897,899,896,890,892,887,887,879,873,872,864,861,849,851,841,828,824,816,812,792,786,776,762,756,737,734,713,703,688,670,663,639,629,612,598,581,559,554,529,514,497,484,468,444,435,416,398,381,369,357,335,324,308,292,280,266,255,239,227,212,200,195,179,169,158,150,137,128,123,111,99,92,87,78,70,69,57,50,48,39,36,30,29,20,17,13,7,11,7,3,4,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,2,4,7,0,3,16,12,17,16,19,27,26,32,36,39,41,42,59,52,58,64,67,73,74,86,86,87,98,101,108,106,121,118,125,133,134,144,143,153,154,160,168,167,177,176,184,186,191,201,198,205,208,214,215,219,227,223,229,232,235,239,239,245,245,249,251,254,258,255,257,258,261,265,262,269,271,267,270,274,277,271,274,279,275,279,277,284,279,279,283,280,286,281,281,283,282,284,279,290,283,281,284,285,287,278,288,283,281,284,283,290,281,286,285,284,284,281,288,280,284,280,284,288,281,287,285,286,283,282,290,281,284,281,286,283,283,288,281,285,285,283,286,284,286,281,286,285,283,287,287,284,283,284,288,282,282,285,284,284,285,290,283,284,287,282,286,283,286,283,283,285,282,291,283,285,285,285,286,279,288,285,282,285,285,286,280,291,285,282,285,284,289,281,287,285,284,288,283,289,283,287,282,284,288,282,288,286,287,283,287,290,281,288,285,285,280,287,287,283,287,285,287,281,285,290,281,284,287,286,285,285,290,285,287,285,286,288,283,284,285,284,284,283,291,285,282,285,288,284,282,290,287,282,285,286,288,283,286,285,282,286,283,288,286,284,286,284,290,283,287,285,282,281,279,286,277,279,281,276,276,272,280,270,269,270,265,266,259,266,255,255,255,248,253,244,243,237,235,232,224,231,219,217,211,212,207,196,201,192,185,180,180,177,164,169,160,155,148,147,145,136,131,126,121,118,111,112,103,101,95,90,89,82,77,72,71,65,62,63,54,50,50,46,42,38,38,30,25,28,21,22,18,16,10,9,8,3,1,7,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,2,2,14,14,15,25,28,37,38,47,54,59,73,79,87,94,108,119,124,139,153,162,175,192,209,217,233,252,262,279,294,314,327,345,363,378,399,415,430,446,462,483,493,517,529,545,560,576,594,603,626,634,646,663,674,689,697,719,724,733,748,754,771,771,787,792,801,811,814,831,832,841,844,853,864,858,873,874,879,880,886,897,890,895,900,901,900,898,907,900,903,904,902,907,903,905,903,904,902,898,905,902,901,900,903,903,900,905,904,902,900,902,903,898,899,901,897,900,898,901,900,897,900,896,905,899,898,900,898,901,895,905,900,897,900,898,901,895,903,899,897,902,898,905,898,903,899,897,901,896,904,898,901,900,899,905,896,902,900,899,898,897,907,896,900,902,901,902,899,907,901,901,900,902,903,899,906,900,905,902,902,907,904,903,901,903,903,899,905,904,903,902,905,904,901,905,903,899,902,904,905,899,901,898,893,891,887,885,876,873,868,859,856,846,844,833,823,817,802,800,779,774,759,748,736,718,716,692,678,667,649,637,613,607,584,566,552,534,523,501,489,467,452,437,414,406,384,370,349,339,326,305,298,280,266,250,238,232,209,203,189,179,167,157,153,135,129,120,111,102,92,89,76,73,64,59,55,46,41,33,31,24,18,21,10,9,4,9,1,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,6,8,8,13,20,25,34,29,43,46,53,60,69,83,79,96,106,113,128,135,155,158,177,190,200,219,230,248,255,274,290,303,328,337,359,371,390,407,421,446,454,472,487,507,521,534,558,565,581,597,611,629,638,654,665,680,692,702,719,729,738,745,760,771,773,787,797,802,808,820,832,832,839,848,851,859,861,872,873,877,884,885,895,892,897,896,897,902,896,906,902,901,903,902,904,899,907,902,901,903,901,904,897,903,902,899,904,901,905,896,905,899,901,903,898,905,900,902,900,901,904,895,903,897,901,898,901,906,897,901,900,901,898,897,906,894,900,898,900,899,899,905,899,901,900,901,900,898,903,898,900,900,899,901,900,902,898,901,897,900,903,898,899,901,901,899,898,907,900,897,898,901,899,897,903,902,897,900,901,903,899,901,899,898,899,895,901,900,897,899,897,902,896,900,900,896,897,894,903,894,899,900,897,901,897,906,898,899,900,897,903,896,903,898,902,900,895,905,899,899,898,899,902,894,905,898,899,896,899,903,894,901,899,899,899,898,905,897,903,900,901,900,896,902,898,899,898,901,903,898,901,901,901,899,898,905,900,897,898,901,898,898,905,900,898,902,898,902,899,902,899,899,900,899,903,898,901,899,897,902,895,905,900,899,900,901,903,896,905,902,897,900,899,903,894,903,902,897,900,900,906,896,902,901,897,900,898,905,897,902,900,901,902,896,906,896,901,896,897,900,895,901,898,899,896,896,905,894,900,900,900,899,897,905,898,899,902,899,900,897,904,897,901,900,901,904,900,903,900,899,898,897,903,899,899,899,902,899,898,905,901,899,899,901,900,898,901,901,898,900,901,902,900,901,900,898,903,900,903,902,901,904,901,907,901,903,902,901,902,901,908,902,902,907,903,904,901,909,901,901,904,901,904,901,909,904,902,906,903,907,901,907,900,901,902,897,903,894,897,888,885,882,868,876,864,861,852,845,840,828,831,813,805,794,786,773,760,757,738,725,712,701,687,667,663,641,626,609,596,581,561,552,531,514,501,484,469,448,439,416,402,386,371,357,341,330,313,299,286,274,262,246,235,220,210,197,186,181,168,155,145,142,129,119,115,104,93,86,81,76,65,65,56,46,42,39,33,26,27,18,15,12,7,15,6,3,4,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,3,4,33,12,13,21,22,37,30,38,46,51,59,64,81,80,89,102,109,121,125,145,150,162,176,187,205,213,232,240,255,270,281,305,313,333,343,363,379,389,415,423,440,454,473,488,499,525,531,547,561,578,593,599,622,627,641,653,669,683,690,706,713,725,736,743,760,765,773,778,790,799,802,815,822,825,830,838,848,848,857,865,867,872,877,886,886,889,892,891,895,895,900,900,900,904,902,904,904,905,903,901,904,899,904,902,901,903,901,902,899,908,903,899,902,901,903,896,906,904,898,903,902,905,897,904,902,898,902,898,905,898,901,900,900,905,896,903,898,901,898,898,904,898,903,900,901,900,899,905,894,903,900,899,898,901,906,898,902,902,903,898,898,906,896,900,900,901,899,898,903,898,900,898,900,900,898,901,898,899,899,899,903,901,899,899,901,897,897,903,898,897,900,899,898,897,903,898,895,898,899,900,896,900,900,895,900,898,903,900,899,900,898,901,896,902,902,898,900,901,905,897,901,902,898,899,897,906,898,900,903,897,900,898,903,898,901,900])
