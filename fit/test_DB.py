@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import unittest
-import fit
+import db
 import numpy
 from pymongo import MongoClient
 
@@ -18,7 +18,7 @@ class test_DB(unittest.TestCase):
 		args.template_collection = 'templatemodels'
 		args.fetch_limit = 9
 		args.show_plots = False
-		self.db = fit.DB(args)
+		self.db = db.DB(args)
 
 	def test_loadData(self):
 		data = self.db.loadData()

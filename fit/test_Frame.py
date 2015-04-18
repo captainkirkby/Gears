@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import unittest
-import fit
+import frame
 import numpy
 
 class test_Frame(unittest.TestCase):
@@ -10,7 +10,7 @@ class test_Frame(unittest.TestCase):
         """
         Override setup method to load input data
         """
-        self.frame = fit.Frame(samples())
+        self.frame = frame.Frame(samples())
 
     def test_frameConstructor(self):
         self.assertTrue(numpy.array_equal(self.frame.samples,samples()),

@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
 import unittest
+import template
 import fit
 import numpy
+import frame
 
 class test_Template(unittest.TestCase):
 
@@ -15,10 +17,10 @@ class test_Template(unittest.TestCase):
 		self.args.spline_pad = 0.03
 		self.args.nfingers = 5
 		self.args.nspline = 1024
-		self.template = fit.Template(dbTemplate(),"TIMESTAMP")
+		self.template = template.Template(dbTemplate(),"TIMESTAMP")
 
 	def test_fitTemplateModel(self):
-		fitParams = self.template.fitTemplateModel(fit.Frame(samples()),
+		fitParams = self.template.fitTemplateModel(frame.Frame(samples()),
 			self.args,1,loVal(),hiVal(),t0Val(),risePositionsSubsamples(),
 			fallPositionsSubsamples())
 		template_t0 = fitParams[0][0]
