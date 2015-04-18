@@ -1,9 +1,11 @@
 import numpy
 import math
+import scipy.interpolate
 
 import model
 import template
 import frame
+
 
 class FrameProcessor(object):
     def __init__(self,tabs,args,db):
