@@ -3,8 +3,6 @@
 import unittest
 import fit
 import numpy
-import argparse
-import test_Template
 
 class test_Frame(unittest.TestCase):
 
@@ -187,5 +185,5 @@ def expectedKernel():
     return numpy.array(a)
 
 if __name__ == '__main__':
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestFrame)
+    suite = unittest.TestLoader().loadTestsFromTestCase(test_Frame)
     unittest.TextTestRunner(verbosity=2).run(suite)
