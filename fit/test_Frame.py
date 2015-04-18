@@ -6,7 +6,7 @@ import numpy
 import argparse
 import test_Template
 
-class TestFrame(unittest.TestCase):
+class test_Frame(unittest.TestCase):
 
     def setUp(self):
         """
