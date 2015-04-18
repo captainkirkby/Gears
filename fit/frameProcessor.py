@@ -183,5 +183,63 @@ class FrameProcessor(object):
             self.fig.savefig('fit.png')
         numpy.savetxt('fit.dat',numpy.vstack([periods,swings]).T)
 
+def buildSplineTemplate(frames,args):
+    """
+    Builds a universal template for the transmission function from the specified frames.
+    """
+    # get the number of frames and check the frame size
+    nframes,frameSize = frames.shape
+    assert frameSize == 1+args.nsamples
+    samples = frames[:,1:]
+    # perform quick fits to each frame
+    if args.verbose:
+        print 'Performing quick fits...'
+    dirvec = numpy.empty((nframes,))
+    lovec = numpy.empty((nframes,))
+    hivec = numpy.empty((nframes,))
+    t0vec = numpy.empty((nframes,))
+    risevec = numpy.empty((nframes,args.nfingers))
+    fallvec = numpy.empty((nframes,args.nfingers))
+    for i in range(nframes):
+        fr = frame.Frame(samples[i])
+        dirvec[i],lovec[i],hivec[i],t0vec[i],risevec[i],fallvec[i],unusedHeight = fr.quickFit(args)
+    # calculate the mean lo,hi levels
+    lo = numpy.mean(lovec)
+    hi = numpy.mean(hivec)
+    # calculate the mean positions of each edge relative to the fiducial
+    rise = numpy.mean(risevec,axis=0)
+    fall = numpy.mean(fallvec,axis=0)
+    if args.verbose:
+        print 'rise/fall',rise,fall
+    # Estimate the stretch factors that map the time between the outer edges to ds = 2
+    stretch = (risevec[:,-1] - fallvec[:,0])/2.
+    # initialize a vector of ADC sample counts
+    tadc = numpy.linspace(0.,args.nsamples-1.,args.nsamples)
+    # initialize our resampling grid
+    smax = 1 + args.spline_pad
+    sgrid = numpy.linspace(-smax,+smax,args.nspline)
+    # initialize the resampled values we will average
+    resampled = numpy.zeros_like(sgrid)
+    # loop over frames
+    if args.verbose:
+        print 'Stacking frames to build spline template...'
+    for i in range(nframes):
+        # convert this frame's ADC timing to s values, correcting for the direction of
+        # travel, the estimate fiducial crossing time, and the stretch factor.
+        svec = dirvec[i]*(tadc - t0vec[i])/stretch[i]
+        # normalize this frame's samples to [0,1]
+        yvec = (samples[i] - lo)/(hi - lo)
+        # ensure that svec is increasing
+        if dirvec[i] < 0:
+            svec = svec[::-1]
+            yvec = yvec[::-1]
+        # build a cubic spline interpolation of (svec,ynorm)
+        splineFit = scipy.interpolate.UnivariateSpline(svec,yvec,k=3,s=0.,)
+        # resample the spline fit to our s grid
+        resampled += splineFit(sgrid)
+    # average and return the resampled values
+    resampled /= nframes
+    return numpy.vstack((sgrid,resampled))
+
 if __name__ == "__main__":
     main()

@@ -2,7 +2,7 @@
 
 import unittest
 import template
-import fit
+# import fit
 import numpy
 import frame
 
@@ -36,14 +36,14 @@ class test_Template(unittest.TestCase):
 		self.assertEquals(template_rng,templatedRange(),
 			msg="Template range test failed")
 
-	# Test static method
-	def test_buildSplineTemplate(self):
-		data = dbData()
-		nframe = len(data)/(1+self.args.nsamples)
-		frames = data[:nframe*(1+self.args.nsamples)].reshape((nframe,1+self.args.nsamples))
-		splineTemplate = fit.buildSplineTemplate(frames,self.args)
-		self.assertTrue(numpy.array_equal(splineTemplate,templateFromDBData()),
-			msg="Build spline template test failed")
+	# # Test static method
+	# def test_buildSplineTemplate(self):
+	# 	data = dbData()
+	# 	nframe = len(data)/(1+self.args.nsamples)
+	# 	frames = data[:nframe*(1+self.args.nsamples)].reshape((nframe,1+self.args.nsamples))
+	# 	splineTemplate = fit.buildSplineTemplate(frames,self.args)
+	# 	self.assertTrue(numpy.array_equal(splineTemplate,templateFromDBData()),
+	# 		msg="Build spline template test failed")
 
 def templatedT0():
 	a = 1467.4986956305686
