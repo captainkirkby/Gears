@@ -6,3 +6,6 @@ Functional Test:
 
 	rm tmp
 	
+Unit Tests:
+
+	python -m unittest test_Frame test_Template test_DB
