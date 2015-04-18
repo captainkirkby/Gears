@@ -79,9 +79,9 @@ class FrameProcessor(object):
                 if not (self.args.max_frames == 0 or nframe <= self.args.max_frames):
                     nframe = self.args.max_frames
                 frames = data[:nframe*(1+self.args.nsamples)].reshape((nframe,1+self.args.nsamples))
-                template = buildSplineTemplate(frames,self.args)
+                templateSpline = buildSplineTemplate(frames,self.args)
                 # Save to database as array of ordered pairs (arrays)
-                self.db.saveTemplate(template,timestamp)
+                self.db.saveTemplate(templateSpline,timestamp)
             # Look for newer template from database
             templateTuple = self.db.loadTemplate()
             templateData = templateTuple[0]
