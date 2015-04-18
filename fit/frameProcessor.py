@@ -104,7 +104,7 @@ class FrameProcessor(object):
         # always start with a quick fit
         direction,lo,hi,offset,rise,fall,height = frame.quickFit(self.args)
         if self.args.physical:
-            fitParams,bestFit = model.Model().fitPhysicalModel(frame.samples,self.tabs,self.args,direction,lo,hi,offset)
+            fitParams,bestFit = model.Model().fitPhysicalModel(frame,self.tabs,self.args,direction,lo,hi,offset)
             offset,amplitude = fitParams[0],fitParams[5]
         elif self.template is not None:
             fitParams,bestFit = self.template.fitTemplateModel(frame,self.args,

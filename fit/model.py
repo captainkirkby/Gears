@@ -57,7 +57,7 @@ class Model(object):
         # scale to ADC units
         return lo + (hi-lo)*trans
     
-    def fitPhysicalModel(self,samples,tabs,args,direction,lo,hi,offset):
+    def fitPhysicalModel(self,frame,tabs,args,direction,lo,hi,offset):
     
         # initial parameter guesses
         loGuess = lo
@@ -69,14 +69,14 @@ class Model(object):
     
         # initialize model prediction
         global prediction
-        prediction = numpy.zeros_like(samples)
+        prediction = numpy.zeros_like(frame.samples)
     
         # define chi-square function to use
         def chiSquare(t0,lo,hi,D,L,dtheta):
             global prediction
             prediction = physicalModel(t0,direction,lo,hi,tabs,D,L,dtheta,
                 nsamples=args.nsamples,adcTick=args.adc_tick)
-            residuals = samples - prediction
+            residuals = frame.samples - prediction
             return numpy.dot(residuals,residuals)
     
         # initialize fitter
@@ -104,4 +104,3 @@ class Model(object):
 
 if __name__ == "__main__":
     main()
-    
