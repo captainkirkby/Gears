@@ -19,7 +19,7 @@ class test_Frame(unittest.TestCase):
             msg="Frame Constructor Test Failed")
 
     def test_padded(self):
-        self.assertTrue(numpy.array_equal(self.frame.padded(15),expectedPadded()),
+        self.assertTrue(numpy.array_equal(self.frame.padded(self.frame.samples,15),expectedPadded()),
             msg="Padded Test Failed")
 
     def test_kernel(self):
@@ -27,7 +27,7 @@ class test_Frame(unittest.TestCase):
             msg="Kernel Test Failed")
 
     def test_runningAvg(self):
-        smooth = self.frame.runningAvg(wlen=31)
+        smooth = self.frame.runningAvg(self.frame.samples,wlen=31)
         # find running average
         # NOTE: floating point errors.  Use np.allclose()
         self.assertTrue(numpy.allclose(smooth,smoothSamples(),rtol=1e-12),

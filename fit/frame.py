@@ -5,16 +5,16 @@ class Frame(object):
     def __init__(self,samples):
         self.samples = samples
 
-    def padded(self,whalf):
-        return numpy.r_[[self.samples[0]]*whalf,self.samples,[self.samples[-1]]*whalf]
+    def padded(self,samples,whalf):
+        return numpy.r_[[samples[0]]*whalf,samples,[samples[-1]]*whalf]
 
     def kernel(self,wlen):
         return numpy.ones(wlen,'d')/wlen
 
-    def runningAvg(self,wlen=31):
+    def runningAvg(self,samples,wlen=31):
         # returns a running-average smoothing of self.samples
-        assert self.samples.size > wlen and wlen % 2 == 1
-        cumulativeSum = numpy.cumsum(numpy.insert(self.padded((wlen-1)/2),0,0))
+        assert samples.size > wlen and wlen % 2 == 1
+        cumulativeSum = numpy.cumsum(numpy.insert(self.padded(samples,(wlen-1)/2),0,0))
         return (cumulativeSum[wlen:] - cumulativeSum[:-wlen])/float(wlen)
 
     def findNMaxes(self,hist,npeaks=3,sharpThreshold=20,levelThreshold=10):
@@ -27,7 +27,7 @@ class Frame(object):
         largest = numpy.zeros((0,2),dtype='int16')
         # Loop over elements in the differences of the histogram of the smoothed graph
         count = 0
-        for i,e in enumerate(numpy.diff(hist)):
+        for i,e in enumerate(self.runningAvg(numpy.diff(hist),wlen=3)):
             # Looking for a sharp sign change
             if (e <= 0 and lastE >= 0) or (e >= 0 and lastE <= 0):
                 if lastE-e > sharpThreshold:
@@ -137,7 +137,7 @@ class Frame(object):
         the direction of travel. All times are measured in ADC samples.
         """
         # perform a running-average smoothing of the frame's raw sample data
-        smooth = self.runningAvg(wlen=1+2*smoothing)
+        smooth = self.runningAvg(self.samples,wlen=1+2*smoothing)
         # Find the range of the smoothed data. Use the min of the smooth samples to estimate the
         # lo value. Use the mean of the left and right margins to estimate the hi value. The
         # reason why don't use the max of the smooth samples to estimate the hi value is that we

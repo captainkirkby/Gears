@@ -1,6 +1,7 @@
 import numpy
 import math
 import scipy.interpolate
+import matplotlib.pyplot as plt
 
 import model
 import template
