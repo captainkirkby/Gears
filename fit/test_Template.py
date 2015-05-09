@@ -46,19 +46,19 @@ class test_Template(unittest.TestCase):
 	# 		msg="Build spline template test failed")
 
 def templatedT0():
-	a = 1467.4986956305686
+	a = 1467.4597689783443
 	return a
 
 def templatedDuration():
-	a = 1413.3307384706754
+	a = 1413.3263308221406
 	return a
 
 def templatedLo():
-	a = 0.5171082548184426
+	a = 0.31742314291973894
 	return a
 
 def templatedRange():
-	a = 898.2383921402183
+	a = 898.4584066099555
 	return a
 
 def prediction():

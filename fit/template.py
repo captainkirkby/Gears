@@ -36,7 +36,9 @@ class Template(object):
             prediction = lo + rng*prediction
             # evaluate the chi-square
             residuals = frame.samples - prediction
-            return numpy.dot(residuals,residuals)
+            # return numpy.dot(residuals,residuals)
+            newResiduals = numpy.concatenate((residuals[:offset-200],residuals[offset+200:]))
+            return numpy.dot(newResiduals,newResiduals)
     
         # initialize fitter
         print_level = 1 if args.verbose else 0
