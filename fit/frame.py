@@ -17,35 +17,44 @@ class Frame(object):
         cumulativeSum = numpy.cumsum(numpy.insert(self.padded(samples,(wlen-1)/2),0,0))
         return (cumulativeSum[wlen:] - cumulativeSum[:-wlen])/float(wlen)
 
-    def findNMaxes(self,hist,npeaks=3,sharpThreshold=20,levelThreshold=10):
+    def findNMaxes(self, hist,npeaks=3,maxHeightThreshold=40, minHeightThreshold=10):
         """
         Given a histogram and the expected number of peaks, returns an array of
         the approximate center of each of the peaks.
         """
-        lastE = 0
-        # Define shape (n,2)
-        largest = numpy.zeros((0,2),dtype='int16')
-        # Loop over elements in the differences of the histogram of the smoothed graph
-        count = 0
-        for i,e in enumerate(self.runningAvg(numpy.diff(hist),wlen=3)):
-            # Looking for a sharp sign change
-            if (e <= 0 and lastE >= 0) or (e >= 0 and lastE <= 0):
-                if lastE-e > sharpThreshold:
-                    # Add potential candidates to an array
-                    largest = numpy.append(largest,[[e-lastE,i]],axis=0)
-                    count = count + 1
-            lastE = e
-        # If greater than n choices, choose the best n
-        if count > npeaks:
-            # Get rid of any indices that are too close to each other
+        heightThreshold = maxHeightThreshold
+        peaks = []
+        diffs = numpy.diff(hist);
+        # Lower the threshold until we find the required number of peaks
+        while len(peaks) < npeaks and heightThreshold >= minHeightThreshold:
+            for index, delta in enumerate(diffs):
+                # Look for sign change (index[-1] = 0)
+                if numpy.sign(diffs[index-1]) != numpy.sign(diffs[index]):
+                    # Look for a sign change above a certain height
+                    if hist[index] > heightThreshold:
+                        # Add to list if we don't already have it
+                        if index not in peaks:
+                            peaks.append(index)
+            # Lower the threshold
+            heightThreshold -= 10;
+        # Sort peaks
+        peaks = numpy.sort(peaks)
+        # If we got too many peaks, pick the best three
+        while len(peaks) > npeaks:
+            # Find the closest two
             nDeleted = 0
-            for index,d in enumerate(numpy.diff(largest[:,1])):
-                if d < levelThreshold:
-                    # Collapse two rows into one
-                    largest = numpy.delete(largest,index+1-nDeleted,axis=0)
-                    nDeleted = nDeleted + 1
-        # Choose indices of best n candidates
-        return largest[numpy.argsort(largest[:,0])][:,1][0:npeaks]
+            closestIndex = -1
+            closestDist = 1000      # arbitrary big number
+            for index, dist in enumerate(numpy.diff(peaks)):
+                # If current distance is smallest, store it
+                if dist < closestDist:
+                    closestDist = dist
+                    closestIndex = index
+            # Average closest index and replace entry at index
+            peaks[index]= int(0.5*(peaks[index]+peaks[index+1]))
+            # Remove entry at index + 1
+            peaks = numpy.delete(peaks, index+1)
+        return peaks
     
     def findPeakValues(self,smooth,npeaks=3,window=10):
         """

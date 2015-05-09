@@ -42,6 +42,15 @@ class test_Frame(unittest.TestCase):
             numpy.sort(maxes())),
             msg="Find N Maxes test failed")
 
+        # My first actual unit test :')  5/9/2015 never froget
+        # Peaks at                *             *              *
+        # Index                   0  1 2 3  4   5  6  7 8 9 10 11 12 13
+        inputData = numpy.array([100,0,0,1,100,101,99,1,0,0,0,100,0,0])
+        peaks = self.frame.findNMaxes(inputData,npeaks=3)
+        expectedPeaks = numpy.array([0,5,11])
+        self.assertTrue(numpy.array_equal(numpy.sort(peaks),
+            expectedPeaks), msg="Find N Maxes test failed")
+
     def test_findPeakValues(self):
         # Get hi/lo values
         lo,height,hi = self.frame.findPeakValues(smoothSamples())
