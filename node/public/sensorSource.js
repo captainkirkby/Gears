@@ -1,7 +1,7 @@
 $(function() {
 
 	// Reverse Order
-	var seriesToPlot = ["boardTemperature", "pressure", "crudePeriod", "blockTemperature", "humidity", "refinedPeriod", "angle"];
+	var seriesToPlot = ["boardTemperature", "pressure", "crudePeriod", "blockTemperature", "humidity", "refinedPeriod", "angle", "height"];
 
 	// Drawing Constants
 	var NORMAL = 2;
@@ -25,7 +25,8 @@ $(function() {
 		"blockTemperature" : { "visible" : true, "width" : NORMAL, "color" : 3},
 		"humidity" : { "visible" : true, "width" : NORMAL, "color" : 4},
 		"refinedPeriod" : { "visible" : true, "width" : NORMAL, "color" : 6},
-		"angle" : { "visible" : true, "width" : NORMAL, "color" : 7}
+		"angle" : { "visible" : true, "width" : NORMAL, "color" : 7},
+		"height" : { "visible" : true, "width" : NORMAL, "color" : 8}
 	};
 
 	// Store last request parameters
@@ -33,7 +34,7 @@ $(function() {
 	var lastTo;
 
 	// Smoothing factors
-	var NUM_BOARD_TEMPERATURE_SAMPLES = 11;		// o o X o o
+	var NUM_BOARD_TEMPERATURE_SAMPLES = 55;		// o o X o o
 	var NUM_PRESSURE_SAMPLES = 55;
 	var NUM_IRLEVEL_SAMPLES = 55;
 	var NUM_BLOCK_TEMPERATURE_SAMPLES = 55;
@@ -41,6 +42,7 @@ $(function() {
 	var NUM_CRUDE_PERIOD_SAMPLES = 0;
 	var NUM_REFINED_PERIOD_SAMPLES = 55;
 	var NUM_ANGLE_SAMPLES = 55;
+	var NUM_HEIGHT_SAMPLES = 55;
 
 	// Real time parameters
 	var TIMEOUT_VALUE = 333;
@@ -57,7 +59,8 @@ $(function() {
 			"blockTemperature" : NUM_BLOCK_TEMPERATURE_SAMPLES,
 			"humidity" : NUM_HUMIDITY_SAMPLES,
 			"refinedPeriod" : NUM_REFINED_PERIOD_SAMPLES,
-			"angle" : NUM_ANGLE_SAMPLES
+			"angle" : NUM_ANGLE_SAMPLES,
+			"height" : NUM_HEIGHT_SAMPLES
 		};
 		var result = lookUpTable[set];
 		if(!result) result = 0;
@@ -89,7 +92,8 @@ $(function() {
 							"blockTemperature"	: "Block Temperature (°C)",
 							"humidity"			: "Humidity (%)",
 							"refinedPeriod"		: "Period (ppm)",
-							"angle"				: "Angle (degrees)"};
+							"angle"				: "Angle (degrees)",
+							"height"			: "Height (ADC)"};
 		
 		var result = lookUpTable[name];
 		if(!result) {
