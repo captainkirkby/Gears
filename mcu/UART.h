@@ -1,7 +1,7 @@
 #ifndef UART_H
 #define UART_H
 
-#define FTDI_BAUD_RATE	57600
+#define FTDI_BAUD_RATE	76800
 #define GPSDO_BAUD_RATE	9600
 
 // Writes one byte to the specified port (0 or 1). This is a synchronous operation
@@ -51,6 +51,7 @@ void initUARTs() {
 	UCSR0B = _BV(RXEN0) | _BV(TXEN0);
 	// frame format is 8-n-1
 	UCSR0C = _BV(UCSZ01) | _BV(UCSZ00);
+	#undef BAUD		// avoid compiler warning
 	#define BAUD GPSDO_BAUD_RATE
 	#include <util/setbaud.h>
 	UBRR1H = UBRRH_VALUE;
