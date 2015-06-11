@@ -543,6 +543,12 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 // Write refined period and swing arc angle to database
 // Format : period angle
 function storeRefinedPeriodAndAngle(periodAngleHeight, dataPacketModel, averager) {
+	// Catch Exception
+	if(periodAngleHeight.toString().substring(0,10) == "Exception:")
+	{
+		winston.error(periodAngleHeight);
+	}
+
 	// Pop least recent date off FIFO stack
 	var storeDate = datesBeingProcessed.pop();
 	if(datesBeingProcessed.length !== 0 && lastDatesLength !== datesBeingProcessed.length){
