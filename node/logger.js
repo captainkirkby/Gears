@@ -474,9 +474,11 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 				'sequenceNumber'	: sequenceNumber,
 				'raw'				: raw
 			};
+			winston.debug(rawData);
 			rawDataModel.collection.insert(rawData, function onInsert(err, docs) {
 				if (err) throw err;
 				// Raw Saved!
+				winston.debug("Raw Saved!");
 			});
 
 			// Input averageable fields to averager object
