@@ -337,9 +337,9 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 
 			// Date logging
 			winston.debug("Delta Time: " + deltaTime);
-			winston.debug("Date: " + date);
-			winston.debug("Reference Date: " + referenceDate);
-			winston.debug("Samples Since Boot: " + samplesSinceBoot);
+			//winston.debug("Date: " + date);
+			//winston.debug("Reference Date: " + referenceDate);
+			//winston.debug("Samples Since Boot: " + samplesSinceBoot);
 
 
 			// Perform test
@@ -546,7 +546,8 @@ function storeRefinedPeriodAndAngle(periodAngleHeight, dataPacketModel, averager
 	// Catch Exception
 	if(periodAngleHeight.toString().substring(0,10) == "Exception:")
 	{
-		winston.error(periodAngleHeight);
+		winston.error("Fit Exception!");
+		winston.error(periodAngleHeight.toString());
 		return;
 	}
 
