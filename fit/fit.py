@@ -150,7 +150,7 @@ def main():
                 # Try to keep going silently after any error
                 if args.verbose:
                     raise e
-                print "Exception: " + str(e) + str(samples.tolist())
+                print "Exception: " + str(e) + " " + str(samples)
                 sys.stdout.flush()
 
     # clean up

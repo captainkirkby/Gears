@@ -547,6 +547,7 @@ function storeRefinedPeriodAndAngle(periodAngleHeight, dataPacketModel, averager
 	if(periodAngleHeight.toString().substring(0,10) == "Exception:")
 	{
 		winston.error(periodAngleHeight);
+		return;
 	}
 
 	// Pop least recent date off FIFO stack
