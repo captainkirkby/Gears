@@ -50,10 +50,10 @@ class Frame(object):
                 if dist < closestDist:
                     closestDist = dist
                     closestIndex = index
-            # Average closest index and replace entry at index
-            peaks[index]= int(0.5*(peaks[index]+peaks[index+1]))
-            # Remove entry at index + 1
-            peaks = numpy.delete(peaks, index+1)
+            # Average closestIndex and replace entry at closestIndex
+            peaks[closestIndex]= int(0.5*(peaks[closestIndex]+peaks[closestIndex+1]))
+            # Remove entry at closestIndex + 1
+            peaks = numpy.delete(peaks, closestIndex+1)
         return peaks
     
     def findPeakValues(self,smooth,npeaks=3,window=10):

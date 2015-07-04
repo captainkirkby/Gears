@@ -51,6 +51,15 @@ class test_Frame(unittest.TestCase):
         self.assertTrue(numpy.array_equal(numpy.sort(peaks),
             expectedPeaks), msg="Find N Maxes test failed")
 
+        # Second unit test - peak in middle has two points that are the same
+        # Peaks at                *               *             *
+        # Index                   0  1 2 3 4 5  6   7 8 9 10 11 12 13 14
+        inputData = numpy.array([100,0,0,1,9,21,57,57,1,0,0,0,100,0,0])
+        peaks = self.frame.findNMaxes(inputData,npeaks=3)
+        expectedPeaks = numpy.array([0,6,12])
+        self.assertTrue(numpy.array_equal(numpy.sort(peaks),
+            expectedPeaks), msg="Find N Maxes test failed")
+
     def test_findPeakValues(self):
         # Get hi/lo values
         lo,height,hi = self.frame.findPeakValues(smoothSamples())
