@@ -57,7 +57,7 @@ Averager.prototype.input = function(obj,saveCallback) {
 		// Append date to data packet
 		dataToSave["timestamp"] = this.date;
 		dataToSave["averagingPeriod"] = this.seconds;
-		console.log("Averaging With Period " + this.seconds);
+		//console.log("Averaging With Period " + this.seconds);
 		// Clear data structure while saving the date and seconds
 		this.clear();
 		// Save to Database
