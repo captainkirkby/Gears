@@ -1,6 +1,10 @@
 // Implements then data logger component of the clock metrology project.
 // Created by D & D Kirkby, Dec 2013
 
+/***********************************************
+	Requires
+***********************************************/
+
 var fs = require('fs');
 var async = require('async');
 var serial = require('serialport');
@@ -13,6 +17,10 @@ var packet = require('./packet');
 var average = require('./average');
 var bins = require('./bins');
 var connectToDB = require('./dbConnection').connectToDB;
+
+/***********************************************
+	Globals
+***********************************************/
 
 // For logging all binary data to a file
 var binaryPacketsFile = fs.createWriteStream('binaryPackets',{ flags: 'a' });
@@ -29,6 +37,9 @@ var runningMicroseconds;
 var runningUs = 0;
 var flag = false;
 
+// Remember the initial UTC-GPS offset
+var utcgpsOffset = 17;
+
 // Remember the last "timeSinceLastBootPacket" so we can reconstruct the crude period
 var lastTimeSinceLastBootPacket = 0;
 
@@ -41,6 +52,10 @@ var MAX_PACKET_SIZE = RAW_START+RAW_LENGTH;
 // FIFO : push on, then pop off
 var datesBeingProcessed = [];
 var lastDatesLength = 0;
+
+/***********************************************
+	Logging with Winston
+***********************************************/
 
 // Log to file
 var winston = new (winston_module.Logger)({
@@ -56,6 +71,10 @@ var winston = new (winston_module.Logger)({
 		})
 	]
 });
+
+/***********************************************
+	Command Line Arguments
+***********************************************/
 
 // Use database for templating
 var templateFile = "db";
@@ -83,6 +102,10 @@ process.argv.forEach(function(val,index,array) {
 	else if(val == '--service') service = true;
 	else if(val == '--physical')  pythonFlags = ["--physical"];
 });
+
+/***********************************************
+	Configure and Launch fit.py
+***********************************************/
 
 // Assumption: this command is being called with cwd /path/to/Gears/node
 
@@ -138,6 +161,10 @@ process.once('SIGINT', function(){
 	winston.info("Stopping Logger " + __filename);
 	process.exit(0);
 });
+
+/***********************************************
+	Connect to 1. Serial Port 2. Database
+***********************************************/
 
 winston.verbose(__filename + ' connecting to the database...');
 
@@ -226,6 +253,10 @@ async.parallel({
 	}
 );
 
+/***********************************************
+	Incoming Data
+***********************************************/
+
 // Receives a new chunk of binary data from the serial port and returns the
 // updated value of remaining that should be used for the next call.
 function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStatusModel,averageDataModel,rawDataModel) {
@@ -236,24 +267,26 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			winston.verbose("Got Boot Packet!");
 			// Prepares boot packet for storing to the database.
 			// GPS Time
-			var utcOffset			= buf.readFloatBE(56);
+			utcgpsOffset				= buf.readFloatBE(56);
 			var weekNumber			= buf.readUInt16BE(60);
 			var timeOfWeek			= buf.readFloatBE(62);
 
 			winston.debug("Week Number: " + weekNumber);
 			winston.debug("Time of Week: " + timeOfWeek);
-			winston.debug("UTC Offset: " + utcOffset);
+			winston.debug("UTC Offset: " + utcgpsOffset);
 
 			var GPS_EPOCH_IN_MS = 315964800000;			// January 6, 1980 UTC
 			var MS_PER_WEEK = 7*24*60*60*1000;
-			var timestamp = new Date(GPS_EPOCH_IN_MS + weekNumber*MS_PER_WEEK + timeOfWeek*1000);	// GPS time!!! 16 leap seconds ahead of UTC
+			// GPS time!!! 17 leap seconds ahead of UTC
+			var timestamp = new Date(GPS_EPOCH_IN_MS + weekNumber*MS_PER_WEEK + timeOfWeek*1000);	
 			winston.debug("Date: " + timestamp);
 
-			lastTime = new Date(GPS_EPOCH_IN_MS + weekNumber*MS_PER_WEEK + Math.floor(timeOfWeek)*1000);	// Truncate decimal to trim miliseconds
+			// Truncate decimal to trim miliseconds
+			lastTime = new Date(GPS_EPOCH_IN_MS + weekNumber*MS_PER_WEEK + Math.floor(timeOfWeek)*1000);
 			winston.debug("PPS Time: " + lastTime);
 
 			computerTimestamp = new Date();
-			var predictedPPSTime = new Date(computerTimestamp.getTime()+utcOffset*1000);
+			var predictedPPSTime = new Date(computerTimestamp.getTime()+utcgpsOffset*1000);
 			winston.debug("Predicted PPS date: " + predictedPPSTime);
 
 			var predictionError = Math.abs(predictedPPSTime.getTime() - lastTime.getTime());
@@ -279,7 +312,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 				'altitude': buf.readDoubleBE(48),
 				'initialWeekNumber': weekNumber,
 				'initialTimeOfWeek': timeOfWeek,
-				'initialUTCOffset': utcOffset
+				'initialUTCOffset': utcgpsOffset
 			});
 			winston.debug("Latitude, Longitude: " + 180/Math.PI*buf.readDoubleBE(32) + ", " + 180/Math.PI*buf.readDoubleBE(40));
 			winston.debug("Altitude: " + buf.readDoubleBE(48));
@@ -360,7 +393,8 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			for(var readOffsetA = initialReadOffsetWithPhase; readOffsetA < MAX_PACKET_SIZE; readOffsetA++) {
 				raw[rawFill] = buf.readUInt8(readOffsetA);
 
-				// This point minus last point (large positive means this goes down a quadrant, large negative means this goes up a quadrant
+				// This point minus last point (large positive means this goes down a quadrant
+				// large negative means this goes up a quadrant
 				if(raw[rawFill] - lastReading > 150){
 					// This goes down a quadrant
 					addToRawReading -= QUADRANT;
@@ -379,7 +413,8 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			for(var readOffsetB = initialReadOffset; readOffsetB < initialReadOffsetWithPhase; readOffsetB++) {
 				raw[rawFill] = buf.readUInt8(readOffsetB);
 
-				// This point minus last point (large positive means this goes down a quadrant, large negative means this goes up a quadrant
+				// This point minus last point (large positive means this goes down a quadrant
+				// large negative means this goes up a quadrant
 				if(raw[rawFill] - lastReading > 150){
 					// This goes down a quadrant
 					addToRawReading -= QUADRANT;
@@ -539,6 +574,10 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 		});
 	});
 }
+
+/***********************************************
+	Process fit.py output
+***********************************************/
 
 // Write refined period and swing arc angle to database
 // Format : period angle
