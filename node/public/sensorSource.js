@@ -240,11 +240,13 @@ $(function() {
 				legend: { show : true, position : "nw", sorted : "ascending"}
 			});
 
-			stopSpinner();
+			// Spinner is handled by switch in real time mode
+			if(!realTimeUpdates) stopSpinner();
 
 		}
 
-		startSpinner();
+		// Spinner is handled by switch in real time mode
+		if(!realTimeUpdates) startSpinner();
 
 		$.ajax({
 			url:dataURL,
@@ -328,6 +330,8 @@ $(function() {
 		if(!realTimeUpdates){
 			// Real Time On
 			realTimeUpdates = true;
+			// Start Spinner
+			startSpinner();
 			$(this).val("Stop Real Time Updates");
 			// Get value of length field
 			var lengthValue = $("#length").val();
@@ -339,6 +343,8 @@ $(function() {
 		} else {
 			// Real Time Off
 			realTimeUpdates = false;
+			// Stop Spinner
+			stopSpinner();
 			$(this).val("Start Real Time Updates");
 			// enable manual fetch
 			setManualFetchEnabled(true);
