@@ -376,15 +376,23 @@ $(function() {
 		return number;
 	}
 
+	function noZero(number) {
+		return (number == 0 ? 12 : number);
+	}
+
 	Date.parseDate = function( input, format ){ return Date.parse(input); };
 	Date.prototype.dateFormat = function( format ){
 		// Return 12 hour time
-		if(format == 'H:i') return pad(this.getHours()) + ":" + pad(this.getMinutes());
+		if(format == 'H:i') return noZero(this.getHours()%12) + ":" + pad(this.getMinutes()) + " " + (this.getHours() < 12 ? "AM" : "PM");
 		else return this.toISOString();
 	};
-	$('#from').datetimepicker();
-	$('#to').datetimepicker();
 
+	defaultOptions = {
+		timepickerScrollbar: false,
+		scrollMonth : false
+	};
+	$('#from').datetimepicker(defaultOptions);
+	$('#to').datetimepicker(defaultOptions);
 	displayData();
 	setManualFetchEnabled(true);
 });
