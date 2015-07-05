@@ -369,6 +369,15 @@ $(function() {
 		}
 	});
 
+	Date.parseDate = function( input, format ){ return Date.parse(input); };
+	Date.prototype.dateFormat = function( format ){
+		// Return 12 hour time
+		if(format == 'H:i') return pad(this.getHours()) + ":" + pad(this.getMinutes());
+		else return this.toISOString();
+	};
+	$('#from').datetimepicker();
+	$('#to').datetimepicker();
+
 	displayData();
 	setManualFetchEnabled(true);
 });
