@@ -19,14 +19,14 @@ $(function() {
 
 	// Plot Settings
 	var dataToPlot = {
-		"boardTemperature" : { "visible" : true, "width" : NORMAL, "color" : 0},
-		"pressure" : { "visible" : true, "width" : NORMAL, "color" : 1},
-		"crudePeriod" : { "visible" : true, "width" : NORMAL, "color" : 2},
+		"boardTemperature" : { "visible" : false, "width" : NORMAL, "color" : 0},
+		"pressure" : { "visible" : false, "width" : NORMAL, "color" : 1},
+		"crudePeriod" : { "visible" : false, "width" : NORMAL, "color" : 2},
 		"blockTemperature" : { "visible" : true, "width" : NORMAL, "color" : 3},
-		"humidity" : { "visible" : true, "width" : NORMAL, "color" : 4},
+		"humidity" : { "visible" : false, "width" : NORMAL, "color" : 4},
 		"refinedPeriod" : { "visible" : true, "width" : NORMAL, "color" : 6},
-		"angle" : { "visible" : true, "width" : NORMAL, "color" : 7},
-		"height" : { "visible" : true, "width" : NORMAL, "color" : 8}
+		"angle" : { "visible" : false, "width" : NORMAL, "color" : 7},
+		"height" : { "visible" : false, "width" : NORMAL, "color" : 18}
 	};
 
 	// Store last request parameters
