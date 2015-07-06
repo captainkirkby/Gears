@@ -235,10 +235,11 @@ $(function() {
 
 			somePlot = $.plot("#placeholder", dataSet, {
 				series : { shadowSize : 0},
-				xaxes : [{ mode: "time", timezone: "browser" }],		//must include jquery.flot.time.min.js for this!
+				xaxes : [{ mode: "time", timezone: "browser", twelveHourClock: true }],		// *
 				yaxes : YAxesSet,
 				legend: { show : true, position : "nw", sorted : "ascending"}
 			});
+			// *must include jquery.flot.time.min.js for this!
 
 			// Spinner is handled by switch in real time mode
 			if(!realTimeUpdates) stopSpinner();
