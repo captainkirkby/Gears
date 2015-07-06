@@ -226,10 +226,11 @@ $(function() {
 
 			somePlot = $.plot("#placeholder", dataSet, {
 				series : { shadowSize : 0},
-				xaxes : [{ mode: "time", timezone: "browser" }],		//must include jquery.flot.time.min.js for this!
+				xaxes : [{ mode: "time", timezone: "browser", twelveHourClock: true }],		// *
 				yaxes : YAxesSet,
 				legend: { show : true, position : "nw", sorted : "ascending"}
 			});
+			// *must include jquery.flot.time.min.js for this!
 
 			// Spinner is handled by switch in real time mode
 			if(!realTimeUpdates) stopSpinner();
@@ -406,6 +407,31 @@ $(function() {
 			showDots = false;
 		}
 	});
+
+	function pad(number) {
+		if (number < 10) {
+			return '0' + number;
+		}
+		return number;
+	}
+
+	function noZero(number) {
+		return (number == 0 ? 12 : number);
+	}
+
+	Date.parseDate = function( input, format ){ return Date.parse(input); };
+	Date.prototype.dateFormat = function( format ){
+		// Return 12 hour time
+		if(format == 'H:i') return noZero(this.getHours()%12) + ":" + pad(this.getMinutes()) + " " + (this.getHours() < 12 ? "AM" : "PM");
+		else return this.toISOString();
+	};
+
+	defaultOptions = {
+		timepickerScrollbar: false,
+		scrollMonth : false
+	};
+	$('#from').datetimepicker(defaultOptions);
+	$('#to').datetimepicker(defaultOptions);
 
 	displayData();
 	setManualFetchEnabled(true);
