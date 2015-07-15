@@ -44,7 +44,7 @@ var utcgpsOffset = 17;
 var lastTimeSinceLastBootPacket = 0;
 
 // Packet Sizes : change this when you want to modify the number of samples
-var RAW_LENGTH = 3072;
+var RAW_LENGTH = 2200;
 var RAW_START = 52;
 var MAX_PACKET_SIZE = RAW_START+RAW_LENGTH;
 
@@ -356,7 +356,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 
 			// Calculates the time since the last boot packet assuming 10MHz clock with prescaler set to 64.
 			// NB: ADC Frequency hardcoded here
-			var timeSince = samplesSinceBoot*64.0*13.0/10000.0;	// in ms
+			var timeSince = samplesSinceBoot*128.0*13.0/10000.0;	// in ms
 
 			// Create date object
 			var date = new Date(lastTime.getTime() + timeSince);
