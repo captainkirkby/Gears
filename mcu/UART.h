@@ -1,8 +1,11 @@
 #ifndef UART_H
 #define UART_H
 
-#define FTDI_BAUD_RATE	76800
-#define GPSDO_BAUD_RATE	9600
+// #define FTDI_BAUD_RATE 78125
+// #define GPSDO_BAUD_RATE	9600
+// NOTE: these values are just for documentation,
+// to actually set them, set UBRR0 and UBRR1 
+// in the initUARTs() function below
 
 // Writes one byte to the specified port (0 or 1). This is a synchronous operation
 // and will block until the transmit buffer is available.
@@ -41,21 +44,25 @@ inline int getc1() {
 }
 
 void initUARTs() {
-	#define BAUD FTDI_BAUD_RATE
-	#include <util/setbaud.h>
-	UBRR0H = UBRRH_VALUE;
-	UBRR0L = UBRRL_VALUE;
+	// Set baud rate of UART0 (computer) to 78125
+	// Assuming we are not using a double-speed baud rate
+	// clock the equation for baud rate is shown below:
+	//		Baud Rate = F_CPU / (16 * (UBRR + 1))
+	//		Example 1: 78125 = 10MHz / (16 * (7+1))
+	//		Example 2: ~9600 = 10MHz / (16 * (64+1))	(within .2 %)
+	UBRR0H = 0;
+	UBRR0L = 7;
 	// we are not using a double-speed baud rate clock
 	UCSR0A &= ~_BV(U2X0);
 	// enable Tx and Rx but not their interrupts
 	UCSR0B = _BV(RXEN0) | _BV(TXEN0);
 	// frame format is 8-n-1
 	UCSR0C = _BV(UCSZ01) | _BV(UCSZ00);
-	#undef BAUD		// avoid compiler warning
-	#define BAUD GPSDO_BAUD_RATE
-	#include <util/setbaud.h>
-	UBRR1H = UBRRH_VALUE;
-	UBRR1L = UBRRL_VALUE;
+
+	// Set baud rate of UART1 (gps) to 9600
+	UBRR1H = 0;
+	UBRR1L = 64;
+	// we are not using a double-speed baud rate clock
 	UCSR1A &= ~_BV(U2X1);
 	// enable Tx and Rx but not their interrupts
 	UCSR1B = _BV(RXEN1) | _BV(TXEN1);
