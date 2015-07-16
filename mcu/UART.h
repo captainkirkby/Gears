@@ -1,7 +1,7 @@
 #ifndef UART_H
 #define UART_H
 
-// #define FTDI_BAUD_RATE 78125
+// #define FTDI_BAUD_RATE 125000
 // #define GPSDO_BAUD_RATE	9600
 // NOTE: these values are just for documentation,
 // to actually set them, set UBRR0 and UBRR1 
@@ -44,14 +44,14 @@ inline int getc1() {
 }
 
 void initUARTs() {
-	// Set baud rate of UART0 (computer) to 78125
+	// Set baud rate of UART0 (computer) to 125000
 	// Assuming we are not using a double-speed baud rate
 	// clock the equation for baud rate is shown below:
 	//		Baud Rate = F_CPU / (16 * (UBRR + 1))
 	//		Example 1: 78125 = 10MHz / (16 * (7+1))
 	//		Example 2: ~9600 = 10MHz / (16 * (64+1))	(within .2 %)
 	UBRR0H = 0;
-	UBRR0L = 7;
+	UBRR0L = 4;
 	// we are not using a double-speed baud rate clock
 	UCSR0A &= ~_BV(U2X0);
 	// enable Tx and Rx but not their interrupts
