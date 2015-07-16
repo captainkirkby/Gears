@@ -13,7 +13,10 @@ datesBeingProcessed
 binaryPackets*
  
 node_modules/
-winstonLogs/
+# NOTE: do NOT ignore this directory, otherwise logger
+# will silently crash. Ignore its contents from within
+# the directory.
+#winstonLogs/	# Leave this commented out!!
 
 pids
 logs
