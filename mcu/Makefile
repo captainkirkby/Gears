@@ -35,7 +35,8 @@ PROGRAMMER = bootloader
 # OS X .........../dev/tty.usbserial*
 PORT = /dev/ttyUSB*
 
-##FUSES      = -U hfuse:w:0xd9:m -U lfuse:w:0x24:m
+# Thanks engbedded AVR fuse calculator!
+FUSES = -U lfuse:w:0xe0:m -U hfuse:w:0xd0:m -U efuse:w:0xfc:m
 
 ifeq ($(PROGRAMMER),usbtiny)
 	PROGRAMMER_ARGS = -c usbtiny -P usb
@@ -76,8 +77,13 @@ $(ASSEMS) : build/%.s : %.c
 flash:	all
 	$(AVRDUDE) -U flash:w:$(TARGET).hex:i
 
-#fuse:
-#	$(AVRDUDE) $(FUSES)
+# Only use with usbtiny
+fuse:
+	$(AVRDUDE) $(FUSES)
+
+# Only use with usbtiny
+serialNumber:
+	$(AVRDUDE) -U eeprom:w:config.srec:s
 
 # if you use a bootloader, change the command below appropriately:
 load: all
