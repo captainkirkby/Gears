@@ -212,4 +212,74 @@ void bmp180test(void)
     LED_ON(GREEN);
 }
 
+void bme280test()
+{
+    /*************************************************************
+        BME 280 Test
+            Initializes, calibrates, and reads BME 280 sensor
+
+        Expected output: 
+            Green LED comes on and computer UART receives
+                Temperature, Pressure, and Humidity
+            Red LED means there was an initialization error
+            Yellow LED means there was a read error or a
+                conversion error
+
+        Pass
+            Temperature: 29.778°C       0x0b49
+            Pressure: 100444 Pa         0x0001885c
+            Humidity: 55.495 %rH        0x0000ddfb
+
+    *************************************************************/
+
+    // Initialize LEDs, UART, and TWI
+    initLEDs();
+    initUARTs();
+    initTWI();
+
+    // Initialize sensor
+    uint8_t bmpiniterror = initBME280();
+    if(bmpiniterror)
+    {
+        LED_ON(RED);
+    }
+
+    int16_t temperature = 0xFFFF;
+    uint32_t pressure = 0xFFFFFFFF;
+    uint32_t humidity = 0xFFFFFFFF;
+
+    // Start Conversion
+    uint8_t startError = startBME280Readout16XOversampling();
+    if(startError)
+    {
+        LED_ON(YELLOW);
+    }
+    // Wait for conversion to complete
+    _delay_ms(113);
+    // Readout conversion
+    uint8_t readError = getFinishedBME280Readout(&temperature,&pressure,&humidity);
+    if(readError)
+    {
+        LED_ON(YELLOW);
+    }
+
+    // Send data over computer UART
+    putc0((uint8_t)(temperature >> 8));
+    putc0((uint8_t)(temperature >> 0));
+
+    // Send data over computer UART
+    putc0((uint8_t)(pressure >> 24));
+    putc0((uint8_t)(pressure >> 16));
+    putc0((uint8_t)(pressure >> 8));
+    putc0((uint8_t)(pressure >> 0));
+
+    // Send data over computer UART
+    putc0((uint8_t)(humidity >> 24));
+    putc0((uint8_t)(humidity >> 16));
+    putc0((uint8_t)(humidity >> 8));
+    putc0((uint8_t)(humidity >> 0));
+
+    LED_ON(GREEN);
+}
+
 #endif
