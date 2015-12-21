@@ -15,7 +15,7 @@
 #include "IR.h"
 #include "UART.h"
 #include "TWI.h"
-#include "BMP180.h"
+#include "BME280.h"
 #include "FreeRunningADC.h"
 #include "Trimble.h"
 #include "packet.h"
@@ -78,7 +78,7 @@ int main(void)
     initTWI();
 
     // Initializes communication with the BMP sensor
-    bmpError = initBMP180();
+    bmpError = initBME280();
     if(bmpError) {
         // A non-zero status indicates a problem, so flash an bmpError code
         flashNumber(100+bmpError);
@@ -155,6 +155,10 @@ int main(void)
     // Enable Trigger
     adcStatus = ADC_STATUS_CONTINUOUS;
 
+    // Start BME 280 Conversion
+    // Note: after 113 ms, the result becomes valid
+    bmpError = startBME280Readout16XOversampling();
+
     while(1) {
         // Store ADC run and transmit data
         if(adcStatus == ADC_STATUS_DONE){
@@ -168,7 +172,9 @@ int main(void)
             dataPacket.timeSinceLastBootPacket = runningCount;
 
             // Reads the BMP180 sensor values and saves the results in the data packet
-            bmpError = readBMP180Sensors(&dataPacket.temperature,&dataPacket.pressure);
+            bmpError = getFinishedBME280Readout(&dataPacket.temperature,
+                &dataPacket.pressure,&dataPacket.humidity
+            );
 
             // Turn on A0 (TP3)
             PORTA |= 0B00000001;
@@ -177,7 +183,7 @@ int main(void)
 
             dataPacket.rawPhase = (currentElementIndex + 1) % CIRCULAR_BUFFER_LENGTH;
             dataPacket.thermistor = thermistorReading;
-            dataPacket.humidity = humidityReading;
+            // dataPacket.humidity = humidityReading;
 
             // Readout GPS health
             health = getGPSHealth();
@@ -200,6 +206,10 @@ int main(void)
             PORTA &= ~0B00000001;
 
             adcStatus = ADC_STATUS_CONTINUOUS;
+
+            // Start BME 280 Conversion
+            // Note: after 113 ms, the result becomes valid
+            bmpError = startBME280Readout16XOversampling();
         }
     }
     return 0; // never actually reached

@@ -53,13 +53,13 @@ typedef struct {
     // Relative timing info (in ADC conversions (64*13/10MHz = 8.32e-5 s)
     // Now with respect to the last Boot Packet
     uint64_t timeSinceLastBootPacket;  // (16) 
-    // BMP180 sensor measurements
-    int32_t temperature;            // (24) divide by 160 to get degrees C
-    int32_t pressure;               // (28) in Pascals
+    // BME 280 sensor measurements
+    uint32_t humidity;               // (24) humidity
+    uint32_t pressure;               // (28) in Pascals
     // block thermistor reading
     uint16_t thermistor;            // (32)
     // relative humidity reading
-    uint16_t humidity;              // (34)
+    int16_t temperature;           // (34) divide by 500 plus 24 to get degrees C
     // PIN diode IR light level
     uint16_t irLevel;               // (36)
     // IR sensor raw ADC readings

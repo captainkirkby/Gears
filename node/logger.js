@@ -278,7 +278,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			var GPS_EPOCH_IN_MS = 315964800000;			// January 6, 1980 UTC
 			var MS_PER_WEEK = 7*24*60*60*1000;
 			// GPS time!!! 17 leap seconds ahead of UTC
-			var timestamp = new Date(GPS_EPOCH_IN_MS + weekNumber*MS_PER_WEEK + timeOfWeek*1000);	
+			var timestamp = new Date(GPS_EPOCH_IN_MS + weekNumber*MS_PER_WEEK + timeOfWeek*1000);
 			winston.debug("Date: " + timestamp);
 
 			// Truncate decimal to trim miliseconds
@@ -431,11 +431,11 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			}
 
 			// use nominal 1st order fit from sensor datasheet to calculate RH in %
-			var humidity			= (buf.readUInt16LE(34)/65536.0 - 0.1515)/0.00636;
+			var humidity			= buf.readUInt32LE(24)/1024.0;
 			var crudePeriod			= samplesSinceBoot - lastSamplesSinceBoot;
 			var sequenceNumber		= buf.readInt32LE(0);
-			var boardTemperature	= buf.readInt32LE(24)/160.0;
-			var pressure			= buf.readInt32LE(28);
+			var boardTemperature	= buf.readInt16LE(34)/500.0 + 24.0;
+			var pressure			= buf.readUInt32LE(28);
 			var irLevel				= buf.readUInt16LE(36)/65536.0*5.0;				// convert IR level to volts
 			// GPS status
 			var gpsStatusValues = {
