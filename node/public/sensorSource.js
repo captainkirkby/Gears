@@ -201,6 +201,8 @@ $(function() {
 				var orientation = axesCount%2 ? "right" : "left";
 				YAxesSet.push({	position : orientation,
 								show : visible,
+								min : (name.indexOf("Temperature") > -1) ? 15 : null,
+								max : (name.indexOf("Temperature") > -1) ? 30 : null,
 								tickFormatter : function(val, axis){ return val.toPrecision(TICK_SIG_FIGS); },
 								font : { color : width == BOLD ? "black" : "lightgrey", weight : width == BOLD ? "bold" : "normal"}});
 
