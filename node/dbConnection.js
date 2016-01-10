@@ -74,7 +74,8 @@ var connectToDB = function (callback) {
 			blockTemperature: Number,
 			humidity: Number,
 			averagingPeriod : Number,
-			clockOffset: Number
+			clockOffset: Number,
+			minorAlarms: Number
 		});
 		var averageDataModel = mongoose.model('averageDataModel',averageDataSchema);
 		// Define the schema and model for the gps status schema
