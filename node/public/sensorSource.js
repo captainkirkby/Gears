@@ -34,15 +34,15 @@ $(function() {
 	var lastTo;
 
 	// Smoothing factors
-	var NUM_BOARD_TEMPERATURE_SAMPLES = 55;		// o o X o o
-	var NUM_PRESSURE_SAMPLES = 55;
-	var NUM_IRLEVEL_SAMPLES = 55;
-	var NUM_BLOCK_TEMPERATURE_SAMPLES = 55;
-	var NUM_HUMIDITY_SAMPLES = 55;
+	var NUM_BOARD_TEMPERATURE_SAMPLES = 30;		// o o X o o
+	var NUM_PRESSURE_SAMPLES = 30;
+	var NUM_IRLEVEL_SAMPLES = 30;
+	var NUM_BLOCK_TEMPERATURE_SAMPLES = 30;
+	var NUM_HUMIDITY_SAMPLES = 30;
 	var NUM_CRUDE_PERIOD_SAMPLES = 0;
-	var NUM_REFINED_PERIOD_SAMPLES = 55;
-	var NUM_ANGLE_SAMPLES = 55;
-	var NUM_HEIGHT_SAMPLES = 55;
+	var NUM_REFINED_PERIOD_SAMPLES = 30;
+	var NUM_ANGLE_SAMPLES = 30;
+	var NUM_HEIGHT_SAMPLES = 30;
 
 	// Real time parameters
 	var TIMEOUT_VALUE = 333;
@@ -163,6 +163,7 @@ $(function() {
 
 				var set = [];
 				var smoothSet = [];
+				var smoothingRadius = (smoothingAmount - 1)/2;
 	
 				// Iterate through retrieved data
 				for(var index=0;index<data.length;index++){
@@ -173,14 +174,17 @@ $(function() {
 					if(name == "refinedPeriod"){
 						if(data[index][name] > 0){
 							set.push([date, (data[index][name]-2)*500000]);
-							smoothSet.push([date, (smoothPoints(name, index, smoothingAmount)-2)*500000]);
+							if (index > smoothingRadius && index < data.length - smoothingRadius) {
+								smoothSet.push([date, (smoothPoints(name, index, smoothingAmount)-2)*500000]);
+							}
 						}
 					} else {
 						set.push([date, data[index][name]]);
-						smoothSet.push([date, smoothPoints(name, index, smoothingAmount)]);
+						if (index > smoothingRadius && index < data.length - smoothingRadius) {
+							smoothSet.push([date, smoothPoints(name, index, smoothingAmount)]);
+						}
+						
 					}
-
-
 				}
 
 				dataSet.push({	data: dataSmoothing ? smoothSet : set,
@@ -199,10 +203,25 @@ $(function() {
 
 				//left or right and visible or invisible
 				var orientation = axesCount%2 ? "right" : "left";
+				lowTemp = parseFloat($('#lowTemp').val(), 10);
+				highTemp = parseFloat($('#highTemp').val(), 10);
+
+				// Sensible default values if input is confusing
+				if (isNaN(lowTemp)) {
+					lowTemp = 15;
+				}
+				if (isNaN(highTemp)) {
+					highTemp = 30;
+				}
+				if (lowTemp > highTemp) {
+					lowTemp = 15;
+					highTemp = 30;
+				}
+
 				YAxesSet.push({	position : orientation,
 								show : visible,
-								min : (name.indexOf("Temperature") > -1) ? 15 : null,
-								max : (name.indexOf("Temperature") > -1) ? 30 : null,
+								min : (name.indexOf("Temperature") > -1) ? lowTemp : null,
+								max : (name.indexOf("Temperature") > -1) ? highTemp : null,
 								tickFormatter : function(val, axis){ return val.toPrecision(TICK_SIG_FIGS); },
 								font : { color : width == BOLD ? "black" : "lightgrey", weight : width == BOLD ? "bold" : "normal"}});
 
@@ -210,29 +229,29 @@ $(function() {
 				if(visible) axesCount++;
 			}
 
-			function smoothPoints(field, index, smoothingRadius){
-				if(smoothingRadius < 1){
+			function smoothPoints(field, index, smoothingWidth){
+				if(smoothingWidth < 1){
 					return data[index][field];
 				}
 
-				if(smoothingRadius%2 === 0){
-					smoothingRadius += 1;
+				if(smoothingWidth%2 === 0){
+					smoothingWidth += 1;
 				}
 
-				var averageSpace = Math.floor(smoothingRadius/2);
+				var averageSpace = Math.floor(smoothingWidth/2);
 				var sum = 0;
 				
 				for(var i=(-1*averageSpace);i<=averageSpace;i++){
 					var t_index = i+index;
 					if(t_index<0 || t_index>=data.length){
 						//console.log("Decreasing radius");
-						return smoothPoints(field, index, smoothingRadius-2);
+						return smoothPoints(field, index, smoothingWidth-2);
 					} else {
 						sum += data[t_index][field];
 					}
 				}
 
-				return sum/smoothingRadius;
+				return sum/smoothingWidth;
 			}
 
 			somePlot = $.plot("#placeholder", dataSet, {
