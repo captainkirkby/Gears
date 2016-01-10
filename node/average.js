@@ -41,6 +41,13 @@ Averager.prototype.input = function(obj,saveCallback) {
 			this.data[key] = obj[key];
 			this.counts[key] = 1;
 			// console.log("New Entry: " + typeof obj[key]);
+		} else if(key == 'minorAlarms') {
+			// If there is an existing minor alarm in this bin
+			// do a 'bitwise average' (set new bits preserve old ones)
+			// e.g. first entry: 1000010010 second entry: 1000001101
+			// Result is 1000011111
+			this.data[key] = this.data[key] | obj[key];
+			// Leave counts at 1 so averaging has no effect.
 		} else {
 			// Add to existing entry in data
 			this.data[key] += obj[key];
