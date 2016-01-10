@@ -157,7 +157,8 @@ function getVisibleSets(query) {
 	return visibleSets;
 }
 
-// Find the smallest standard bin size that, when we break up the time period we're given, will result in under 1000 bins
+// Find the smallest standard bin size that, when we break up the time period
+// we're given, will result in under MAX_QUERY_RESULTS bins
 // Inputs delta time in miliseconds, returns standard bin size in seconds
 function getBins(dt){
 	// winston.info(dt);

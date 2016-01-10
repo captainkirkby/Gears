@@ -31,7 +31,7 @@ $(function() {
 	var MAX_CACHE_LENGTH = 500;
 
 	// Tick significant figures
-	var TICK_SIG_FIGS = 6;
+	var TICK_SIG_FIGS = 2;
 
 	// Whether or not to show the dots on a smoothed curve
 	var showDots = true;
@@ -236,15 +236,25 @@ $(function() {
 			if(!realTimeUpdates) stopSpinner();
 
 			function onStatusDataRecieved(alarmData){
-				// console.log(alarmData);
-				var minorAlarms = alarmData[0]["minorAlarms"];
-				// minorAlarms = 8191
+				console.log(alarmData);
 
+				// Zero out alarms
 				var alarmCount=0;
 				for(alarmCount=0; alarmCount < minorAlarmKey.length; alarmCount++){
-					var flag = false;
-					if((minorAlarms >> alarmCount)%2 == 1) flag = true;
-					alarms[minorAlarmKey[alarmCount]] = flag;
+					alarms[minorAlarmKey[alarmCount]] = false;
+				}
+
+				// Set each index of alarms to a boolean value.
+				var alarmIndex;
+				var minorAlarms;
+				for(alarmIndex = 0; alarmIndex < alarmData.length; alarmIndex++){
+					minorAlarms = alarmData[alarmIndex]["minorAlarms"];
+
+					for(alarmCount=0; alarmCount < minorAlarmKey.length; alarmCount++){
+						alarms[minorAlarmKey[alarmCount]] =
+							alarms[minorAlarmKey[alarmCount]] ||
+							((minorAlarms >> alarmCount)%2 == 1);
+					}
 				}
 				writeAlarms();
 			}
@@ -256,8 +266,8 @@ $(function() {
 	
 			// Get status alarms
 			var statusURL = "fetch?" + $.param({
-					"from"		: -1,
-					"to"		: "now",
+					"from"		: from,
+					"to"		: to,
 					"series"	: alarmSeries,
 					"db"		: "gps"
 			});

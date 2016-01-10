@@ -522,7 +522,8 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 				'pressure': pressure,
 				'blockTemperature': ttherm,
 				'humidity': humidity,
-				'clockOffset' : gpsStatusValues.clockOffset
+				'clockOffset' : gpsStatusValues.clockOffset,
+				'minorAlarms' : gpsStatusValues.minorAlarms
 			}, function (data){
 				// To be called when the average reaches its period
 				averageDataModel.create(data,function(err,data){
