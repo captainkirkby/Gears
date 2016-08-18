@@ -44,7 +44,7 @@ var utcgpsOffset = 17;
 var lastTimeSinceLastBootPacket = 0;
 
 // Packet Sizes : change this when you want to modify the number of samples
-var RAW_LENGTH = 2600;
+var RAW_LENGTH = 1300;
 var RAW_START = 52;
 var MAX_PACKET_SIZE = RAW_START+RAW_LENGTH;
 

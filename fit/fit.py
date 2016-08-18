@@ -32,9 +32,9 @@ def main():
         help = 'no interactive prompting for each frame during replay')
     parser.add_argument('--max-frames', type = int, default = 0,
         help = 'maximum number of frames to replay (or no limit if zero)')
-    parser.add_argument('--nsamples', type=int, default=2600,
+    parser.add_argument('--nsamples', type=int, default=1300,
         help = 'number of IR ADC samples per frame')
-    parser.add_argument('--adc-tick', type = float, default = 1664e-7,
+    parser.add_argument('--adc-tick', type = float, default = 832e-7,
         help = 'ADC sampling period in seconds')
     parser.add_argument('--nfingers', type = int, default = 5,
         help = 'number of fingers on the fiducial bob (')

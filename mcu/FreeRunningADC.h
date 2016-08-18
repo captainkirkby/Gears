@@ -84,9 +84,9 @@ void startFreeRunningADC(uint8_t channel)
     // immediately started.
     ADCSRB &= 0B11111000;
     
-    // Set the Prescaler to 128 (10000KHz/128 = 78.125kHz)
+    // Set the Prescaler to 64 (10000KHz/64 = 156.25kHz)
     // Above 200KHz 10-bit results are not reliable.
-    ADCSRA |= 0B00000111;
+    ADCSRA |= 0B00000110;
     
     // Set ADIE in ADCSRA (0x7A) to enable the ADC interrupt.
     // Without this, the internal interrupt will not trigger.
