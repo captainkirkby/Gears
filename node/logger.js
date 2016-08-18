@@ -43,6 +43,9 @@ var utcgpsOffset = 17;
 // Remember the last "timeSinceLastBootPacket" so we can reconstruct the crude period
 var lastTimeSinceLastBootPacket = 0;
 
+// ADC Prescaler : change this when you want to modify the ADC Speed
+var ADC_PRESCALER = 64.0;
+
 // Packet Sizes : change this when you want to modify the number of samples
 var RAW_LENGTH = 1300;
 var RAW_START = 52;
@@ -383,7 +386,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 
 			// Calculates the time since the last boot packet assuming 10MHz clock with prescaler set to 64.
 			// NB: ADC Frequency hardcoded here
-			var timeSince = samplesSinceBoot*128.0*13.0/10000.0;	// in ms
+			var timeSince = samplesSinceBoot*ADC_PRESCALER*13.0/10000.0;	// in ms
 
 			// Create date object
 			var date = new Date(lastTime.getTime() + timeSince);
