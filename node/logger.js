@@ -53,6 +53,11 @@ var MAX_PACKET_SIZE = RAW_START+RAW_LENGTH;
 var datesBeingProcessed = [];
 var lastDatesLength = 0;
 
+// GPS Constants
+var GPS_EPOCH_IN_MS = 315964800000;			// January 6, 1980 UTC
+var MS_PER_WEEK = 7*24*60*60*1000;
+var GPS_WEEK_NUMBER_ROLLOVER = 1024;
+
 /***********************************************
 	Logging with Winston
 ***********************************************/
@@ -257,6 +262,24 @@ async.parallel({
 	Incoming Data
 ***********************************************/
 
+function guessGPSCycle(weekNumberMod, timeOfWeek, today)
+{
+	var cycleGuess;
+	var trueWeekNumber;
+	var guessMs;
+	var cycleGuessErr;
+	for (cycleGuess = 0; cycleGuess < 10; cycleGuess++) {
+		trueWeekNumber = weekNumberMod + GPS_WEEK_NUMBER_ROLLOVER * cycleGuess;
+		guessMs = GPS_EPOCH_IN_MS + trueWeekNumber*MS_PER_WEEK + timeOfWeek*1000;
+		cycleGuessErr = Math.abs(guessMs - today);
+		if (cycleGuessErr < 100000) {
+			return cycleGuess;
+		}
+	}
+
+	throw new Error("Could not guess current GPS week number cycle!");
+}
+
 // Receives a new chunk of binary data from the serial port and returns the
 // updated value of remaining that should be used for the next call.
 function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStatusModel,averageDataModel,rawDataModel) {
@@ -275,17 +298,21 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			winston.debug("Time of Week: " + timeOfWeek);
 			winston.debug("UTC Offset: " + utcgpsOffset);
 
-			var GPS_EPOCH_IN_MS = 315964800000;			// January 6, 1980 UTC
-			var MS_PER_WEEK = 7*24*60*60*1000;
-			// GPS time!!! 17 leap seconds ahead of UTC
-			var timestamp = new Date(GPS_EPOCH_IN_MS + weekNumber*MS_PER_WEEK + timeOfWeek*1000);
+			// Get computer timestamp
+			computerTimestamp = new Date();
+
+			// Take care of GPS week number rollover
+			var weekNumberMod = weekNumber % GPS_WEEK_NUMBER_ROLLOVER;
+			var cycles = guessGPSCycle(weekNumberMod, timeOfWeek, computerTimestamp.getTime() + utcgpsOffset * 1000);
+			var trueWeekNumber = weekNumberMod + GPS_WEEK_NUMBER_ROLLOVER * cycles;
+
+			var timestamp = new Date(GPS_EPOCH_IN_MS + trueWeekNumber*MS_PER_WEEK + timeOfWeek*1000);
 			winston.debug("Date: " + timestamp);
 
 			// Truncate decimal to trim miliseconds
-			lastTime = new Date(GPS_EPOCH_IN_MS + weekNumber*MS_PER_WEEK + Math.floor(timeOfWeek)*1000);
+			lastTime = new Date(GPS_EPOCH_IN_MS + trueWeekNumber*MS_PER_WEEK + Math.floor(timeOfWeek)*1000);
 			winston.debug("PPS Time: " + lastTime);
 
-			computerTimestamp = new Date();
 			var predictedPPSTime = new Date(computerTimestamp.getTime()+utcgpsOffset*1000);
 			winston.debug("Predicted PPS date: " + predictedPPSTime);
 
@@ -652,3 +679,4 @@ function storeRefinedPeriodAndAngle(periodAngleHeight, dataPacketModel, averager
 	// Note: because averager does not wait on these fields to save to the database, the average values will be OFFSET!
 	averager.input(averageData);
 }
+
