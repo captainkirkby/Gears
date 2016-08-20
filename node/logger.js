@@ -400,6 +400,9 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 
 			// Date logging
 			winston.debug("Delta Time: " + deltaTime);
+			if (deltaTime > 5 * 60 * 1000) {
+				throw new Error("Internal Error: 5m difference between computer and reconstructed GPS time");
+			}
 			//winston.debug("Date: " + date);
 			//winston.debug("Reference Date: " + referenceDate);
 			//winston.debug("Samples Since Boot: " + samplesSinceBoot);
