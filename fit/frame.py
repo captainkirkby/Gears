@@ -17,11 +17,13 @@ class Frame(object):
         cumulativeSum = numpy.cumsum(numpy.insert(self.padded(samples,(wlen-1)/2),0,0))
         return (cumulativeSum[wlen:] - cumulativeSum[:-wlen])/float(wlen)
 
-    def findNMaxes(self, hist,npeaks=3,maxHeightThreshold=40, minHeightThreshold=10):
+    def findNMaxes(self, hist,npeaks=3,maxHeightThreshold=40, minHeightThreshold=1):
         """
         Given a histogram and the expected number of peaks, returns an array of
         the approximate center of each of the peaks.
         """
+        thresholdReductionTable = [10, 10, 5, 5, 3, 3, 1, 1, 1, 1]
+        iteration = 0
         heightThreshold = maxHeightThreshold
         peaks = []
         diffs = numpy.diff(hist);
@@ -36,7 +38,8 @@ class Frame(object):
                         if index not in peaks:
                             peaks.append(index)
             # Lower the threshold
-            heightThreshold -= 10;
+            heightThreshold -= thresholdReductionTable[iteration]
+            iteration += 1
         # Sort peaks
         peaks = numpy.sort(peaks)
         # If we got too many peaks, pick the best three
