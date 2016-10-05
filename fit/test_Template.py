@@ -27,13 +27,13 @@ class test_Template(unittest.TestCase):
 		template_dur = fitParams[0][1]
 		template_lo = fitParams[0][2]
 		template_rng = fitParams[0][3]
-		self.assertEquals(template_t0,templatedT0(),
+		self.assertAlmostEqual(template_t0,templatedT0(),
 			msg="Template t0 test failed")
-		self.assertEquals(template_dur,templatedDuration(),
+		self.assertAlmostEqual(template_dur,templatedDuration(),
 			msg="Template duration test failed")
-		self.assertEquals(template_lo,templatedLo(),
+		self.assertAlmostEqual(template_lo,templatedLo(),
 			msg="Template lo test failed")
-		self.assertEquals(template_rng,templatedRange(),
+		self.assertAlmostEqual(template_rng,templatedRange(),
 			msg="Template range test failed")
 
 	# # Test static method
