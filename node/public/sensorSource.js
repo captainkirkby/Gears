@@ -39,7 +39,7 @@ $(function() {
 
 	var defaults = null;
 
-	function defaultsSetup() {
+	function defaultsSetup(firstTime) {
 		var defaultsStr = localStorage.getItem("defaults");
 	
 		// If no defaults exist, write some
@@ -76,29 +76,53 @@ $(function() {
 			$(lowID).val(defaultLow);
 			$(autoID).prop("checked", defaultAuto);
 	
-			$(highID).change(function() {
-				var high = $(highID).val();
-				defaults[series].High = high;
-				localStorage.setItem("defaults", JSON.stringify(defaults));
-			});
-			$(lowID).change(function() {
-				var low = $(lowID).val();
-				defaults[series].Low = low;
-				localStorage.setItem("defaults", JSON.stringify(defaults));
-	
-			});
-			$(autoID).change(function() {
-				var auto = $(autoID).prop("checked");
-				defaults[series].Auto = auto;
-				localStorage.setItem("defaults", JSON.stringify(defaults));
-			});
+			if (firstTime) {
+				$(highID).change(function() {
+					var high = $(highID).val();
+					defaults[series].High = high;
+					localStorage.setItem("defaults", JSON.stringify(defaults));
+				});
+				$(lowID).change(function() {
+					var low = $(lowID).val();
+					defaults[series].Low = low;
+					localStorage.setItem("defaults", JSON.stringify(defaults));
+		
+				});
+				$(autoID).change(function() {
+					var auto = $(autoID).prop("checked");
+					defaults[series].Auto = auto;
+					localStorage.setItem("defaults", JSON.stringify(defaults));
+				});
+			}
+
 		});
 	
 		$("#length").prop('disabled', true);
 		$("#length").val(120);
 	}
 
-	defaultsSetup();
+	function saveCurrentValues() {
+		if (defaults !== null) {
+			$.each(dataToPlot, function(series, options) {
+				var highID = dataToPlot[series].highID;
+				var lowID = dataToPlot[series].lowID;
+				var autoID = dataToPlot[series].autoID;
+	
+				var high = $(highID).val();
+				var low = $(lowID).val();
+				var auto = $(autoID).prop("checked");
+	
+				defaults[series].High = high;
+				defaults[series].Low = low;
+				defaults[series].Auto = auto;
+
+				localStorage.setItem("defaults", JSON.stringify(defaults));
+			});
+		}
+
+	}
+
+	defaultsSetup(true);
 
 	// Keep doing the default population + reading!
 
@@ -307,6 +331,8 @@ $(function() {
 
 				count++;
 				if(visible) axesCount++;
+
+				saveCurrentValues()
 			}
 
 			function smoothPoints(field, index, smoothingWidth){
@@ -473,7 +499,7 @@ $(function() {
 
 	$("#restoreDefaults").click(function() {
 		localStorage.removeItem("defaults");
-		defaultsSetup();
+		defaultsSetup(false);
 	});
 
 	function pad(number) {
