@@ -55,12 +55,59 @@
 		<br/><br/> Samples:
 		<input type="text" id="length" size="10" value=""></input>
 
-		<br/><br/> Temperature Range (Celsius):
-		<br/> Low:
-		<input type="text" id="lowTemp" size="10" value="15"></input>
-
-		<br/> High:
-		<input type="text" id="highTemp" size="10" value="30"></input>
+		<br/><br/> Ranges:
+		<table>
+			<tr>
+				<th style="background-color: #a23c3c">Angle</th>
+				<th style="background-color: #4da74d">Block Temp.</th>
+				<th style="background-color: #edc240">Board Temp.</th>
+				<th style="background-color: #2e642e">Height</th>
+				<th style="background-color: #9440ed">Humidity</th>
+				<th style="background-color: #8cacc6">Calculated Period</th>
+				<th style="background-color: #cb4b4b">Coarse Period</th>
+				<th style="background-color: #afd8f8">Pressure</th>
+			</tr>
+			<tr>
+				<th style="background-color: #a23c3c">[°]</th>
+				<th style="background-color: #4da74d">[°C]</th>
+				<th style="background-color: #edc240">[°C]</th>
+				<th style="background-color: #2e642e">[ADC Levels]</th>
+				<th style="background-color: #9440ed">[%rH]</th>
+				<th style="background-color: #8cacc6">[ppm from 2.0s]</th>
+				<th style="background-color: #cb4b4b">[ADC Ticks]</th>
+				<th style="background-color: #afd8f8">[Pa]</th>
+			</tr>
+			<tr>
+				<td style="width:12%">Low:  <br/><input type="text" id="lowAngle" size="10"></input></td>
+				<td style="width:12%">Low:  <br/><input type="text" id="lowBlockTemp" size="10"></input></td>
+				<td style="width:12%">Low:  <br/><input type="text" id="lowBoardTemp" size="10"></input></td>
+				<td style="width:12%">Low:  <br/><input type="text" id="lowHeight" size="10"</input></td>
+				<td style="width:12%">Low:  <br/><input type="text" id="lowHumidity" size="10"></input></td>
+				<td style="width:12%">Low:  <br/><input type="text" id="lowCalculatedPeriod" size="10"></input></td>
+				<td style="width:12%">Low:  <br/><input type="text" id="lowCoarsePeriod" size="10"></input></td>
+				<td style="width:12%">Low:  <br/><input type="text" id="lowPressure" size="10"></input></td>
+			</tr>
+			<tr>
+				<td>High: <br/><input type="text" id="highAngle" size="10"></input></td>
+				<td>High: <br/><input type="text" id="highBlockTemp" size="10"></input></td>
+				<td>High: <br/><input type="text" id="highBoardTemp" size="10"></input></td>
+				<td>High: <br/><input type="text" id="highHeight" size="10"></input></td>
+				<td>High: <br/><input type="text" id="highHumidity" size="10"></input></td>
+				<td>High: <br/><input type="text" id="highCalculatedPeriod" size="10"></input></td>
+				<td>High: <br/><input type="text" id="highCoarsePeriod" size="10"></input></td>
+				<td>High: <br/><input type="text" id="highPressure" size="10"></input></td>
+			</tr>
+			<tr>
+				<td>Auto: <br/><input type="checkbox" id="angleEnableAuto"></td>
+				<td>Auto: <br/><input type="checkbox" id="blockTempEnableAuto"></td>
+				<td>Auto: <br/><input type="checkbox" id="boardTempEnableAuto"></td>
+				<td>Auto: <br/><input type="checkbox" id="heightEnableAuto"></td>
+				<td>Auto: <br/><input type="checkbox" id="humidityEnableAuto"></td>
+				<td>Auto: <br/><input type="checkbox" id="calculatedPeriodEnableAuto"></td>
+				<td>Auto: <br/><input type="checkbox" id="coarsePeriodEnableAuto"></td>
+				<td>Auto: <br/><input type="checkbox" id="pressureEnableAuto"></td>
+			</tr>
+		</table>
 
 	</div>
 

@@ -19,15 +19,29 @@ $(function() {
 
 	// Plot Settings
 	var dataToPlot = {
-		"boardTemperature" : { "visible" : false, "width" : NORMAL, "color" : 0},
-		"pressure" : { "visible" : false, "width" : NORMAL, "color" : 1},
-		"crudePeriod" : { "visible" : false, "width" : NORMAL, "color" : 2},
-		"blockTemperature" : { "visible" : true, "width" : NORMAL, "color" : 3},
-		"humidity" : { "visible" : false, "width" : NORMAL, "color" : 4},
-		"refinedPeriod" : { "visible" : true, "width" : NORMAL, "color" : 6},
-		"angle" : { "visible" : false, "width" : NORMAL, "color" : 7},
-		"height" : { "visible" : false, "width" : NORMAL, "color" : 18}
+		"boardTemperature" : { "visible" : false, "width" : NORMAL, "color" : 0, "lowID" : "#lowBoardTemp", "highID" : "#highBoardTemp", "defaultLow": 15, "defaultHigh" : 30},
+		"pressure" : { "visible" : false, "width" : NORMAL, "color" : 1, "lowID" : "#lowPressure", "highID" : "#highPressure", "defaultLow": 100000, "defaultHigh" : 110000},
+		"crudePeriod" : { "visible" : false, "width" : NORMAL, "color" : 2, "lowID" : "#lowCoarsePeriod", "highID" : "#highCoarsePeriod", "defaultLow": 11000, "defaultHigh" : 13000},
+		"blockTemperature" : { "visible" : true, "width" : NORMAL, "color" : 3, "lowID" : "#lowBlockTemp", "highID" : "#highBlockTemp", "defaultLow": 15, "defaultHigh" : 30},
+		"humidity" : { "visible" : false, "width" : NORMAL, "color" : 4, "lowID" : "#lowHumidity", "highID" : "#highHumidity", "defaultLow": 20, "defaultHigh" : 50},
+		"refinedPeriod" : { "visible" : true, "width" : NORMAL, "color" : 6, "lowID" : "#lowCalculatedPeriod", "highID" : "#highCalculatedPeriod", "defaultLow": -2000, "defaultHigh" : 2000},
+		"angle" : { "visible" : false, "width" : NORMAL, "color" : 7, "lowID" : "#lowAngle", "highID" : "#highAngle", "defaultLow": 5, "defaultHigh" : 15},
+		"height" : { "visible" : false, "width" : NORMAL, "color" : 18, "lowID" : "#lowHeight", "highID" : "#highHeight", "defaultLow": 200, "defaultHigh" : 700}
 	};
+
+
+	// Default Setup
+	$.each(dataToPlot, function(series, options) {
+		var highID = dataToPlot[series].highID;
+		var lowID = dataToPlot[series].lowID;
+		var defaultHigh = dataToPlot[series].defaultHigh.toString();
+		var defaultLow = dataToPlot[series].defaultLow.toString();
+
+		$(highID).val(defaultHigh);
+		$(lowID).val(defaultLow);
+	});
+
+	// Keep doing the default population + reading!
 
 	// Store last request parameters
 	var lastFrom;
@@ -203,8 +217,15 @@ $(function() {
 
 				//left or right and visible or invisible
 				var orientation = axesCount%2 ? "right" : "left";
+
+
+
+				// For each quantity, I need 2x ids and a default
+
+
 				lowTemp = parseFloat($('#lowTemp').val(), 10);
 				highTemp = parseFloat($('#highTemp').val(), 10);
+
 
 				// Sensible default values if input is confusing
 				if (isNaN(lowTemp)) {
