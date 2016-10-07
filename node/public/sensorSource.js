@@ -49,6 +49,9 @@ $(function() {
 		$(lowID).val(defaultLow);
 	});
 
+	$("#length").prop('disabled', true);
+	$("#length").val(120);
+
 	// Keep doing the default population + reading!
 
 	// Store last request parameters
