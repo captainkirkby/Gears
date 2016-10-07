@@ -19,14 +19,22 @@ $(function() {
 
 	// Plot Settings
 	var dataToPlot = {
-		"boardTemperature" : { "visible" : false, "width" : NORMAL, "color" : 0, "lowID" : "#lowBoardTemp", "highID" : "#highBoardTemp", "defaultLow": 15, "defaultHigh" : 30},
-		"pressure" : { "visible" : false, "width" : NORMAL, "color" : 1, "lowID" : "#lowPressure", "highID" : "#highPressure", "defaultLow": 100000, "defaultHigh" : 110000},
-		"crudePeriod" : { "visible" : false, "width" : NORMAL, "color" : 2, "lowID" : "#lowCoarsePeriod", "highID" : "#highCoarsePeriod", "defaultLow": 11000, "defaultHigh" : 13000},
-		"blockTemperature" : { "visible" : true, "width" : NORMAL, "color" : 3, "lowID" : "#lowBlockTemp", "highID" : "#highBlockTemp", "defaultLow": 15, "defaultHigh" : 30},
-		"humidity" : { "visible" : false, "width" : NORMAL, "color" : 4, "lowID" : "#lowHumidity", "highID" : "#highHumidity", "defaultLow": 20, "defaultHigh" : 50},
-		"refinedPeriod" : { "visible" : true, "width" : NORMAL, "color" : 6, "lowID" : "#lowCalculatedPeriod", "highID" : "#highCalculatedPeriod", "defaultLow": -2000, "defaultHigh" : 2000},
-		"angle" : { "visible" : false, "width" : NORMAL, "color" : 7, "lowID" : "#lowAngle", "highID" : "#highAngle", "defaultLow": 5, "defaultHigh" : 15},
-		"height" : { "visible" : false, "width" : NORMAL, "color" : 18, "lowID" : "#lowHeight", "highID" : "#highHeight", "defaultLow": 200, "defaultHigh" : 700}
+		"boardTemperature" : { "visible" : false, "width" : NORMAL, "color" : 0, "autoID" : "#boardTempEnableAuto",
+			"lowID" : "#lowBoardTemp", "highID" : "#highBoardTemp", "defaultLow": 15, "defaultHigh" : 30},
+		"pressure" : { "visible" : false, "width" : NORMAL, "color" : 1, "autoID" : "#pressureEnableAuto",
+			"lowID" : "#lowPressure", "highID" : "#highPressure", "defaultLow": 100000, "defaultHigh" : 110000},
+		"crudePeriod" : { "visible" : false, "width" : NORMAL, "color" : 2, "autoID" : "#coarsePeriodEnableAuto",
+			"lowID" : "#lowCoarsePeriod", "highID" : "#highCoarsePeriod", "defaultLow": 11000, "defaultHigh" : 13000},
+		"blockTemperature" : { "visible" : true, "width" : NORMAL, "color" : 3, "autoID" : "b#lockTempEnableAuto",
+			"lowID" : "#lowBlockTemp", "highID" : "#highBlockTemp", "defaultLow": 15, "defaultHigh" : 30},
+		"humidity" : { "visible" : false, "width" : NORMAL, "color" : 4, "autoID" : "#humidityEnableAuto",
+			"lowID" : "#lowHumidity", "highID" : "#highHumidity", "defaultLow": 20, "defaultHigh" : 50},
+		"refinedPeriod" : { "visible" : true, "width" : NORMAL, "color" : 6, "autoID" : "#calculatedPeriodEnableAuto",
+			"lowID" : "#lowCalculatedPeriod", "highID" : "#highCalculatedPeriod", "defaultLow": -2000, "defaultHigh" : 2000},
+		"angle" : { "visible" : false, "width" : NORMAL, "color" : 7, "autoID" : "#angleEnableAuto",
+			"lowID" : "#lowAngle", "highID" : "#highAngle", "defaultLow": 5, "defaultHigh" : 15},
+		"height" : { "visible" : false, "width" : NORMAL, "color" : 18, "autoID" : "#heightEnableAuto",
+			"lowID" : "#lowHeight", "highID" : "#highHeight", "defaultLow": 200, "defaultHigh" : 700}
 	};
 
 
@@ -220,29 +228,29 @@ $(function() {
 
 
 
-				// For each quantity, I need 2x ids and a default
-
-
-				lowTemp = parseFloat($('#lowTemp').val(), 10);
-				highTemp = parseFloat($('#highTemp').val(), 10);
-
+				// For each name, if quantity has auto checked, set min/max to null
+				// if quantity has auto unchecked, set min/max to parsed input values
+				auto = $(dataToPlot[name].autoID).is(':checked');
+				min = parseFloat($(dataToPlot[name].lowID).val(), 10);
+				max = parseFloat($(dataToPlot[name].highID).val(), 10);
 
 				// Sensible default values if input is confusing
-				if (isNaN(lowTemp)) {
-					lowTemp = 15;
+				if (isNaN(min)) {
+					min = dataToPlot[name].defaultLow;
 				}
-				if (isNaN(highTemp)) {
-					highTemp = 30;
+				if (isNaN(max)) {
+					max = dataToPlot[name].defaultHigh;
 				}
-				if (lowTemp > highTemp) {
-					lowTemp = 15;
-					highTemp = 30;
+				if (min > max) {
+					min = dataToPlot[name].defaultLow;
+					max = dataToPlot[name].defaultHigh;
 				}
+
 
 				YAxesSet.push({	position : orientation,
 								show : visible,
-								min : (name.indexOf("Temperature") > -1) ? lowTemp : null,
-								max : (name.indexOf("Temperature") > -1) ? highTemp : null,
+								min : auto ? null : min,
+								max : auto ? null : max,
 								tickFormatter : function(val, axis){ return val.toPrecision(TICK_SIG_FIGS); },
 								font : { color : width == BOLD ? "black" : "lightgrey", weight : width == BOLD ? "bold" : "normal"}});
 
