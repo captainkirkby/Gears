@@ -90,7 +90,8 @@ process.once('SIGINT', function(){
 winston.verbose(__filename + ' connecting to the database...');
 
 var dbCallback = dbCallbackFunction;
-connectToDB(dbCallback);
+// connectToDB(dbCallback);
+dbCallbackFunction(null, null);
 
 function dbCallbackFunction(err, config) {
 	if(err) {

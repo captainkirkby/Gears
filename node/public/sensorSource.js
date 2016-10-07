@@ -20,37 +20,85 @@ $(function() {
 	// Plot Settings
 	var dataToPlot = {
 		"boardTemperature" : { "visible" : false, "width" : NORMAL, "color" : 0, "autoID" : "#boardTempEnableAuto",
-			"lowID" : "#lowBoardTemp", "highID" : "#highBoardTemp", "defaultLow": 15, "defaultHigh" : 30},
+			"lowID" : "#lowBoardTemp", "highID" : "#highBoardTemp"},
 		"pressure" : { "visible" : false, "width" : NORMAL, "color" : 1, "autoID" : "#pressureEnableAuto",
-			"lowID" : "#lowPressure", "highID" : "#highPressure", "defaultLow": 100000, "defaultHigh" : 110000},
+			"lowID" : "#lowPressure", "highID" : "#highPressure"},
 		"crudePeriod" : { "visible" : false, "width" : NORMAL, "color" : 2, "autoID" : "#coarsePeriodEnableAuto",
-			"lowID" : "#lowCoarsePeriod", "highID" : "#highCoarsePeriod", "defaultLow": 11000, "defaultHigh" : 13000},
-		"blockTemperature" : { "visible" : true, "width" : NORMAL, "color" : 3, "autoID" : "b#lockTempEnableAuto",
-			"lowID" : "#lowBlockTemp", "highID" : "#highBlockTemp", "defaultLow": 15, "defaultHigh" : 30},
+			"lowID" : "#lowCoarsePeriod", "highID" : "#highCoarsePeriod"},
+		"blockTemperature" : { "visible" : true, "width" : NORMAL, "color" : 3, "autoID" : "#blockTempEnableAuto",
+			"lowID" : "#lowBlockTemp", "highID" : "#highBlockTemp"},
 		"humidity" : { "visible" : false, "width" : NORMAL, "color" : 4, "autoID" : "#humidityEnableAuto",
-			"lowID" : "#lowHumidity", "highID" : "#highHumidity", "defaultLow": 20, "defaultHigh" : 50},
+			"lowID" : "#lowHumidity", "highID" : "#highHumidity"},
 		"refinedPeriod" : { "visible" : true, "width" : NORMAL, "color" : 6, "autoID" : "#calculatedPeriodEnableAuto",
-			"lowID" : "#lowCalculatedPeriod", "highID" : "#highCalculatedPeriod", "defaultLow": -2000, "defaultHigh" : 2000},
+			"lowID" : "#lowCalculatedPeriod", "highID" : "#highCalculatedPeriod"},
 		"angle" : { "visible" : false, "width" : NORMAL, "color" : 7, "autoID" : "#angleEnableAuto",
-			"lowID" : "#lowAngle", "highID" : "#highAngle", "defaultLow": 5, "defaultHigh" : 15},
+			"lowID" : "#lowAngle", "highID" : "#highAngle"},
 		"height" : { "visible" : false, "width" : NORMAL, "color" : 18, "autoID" : "#heightEnableAuto",
-			"lowID" : "#lowHeight", "highID" : "#highHeight", "defaultLow": 200, "defaultHigh" : 700}
+			"lowID" : "#lowHeight", "highID" : "#highHeight"}
 	};
 
+	var defaults = null;
 
-	// Default Setup
-	$.each(dataToPlot, function(series, options) {
-		var highID = dataToPlot[series].highID;
-		var lowID = dataToPlot[series].lowID;
-		var defaultHigh = dataToPlot[series].defaultHigh.toString();
-		var defaultLow = dataToPlot[series].defaultLow.toString();
+	function defaultsSetup() {
+		var defaultsStr = localStorage.getItem("defaults");
+	
+		// If no defaults exist, write some
+		if (defaultsStr == null) {
+			defaults = {
+				"angle" : { "Low" : 5,"High" : 25,"Auto" : false},
+				"blockTemperature" : { "Low" : 15,"High" : 30,"Auto" : false},
+				"boardTemperature" : { "Low" : 15,"High" : 30,"Auto" : false},
+				"height" : { "Low" : 200,"High" : 700,"Auto" : false},
+				"humidity" : { "Low" : 20,"High" : 50,"Auto" : false},
+				"refinedPeriod" : { "Low" : -20,"High" : 20,"Auto" : false},
+				"crudePeriod" : { "Low" : 11000,"High" : 13000,"Auto" : false},
+				"pressure" : { "Low" : 100000,"High" : 110000,"Auto" : false}
+			};
+	
+			localStorage.setItem("defaults", JSON.stringify(defaults));
+		}
+		// Otherwise, use the existing defaults
+		else {
+			defaults = JSON.parse(defaultsStr);
+		}
+	
+		// Default Setup
+		$.each(dataToPlot, function(series, options) {
+			var highID = dataToPlot[series].highID;
+			var lowID = dataToPlot[series].lowID;
+			var autoID = dataToPlot[series].autoID;
+	
+			var defaultHigh = defaults[series].High.toString();
+			var defaultLow = defaults[series].Low.toString();
+			var defaultAuto = defaults[series].Auto;
+	
+			$(highID).val(defaultHigh);
+			$(lowID).val(defaultLow);
+			$(autoID).prop("checked", defaultAuto);
+	
+			$(highID).change(function() {
+				var high = $(highID).val();
+				defaults[series].High = high;
+				localStorage.setItem("defaults", JSON.stringify(defaults));
+			});
+			$(lowID).change(function() {
+				var low = $(lowID).val();
+				defaults[series].Low = low;
+				localStorage.setItem("defaults", JSON.stringify(defaults));
+	
+			});
+			$(autoID).change(function() {
+				var auto = $(autoID).prop("checked");
+				defaults[series].Auto = auto;
+				localStorage.setItem("defaults", JSON.stringify(defaults));
+			});
+		});
+	
+		$("#length").prop('disabled', true);
+		$("#length").val(120);
+	}
 
-		$(highID).val(defaultHigh);
-		$(lowID).val(defaultLow);
-	});
-
-	$("#length").prop('disabled', true);
-	$("#length").val(120);
+	defaultsSetup();
 
 	// Keep doing the default population + reading!
 
@@ -423,6 +471,11 @@ $(function() {
 		}
 	});
 
+	$("#restoreDefaults").click(function() {
+		localStorage.removeItem("defaults");
+		defaultsSetup();
+	});
+
 	function pad(number) {
 		if (number < 10) {
 			return '0' + number;
@@ -431,7 +484,7 @@ $(function() {
 	}
 
 	function noZero(number) {
-		return (number == 0 ? 12 : number);
+		return ((number === 0) ? 12 : number);
 	}
 
 	Date.parseDate = function( input, format ){ return Date.parse(input); };
