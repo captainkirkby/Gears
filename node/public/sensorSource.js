@@ -108,14 +108,14 @@ $(function() {
 	}
 
 	function generateLabel(name){
-		var lookUpTable = { "boardTemperature"	: "Board Temperature (°C)",
-							"pressure"			: "Pressure (Pa)",
-							"crudePeriod"		: "Period (samples)",
-							"blockTemperature"	: "Block Temperature (°C)",
-							"humidity"			: "Humidity (%)",
-							"refinedPeriod"		: "Period (ppm)",
-							"angle"				: "Angle (degrees)",
-							"height"			: "Height (ADC)"};
+		var lookUpTable = { "boardTemperature"	: "Board Temperature",
+							"pressure"			: "Pressure",
+							"crudePeriod"		: "Coarse Period",
+							"blockTemperature"	: "Block Temperature",
+							"humidity"			: "Humidity",
+							"refinedPeriod"		: "Calculated Period",
+							"angle"				: "Calculated Angle",
+							"height"			: "Calculated Height"};
 		
 		var result = lookUpTable[name];
 		if(!result) {
