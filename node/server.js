@@ -101,9 +101,10 @@ function dbCallbackFunction(err, config) {
 	newConfig.startupTime = new Date();
 
 	// Start the webapp once we have the serial port
-	var portChild = exec("echo -n '/dev/ && dmesg | egrep 'FTDI.*tty' | rev | cut -d' ' -f1 | rev",
+	var portChild = exec("echo -n '/dev/' && dmesg | egrep 'FTDI.*tty' | rev | cut -d' ' -f1 | rev",
 		function (error, stdout, stderr) {
-			newConfig.port = stdout.trim();
+			if (error) throw error;
+			newConfig.portPath = stdout.trim();
 			startWebApp(newConfig);
 		}
 	);
@@ -179,8 +180,8 @@ function about(req,res,config) {
 	res.send(
 		'Server started ' + config.startupTime + '<br/>' +
 		'Server command line: ' + process.argv.join(' ') + '<br/>' +
-		(config.port === null ? 'No serial connection' : (
-			'Connected to tty ' + config.port.path)) + '<br/>' +
+		(config.portPath === null ? 'No serial connection' : (
+			'Connected to tty ' + config.portPath)) + '<br/>' +
 		(config.db === null ? 'No database connection' : (
 			'Connected to db "' + config.db.connection.name + '" at ' +
 			config.db.connection.host + ':' + config.db.connection.port)) + '<br/>'
