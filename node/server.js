@@ -90,18 +90,23 @@ process.once('SIGINT', function(){
 winston.verbose(__filename + ' connecting to the database...');
 
 var dbCallback = dbCallbackFunction;
-// connectToDB(dbCallback);
-dbCallbackFunction(null, null);
+connectToDB(dbCallback);
 
 function dbCallbackFunction(err, config) {
 	if(err) {
 		throw err;
 	}
 	newConfig = {};
-	newConfig.port = null;			// Fix Me... probably not true
 	newConfig.db = config;
 	newConfig.startupTime = new Date();
-	startWebApp(newConfig);
+
+	// Start the webapp once we have the serial port
+	var portChild = exec("echo -n '/dev/ && dmesg | egrep 'FTDI.*tty' | rev | cut -d' ' -f1 | rev",
+		function (error, stdout, stderr) {
+			newConfig.port = stdout.trim();
+			startWebApp(newConfig);
+		}
+	);
 }
 
 function startWebApp(config)
