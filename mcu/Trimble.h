@@ -135,6 +135,7 @@ TsipHealthResponsePacket getGPSHealth(){
     // Read back 72 bytes of response
     uint8_t healthNumRxBytes = 72;
     uint8_t healthRxBytes[healthNumRxBytes];
+    void *healthRxBuffer = healthRxBytes;
     readResponse(healthNumRxBytes, healthRxBytes);
 
     // Confirm response
@@ -173,7 +174,7 @@ TsipHealthResponsePacket getGPSHealth(){
     // packet = (TsipHealthResponsePacket *)healthRxBytes;
 
     // // Cast to struct type
-    TsipHealthResponsePacket health = *((TsipHealthResponsePacket *)&healthRxBytes[0]);
+    TsipHealthResponsePacket health = *((TsipHealthResponsePacket *)healthRxBuffer);
     // uint64_t latitude = health.latitude;
     // uint64_t longitude = health.longitude;
     // uint64_t altitude = health.altitude;
@@ -193,10 +194,71 @@ TsipHealthResponsePacket getGPSHealth(){
     return health;
 }
 
-TsipCommandResponsePacket getTime(){
-    TsipCommandPacket timePacket;
+/*
+ * Old version of getTime that uses undocumented command/response
+ * packet pair 0x21 / 0x41
+ *
+ * This command returned incorrect data...
+ *      GPS Offset  : 0x00 0x00 0x00 0x00   = 0
+ *      WK #        : 0x00 0x05             = 5
+ *      Time of Wk  : 0xbf 0x80 0x00 0x00   = -1
+ *
+ * Replaced with new TsipTimeResponsePacket getTime()
+ */
+
+// TsipCommandResponsePacket getTime(){
+//     TsipCommandPacket timePacket;
+//     timePacket.header = TSIP_START_BYTE;
+//     timePacket.command = 0x21;
+//     timePacket.stop[0] = TSIP_STOP_BYTE1;
+//     timePacket.stop[1] = TSIP_STOP_BYTE2;
+
+//     // Send Packet
+//     serialWriteGPS((const uint8_t*)&timePacket,sizeof(timePacket));
+
+//     // Read back 14 bytes of response
+//     uint8_t commandNumRxBytes = 14;
+//     uint8_t commandRxBytes[commandNumRxBytes];
+//     void *commandRxBuffer = commandRxBytes;
+//     readResponse(commandNumRxBytes, commandRxBytes);
+
+//     // serialWriteUSB((const uint8_t*)&commandRxBytes,sizeof(commandRxBytes));
+
+
+//     // Confirm response
+//     uint8_t expectedCommandRxBytes[] = {
+//         TSIP_START_BYTE,
+//         0x41,
+//         0xBE,0xBE,0xBE,0xBE,        // Time of week (float)
+//         0xBE,0xBE,                  // Week number (uint16_t)       // should be 1807 (as of now...)
+//         0xBE,0xBE,0xBE,0xBE,        // GPS-UTC offset (float)       // should be 16.00 ms
+//         TSIP_STOP_BYTE1,TSIP_STOP_BYTE2
+//     };
+//     for (int i = 0; i < commandNumRxBytes; ++i) {
+//         if(expectedCommandRxBytes[i] != commandRxBytes[i] && expectedCommandRxBytes[i] != 0xBE) {     // 0xBE is the arbitrary wildcard
+//             LED_ON(RED);
+//         }
+//     }
+
+//     // Cast to struct type
+//     TsipCommandResponsePacket time = *((TsipCommandResponsePacket *)commandRxBuffer);
+//     return time;
+// }
+
+/*
+ * New version of getTime that uses documented command/response
+ * packet pair 0x8E-AB / 0x8F-AB
+ *
+ * Replaced old TsipCommandResponsePacket getTime()
+ */
+
+TsipTimeResponsePacket getTime(){
+    TsipTimePacket timePacket;
     timePacket.header = TSIP_START_BYTE;
-    timePacket.command = 0x21;
+    timePacket.packetType = 0x8E;
+    timePacket.packetSubType = 0xAB;
+    // Request Type 0x0 = send immediately, 0x1 = send on next PPS
+    timePacket.requestType = 0x00;
     timePacket.stop[0] = TSIP_STOP_BYTE1;
     timePacket.stop[1] = TSIP_STOP_BYTE2;
 
@@ -204,30 +266,40 @@ TsipCommandResponsePacket getTime(){
     serialWriteGPS((const uint8_t*)&timePacket,sizeof(timePacket));
 
     // Read back 14 bytes of response
-    uint8_t commandNumRxBytes = 14;
-    uint8_t commandRxBytes[commandNumRxBytes];
-    readResponse(commandNumRxBytes, commandRxBytes);
+    uint8_t timeNumBytes = 20;
+    uint8_t timeRxBytes[timeNumBytes];
+    void *timeRxBuffer = timeRxBytes;
+    readResponse(timeNumBytes, timeRxBytes);
 
-    // serialWriteUSB((const uint8_t*)&commandRxBytes,sizeof(commandRxBytes));
+    // serialWriteUSB((const uint8_t*)&timeRxBytes,sizeof(timeRxBytes));
 
 
     // Confirm response
-    uint8_t expectedCommandRxBytes[] = {
+    uint8_t expectedTimeRxBytes[] = {
         TSIP_START_BYTE,
-        0x41,
-        0xBE,0xBE,0xBE,0xBE,        // Time of week (float)
-        0xBE,0xBE,                  // Week number (uint16_t)       // should be 1807 (as of now...)
-        0xBE,0xBE,0xBE,0xBE,        // GPS-UTC offset (float)       // should be 16.00 ms
+        0x8F,0xAB,
+        0xBE,0xBE,0xBE,0xBE,        // Time of week
+        0xBE,0xBE,                  // Week number
+        0xBE,0xBE,                  // GPS-UTC offset
+        0xBE,                       // Timing Flag
+        0xBE,                       // Seconds
+        0xBE,                       // Minutes
+        0xBE,                       // Hours
+        0xBE,                       // Day of Month
+        0xBE,                       // Month
+        0xBE,0xBE,                   // Year
         TSIP_STOP_BYTE1,TSIP_STOP_BYTE2
     };
-    for (int i = 0; i < commandNumRxBytes; ++i) {
-        if(expectedCommandRxBytes[i] != commandRxBytes[i] && expectedCommandRxBytes[i] != 0xBE) {     // 0xBE is the arbitrary wildcard
+    for (int i = 0; i < timeNumBytes; ++i) {
+        if(expectedTimeRxBytes[i] != timeRxBytes[i] && expectedTimeRxBytes[i] != 0xBE) {     // 0xBE is the arbitrary wildcard
+            uint8_t indicator = 0xFE;
+            serialWriteUSB((const uint8_t*)&indicator,sizeof(indicator));
             LED_ON(RED);
         }
     }
 
     // Cast to struct type
-    TsipCommandResponsePacket time = *((TsipCommandResponsePacket *)&commandRxBytes[0]);
+    TsipTimeResponsePacket time = *((TsipTimeResponsePacket *)timeRxBuffer);
     return time;
 }
 

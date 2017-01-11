@@ -98,7 +98,7 @@ typedef struct {
     uint8_t stop[2];
 } TsipAutoManualPacketNoSubType;
 
-// Command packet for requesting time
+// Command packet for requesting time (0x21)
 typedef struct {
     // Header
     uint8_t header;
@@ -107,6 +107,18 @@ typedef struct {
     // Stop sequence
     uint8_t stop[2];
 } TsipCommandPacket;
+
+// Command packet for requesting time (0x8E-AB)
+typedef struct {
+    // Header
+    uint8_t header;
+    // Payload
+    uint8_t packetType;
+    uint8_t packetSubType;
+    uint8_t requestType;
+    // Stop sequence
+    uint8_t stop[2];
+} TsipTimePacket;
 
 // Command packet for requesting health
 typedef struct {
@@ -132,7 +144,7 @@ typedef struct {
     uint8_t stop[2];
 } TsipAutoManualResponsePacket;
 
-// Response packet for time
+// Response packet for time (0x41)
 typedef struct {
     // Header
     uint8_t header;
@@ -145,6 +157,26 @@ typedef struct {
     uint8_t stop[2];
 } TsipCommandResponsePacket;
 
+// Response packet for time (0x8F-AB)
+typedef struct {
+    // Header
+    uint8_t header;
+    // Payload
+    uint8_t packetType;
+    uint8_t packetSubType;
+    uint32_t timeOfWeek;
+    uint16_t weekNumber;
+    int16_t gpsOffset;
+    uint8_t timingFlag;
+    uint8_t seconds;
+    uint8_t minutes;
+    uint8_t hours;
+    uint8_t dayOfMonth;
+    uint8_t month;
+    uint16_t year;
+    // Stop sequence
+    uint8_t stop[2];
+} TsipTimeResponsePacket;
 
 // Response packet for health
 typedef struct {

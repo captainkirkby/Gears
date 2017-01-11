@@ -127,7 +127,7 @@ int main(void)
     bootPacket.serialNumber = eeprom_read_dword((uint32_t*)0x10);
 
     // Get Time
-    TsipCommandResponsePacket time = getTime();
+    TsipTimeResponsePacket time = getTime();
     bootPacket.utcOffset = time.gpsOffset;
     bootPacket.weekNumber = time.weekNumber;
     bootPacket.timeOfWeek = time.timeOfWeek;
