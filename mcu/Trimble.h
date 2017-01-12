@@ -266,7 +266,7 @@ TsipTimeResponsePacket getTime(){
     serialWriteGPS((const uint8_t*)&timePacket,sizeof(timePacket));
 
     // Read back 14 bytes of response
-    uint8_t timeNumBytes = 20;
+    uint8_t timeNumBytes = 21;
     uint8_t timeRxBytes[timeNumBytes];
     void *timeRxBuffer = timeRxBytes;
     readResponse(timeNumBytes, timeRxBytes);
