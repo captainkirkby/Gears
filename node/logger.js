@@ -61,7 +61,7 @@ var GPS_EPOCH_IN_MS = 315964800000;			// January 6, 1980 UTC
 var MS_PER_WEEK = 7*24*60*60*1000;
 var GPS_WEEK_NUMBER_ROLLOVER = 1024;
 
-var RECONSTITUTION_THRESH = 140;			// Lower number means more false positive changes
+var RECONSTITUTION_THRESH = 130;			// Lower number means more false positive changes
 											// Higher number means more changes that don't get registered
 
 /***********************************************
