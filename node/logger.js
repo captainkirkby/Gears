@@ -61,6 +61,9 @@ var GPS_EPOCH_IN_MS = 315964800000;			// January 6, 1980 UTC
 var MS_PER_WEEK = 7*24*60*60*1000;
 var GPS_WEEK_NUMBER_ROLLOVER = 1024;
 
+var RECONSTITUTION_THRESH = 140;			// Lower number means more false positive changes
+											// Higher number means more changes that don't get registered
+
 /***********************************************
 	Logging with Winston
 ***********************************************/
@@ -428,11 +431,11 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 
 				// This point minus last point (large positive means this goes down a quadrant
 				// large negative means this goes up a quadrant
-				if(raw[rawFill] - lastReading > 150){
+				if(raw[rawFill] - lastReading > RECONSTITUTION_THRESH){
 					// This goes down a quadrant
 					addToRawReading -= QUADRANT;
 
-				} else if(raw[rawFill] - lastReading < -150){
+				} else if(raw[rawFill] - lastReading < -RECONSTITUTION_THRESH){
 					// This goes up a quadrant
 					addToRawReading += QUADRANT;
 				}
@@ -448,11 +451,11 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 
 				// This point minus last point (large positive means this goes down a quadrant
 				// large negative means this goes up a quadrant
-				if(raw[rawFill] - lastReading > 150){
+				if(raw[rawFill] - lastReading > RECONSTITUTION_THRESH){
 					// This goes down a quadrant
 					addToRawReading -= QUADRANT;
 
-				} else if(raw[rawFill] - lastReading < -150){
+				} else if(raw[rawFill] - lastReading < -RECONSTITUTION_THRESH){
 					// This goes up a quadrant
 					addToRawReading += QUADRANT;
 				}
