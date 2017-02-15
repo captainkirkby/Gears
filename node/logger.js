@@ -61,6 +61,8 @@ var GPS_EPOCH_IN_MS = 315964800000;			// January 6, 1980 UTC
 var MS_PER_WEEK = 7*24*60*60*1000;
 var GPS_WEEK_NUMBER_ROLLOVER = 1024;
 
+// Reconstitution constants
+var QUADRANT = 0xFF;						// 2^8 when we're running the ADC in 8 bit mode
 var RECONSTITUTION_THRESH = 130;			// Lower number means more false positive changes
 											// Higher number means more changes that don't get registered
 
@@ -360,9 +362,6 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 		else if(ptype == 0x01) {
 			winston.verbose("Got Data!");
 
-			// Prepare to recieve data
-			var QUADRANT = 0xFF;						// 2^8 when we're running the ADC in 8 bit mode
-
 			// Gets the raw data from the packet.raw field
 			var raw = [];
 			var rawFill = 0;
@@ -465,6 +464,8 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 				raw[rawFill] += addToRawReading;
 				rawFill = rawFill + 1;
 			}
+
+			raw = errorCorrection(raw);
 
 			// use nominal 1st order fit from sensor datasheet to calculate RH in %
 			var humidity			= buf.readUInt32LE(24)/1024.0;
@@ -689,3 +690,57 @@ function storeRefinedPeriodAndAngle(periodAngleHeight, dataPacketModel, averager
 	averager.input(averageData);
 }
 
+
+/***********************************************
+	IR Data Reconstitution Error Correction
+***********************************************/
+
+function errorCorrection(raw) {
+	var errorCorrections = 0;
+	var reconstitutionError = false;
+	var rawIndex;
+	
+	// Detect Error
+	for (rawIndex = 0; rawIndex < RAW_LENGTH; rawIndex++) {
+		if ((raw[rawIndex] > (1 << 10) - 1) || (raw[rawIndex] < 0)) {
+			reconstitutionError = true;
+			break;
+		}
+	}
+	
+	// Reconstitution error correction routine
+	while (errorCorrections < 4 && reconstitutionError) {
+		var largestDiscontinuity = 0;
+		var signOfLargestDiscontinuity = 0;
+		var indexOfLargestDiscontinuity = 0;
+	
+		// Find largest discontinuity
+		for (rawIndex = 1; rawIndex < RAW_LENGTH; rawIndex++) {
+			diff = raw[rawIndex] - raw[rawIndex - 1];
+			if (Math.abs(diff) > largestDiscontinuity) {
+				largestDiscontinuity = Math.abs(diff);
+				signOfLargestDiscontinuity = diff > 0 ? 1 : -1;
+				indexOfLargestDiscontinuity = rawIndex;
+			}
+		}
+		
+		// And raise all the following points by a quadrant
+		// Up or down depending on the sign
+		for (rawIndex = indexOfLargestDiscontinuity; rawIndex < RAW_LENGTH; rawIndex++) {
+			raw[rawIndex] += QUADRANT * -signOfLargestDiscontinuity;
+		}
+		
+		// Is there still an error
+		reconstitutionError = false;
+		for (rawIndex = 0; rawIndex < RAW_LENGTH; rawIndex++) {
+			if ((raw[rawIndex] > (1 << 10) - 1) || (raw[rawIndex] < 0)) {
+				reconstitutionError = true;
+				break;
+			}
+		}
+	
+		errorCorrections++;
+	}
+
+	return raw;
+}
