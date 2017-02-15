@@ -6,7 +6,7 @@
 #define START_BYTE 0xFE
 #define BOOT_PACKET 0x00
 #define DATA_PACKET 0x01
-#define CIRCULAR_BUFFER_LENGTH 1300
+// #define CIRCULAR_BUFFER_LENGTH 1300      // #defined by the makefile which reads from ../IRLength.txt
 #define TSIP_START_BYTE 0x10
 #define TSIP_STOP_BYTE1 0x10
 #define TSIP_STOP_BYTE2 0x03

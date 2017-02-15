@@ -48,9 +48,11 @@ else
 	PROGRAMMER_ARGS = -c usbtiny -P usb
 endif
 
+# run cat ../IRLength.txt to capture the value for CIRCULAR_BUFFER_LENGTH
+IRLENGTH := $(shell cat ../IRLength.txt)
 
 AVRDUDE = avrdude $(PROGRAMMER_ARGS) -p $(UPLOAD_DEVICE)
-COMPILE = avr-gcc -Wall -Os -std=c99 -DF_CPU=$(CLOCK) -mmcu=$(DEVICE)
+COMPILE = avr-gcc -Wall -Os -std=c99 -DF_CPU=$(CLOCK) -DCIRCULAR_BUFFER_LENGTH=$(IRLENGTH) -mmcu=$(DEVICE)
 
 SOURCES = main.c
 OBJECTS = $(addprefix build/, $(SOURCES:%.c=%.o))
