@@ -211,7 +211,7 @@ function setIRLength(req, res) {
 			function (error, stdout, stderr) {
 				if (error)
 					throw error;
-				exec("./SetIRLength.sh", {cwd : ".."},
+				exec("./SetIRLength.sh", {cwd : "../mcu"},
 					function (error, stdout, stderr) {
 						if (error)
 							throw error;
