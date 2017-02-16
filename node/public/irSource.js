@@ -84,6 +84,8 @@ $(function() {
 			var count = 0;
 			var axesCount = 0;
 
+			$('#irLength').attr('placeholder', data[0]['raw'].length);
+
 			$.each(seriesToPlot, function(index, set){
 				displaySet(set, dataToPlot[set].visible, dataToPlot[set].width);
 			});
@@ -182,6 +184,69 @@ $(function() {
 
 		continuousUpdate();
 	});
+
+	$('#setIRLength').click(function(){
+		var irLength = $('#irLength').val();
+		if (!isNaN(parseInt(irLength, 10))) {
+			$.confirm({
+				title : 'Confirm Set IR Length to ' + irLength,
+				content : 'This will trigger a microcontroller reflash and take ~20s.  Are you sure you want to proceed?',
+				boxWidth: '30%',
+				buttons : {
+					confirm : function () {
+						confirmFunction(parseInt(irLength, 10));
+					},
+					cancel : function() {
+						cancelFunction();
+					}
+				}
+			});
+		}
+	});
+
+	function confirmFunction(length) {
+		var setIRLengthURL = "setIRLength?" + $.param({
+			"irlength" : length
+		});
+
+		// Disable Buttons
+		$("#fetchLatest").prop('disabled', true);
+		$("#continuousMode").prop('disabled', true);
+		$("#setIRLength").prop('disabled', true);
+		$("#irLength").prop('disabled', true);
+		$(".loading").show();
+		
+		$.ajax({
+			url:setIRLengthURL,
+			type:"GET",
+			dataType:"json",
+			complete:setIRLengthComplete
+		});
+	}
+
+	function setIRLengthComplete() {
+		// Reenable buttons
+		$("#fetchLatest").prop('disabled', false);
+		$("#continuousMode").prop('disabled', false);
+		$("#setIRLength").prop('disabled', false);
+		$("#irLength").prop('disabled', false);
+		$(".loading").hide();
+
+		$.alert({
+			title: 'Success!',
+			content: 'Microcontroller Successfully Reprogrammed',
+			autoClose: 'ok|2000',
+			buttons: {
+				ok: {
+					text: 'OK'
+				}
+			}
+		});
+	}
+
+	function cancelFunction() {
+		return;
+	}
 
 	displayData();
 	setManualFetchEnabled(true);
