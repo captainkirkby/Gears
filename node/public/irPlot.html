@@ -8,11 +8,17 @@
 	<script language="javascript" type="text/javascript" src="jquery-1.10.2.min.js"></script>
 	<script language="javascript" type="text/javascript" src="jquery.flot.min.js"></script>
 	<script language="javascript" type="text/javascript" src="jquery.flot.time.min.js"></script>
+
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-confirm/3.0.3/jquery-confirm.min.css">
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-confirm/3.0.3/jquery-confirm.min.js"></script>
 	<script language="javascript" type="text/javascript" src="irSource.js"></script>
 </head>
 <body>
 	<div id="header">
-		<h2>IR Sensor Data</h2>
+		<h2 class="loadingDiv">IR Sensor Data</h2>
+		<span class="loading" style="display: none">
+			<img src="loading_icon.gif"/>
+		</span>
 		<span class="back">
 			<a href="index.html">Home</a>
 		</span>
@@ -29,6 +35,11 @@
 
 		<input type="button" id="fetchLatest" value="Get latest data"></input>
 		<input type="button" id="continuousMode" value="Start Real Time Updates"></input>
+
+		<span class="checkboxes">
+			<input type="button" id="setIRLength" value="Set IR Length"></input>
+			<input type="text" id="irLength" size="10" value=""></input>
+		</span>
 
 	</div>
 
