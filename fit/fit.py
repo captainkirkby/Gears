@@ -32,7 +32,9 @@ def main():
         help = 'no interactive prompting for each frame during replay')
     parser.add_argument('--max-frames', type = int, default = 0,
         help = 'maximum number of frames to replay (or no limit if zero)')
-    parser.add_argument('--nsamples', type=int, default=1300,
+    parser.add_argument('--nsamples', type=int, default=0,
+        help = 'number of IR ADC samples per frame')
+    parser.add_argument('--nsamples-file', type=str, default='../IRLength.txt',
         help = 'number of IR ADC samples per frame')
     parser.add_argument('--adc-tick', type = float, default = 832e-7,
         help = 'ADC sampling period in seconds')
@@ -66,6 +68,11 @@ def main():
 
     # define tab geometry
     tabs = numpy.array([[-27.,-19.],[-15.,-11.],[-7.,-3.],[3.,7.],[11.,15.],[23.,27.]])
+
+    # get nsamples from nsamples_file
+    with open(args.nsamples_file) as f:
+        for line in f:
+            args.nsamples = int(line)
 
     # initialize our database connection
     database = db.DB(args)

@@ -124,6 +124,8 @@ function startWebApp(config)
 		app.get('/boot', function(req,res) { return boot(req,res,config.db.bootPacketModel); });
 		// Serve requests to update template
 		app.get('/template', function(req,res) { return updateTemplate(req,res,config.db.dataPacketModel); });
+		// Serve requests to update template
+		app.get('/setIRLength', function(req,res) { return setIRLength(req,res); });
 		// Serves data dynamically via AJAX.
 		// app.get('/fetch', function(req,res) { return fetch(req,res,config.db.dataPacketModel); });
 		app.get('/fetch', function(req,res) {
@@ -200,5 +202,27 @@ function updateTemplate(req,res,dataPacketModel) {
 	// console.log(dataPacketModel.collection.name);
 	var update = exec("../fit/fit.py --from-db --save-template db", { cwd : "../fit" });
 	res.send("");
+}
+
+// Run the SetIRLength.sh script
+function setIRLength(req, res) {
+	if (!isNaN(req.query.irlength)) {
+		exec("echo " + req.query.irlength + " > IRLength.txt", {cwd : ".."},
+			function (error, stdout, stderr) {
+				if (error)
+					throw error;
+				exec("./SetIRLength.sh", {cwd : ".."},
+					function (error, stdout, stderr) {
+						if (error)
+							throw error;
+						res.send("Successfully updated IR Length!");
+					}
+				);
+			}
+		);
+	}
+	else {
+		res.send("Invalid Request");
+	}
 }
 

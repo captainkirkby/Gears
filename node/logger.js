@@ -46,8 +46,14 @@ var lastTimeSinceLastBootPacket = 0;
 // ADC Prescaler : change this when you want to modify the ADC Speed
 var ADC_PRESCALER = 64.0;
 
-// Packet Sizes : change this when you want to modify the number of samples
-var RAW_LENGTH = 1300;
+// Packet Sizes (read from on disk in Gears/IRLength.txt)
+try {
+	var RAW_LENGTH = parseInt(fs.readFileSync('../IRLength.txt'), 10);
+}
+catch (ex) {
+	throw new Error("Could not read IR length from ../IRLength.txt");
+}
+console.log(RAW_LENGTH+1);
 var RAW_START = 52;
 var MAX_PACKET_SIZE = RAW_START+RAW_LENGTH;
 
