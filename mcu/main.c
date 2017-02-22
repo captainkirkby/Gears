@@ -59,6 +59,11 @@ volatile uint64_t runningCount = 0;
 // Oversampling Counter
 uint8_t oversampleCount = 0;
 
+// Packing algorithm memory
+uint8_t extra = 0;
+int8_t bitsLeft = 8;
+uint8_t msbs;
+
 uint16_t thermistorReading;
 uint16_t humidityReading;
 
@@ -289,7 +294,27 @@ ISR(ADC_vect){
     
         //Add value to buffer
         currentElementIndex = (currentElementIndex + 1) % CIRCULAR_BUFFER_LENGTH;
-        dataPacket.raw[currentElementIndex] = (adcValue & 0xFF);             // Lower byte 
+
+
+        // Data Packing algorithm
+        if (bitsLeft <= 0) {
+            dataPacket.raw[currentElementIndex] = extra;
+            currentElementIndex = currentElementIndex + 1;
+            extra = 0;
+            bitsLeft = 8;
+        }
+
+        dataPacket.raw[currentElementIndex] = adcValue & 0xFF;
+        currentElementIndex = currentElementIndex + 1;
+        msbs = adcValue >> 8;
+        extra |= (msbs) << (bitsLeft - 2);
+        bitsLeft = bitsLeft - 2;
+        
+        if (bitsLeft < 8) {
+            dataPacket.raw[currentElementIndex] = extra;
+        }
+
+        // dataPacket.raw[currentElementIndex] = (adcValue & 0xFF);             // Lower byte 
     } else if(adcStatus == ADC_STATUS_UNSTABLE){
         // Current reading is unstable, but next one will be stable
         adcStatus = ADC_STATUS_ONE_SHOT;
