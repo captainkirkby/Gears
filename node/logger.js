@@ -424,54 +424,37 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			}
 			deltaLastTime = deltaTime;
 
-			// Store last buffer entry
-			var lastReading = buf.readUInt8(initialReadOffsetWithPhase);
-			// Value to add to each reading to expand from 8 bit to 10 bit values
-			var addToRawReading = QUADRANT * 3;
 
-			// Assumption: The first data point is in the upper quadrant (between 75% and 100% light level)
-			// Reconstruct first part of raw IR waveform from circular buffer
-			for(var readOffsetA = initialReadOffsetWithPhase; readOffsetA < MAX_PACKET_SIZE; readOffsetA++) {
-				raw[rawFill] = buf.readUInt8(readOffsetA);
-
-				// This point minus last point (large positive means this goes down a quadrant
-				// large negative means this goes up a quadrant
-				if(raw[rawFill] - lastReading > RECONSTITUTION_THRESH){
-					// This goes down a quadrant
-					addToRawReading -= QUADRANT;
-
-				} else if(raw[rawFill] - lastReading < -RECONSTITUTION_THRESH){
-					// This goes up a quadrant
-					addToRawReading += QUADRANT;
+			// Go from bytes on the wire to an array of length RAW_LENGTH
+			var rxIndex = 0;
+			var txIndex = 0;
+			var extra = 0;
+			var total = bufSize + math.ceil(bufSize / 4.0);
+			
+			while (txIndex < total) {
+				var bufIndex = initialReadOffsetWithPhase + txIndex;
+				if (bufIndex >= MAX_PACKET_SIZE) {
+					bufIndex = initialReadOffset + txIndex - (MAX_PACKET_SIZE - initialReadOffsetWithPhase);
 				}
-
-				lastReading = raw[rawFill];
-
-				raw[rawFill] += addToRawReading;
-				rawFill = rawFill + 1;
-			}
-			// Reconstruct second part of raw IR waveform from circular buffer
-			for(var readOffsetB = initialReadOffset; readOffsetB < initialReadOffsetWithPhase; readOffsetB++) {
-				raw[rawFill] = buf.readUInt8(readOffsetB);
-
-				// This point minus last point (large positive means this goes down a quadrant
-				// large negative means this goes up a quadrant
-				if(raw[rawFill] - lastReading > RECONSTITUTION_THRESH){
-					// This goes down a quadrant
-					addToRawReading -= QUADRANT;
-
-				} else if(raw[rawFill] - lastReading < -RECONSTITUTION_THRESH){
-					// This goes up a quadrant
-					addToRawReading += QUADRANT;
+				txval = buf.readUInt8(bufIndex);
+				if ((txIndex % 5 == 4) || txIndex == total - 1) {
+					// this is MSB info, add it to the last few bytes of raw
+					nModifications = txIndex % 5;
+					totalModifications = nModifications;
+					while (nModifications > 0) {
+						// 0b11 is 3, 2^8 is 256
+						raw[rxIndex - nModifications] += (((txval >> (6 - 2 * (totalModifications - nModifications))) & 3) * 256);
+						nModifications = nModifications - 1;
+					}
 				}
-
-				lastReading = raw[rawFill];
-
-				raw[rawFill] += addToRawReading;
-				rawFill = rawFill + 1;
+				else {
+					// LSB info, store directly in raw
+					raw[rxIndex] = txval;
+					rxIndex = rxIndex + 1;
+				}
+				txIndex = txIndex + 1;
 			}
-
-			raw = errorCorrection(raw);
+			
 
 			// use nominal 1st order fit from sensor datasheet to calculate RH in %
 			var humidity			= buf.readUInt32LE(24)/1024.0;
