@@ -429,7 +429,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 			var rxIndex = 0;
 			var txIndex = 0;
 			var extra = 0;
-			var total = bufSize + math.ceil(bufSize / 4.0);
+			var total = RAW_LENGTH + Math.ceil(RAW_LENGTH / 4.0);
 			
 			while (txIndex < total) {
 				var bufIndex = initialReadOffsetWithPhase + txIndex;
