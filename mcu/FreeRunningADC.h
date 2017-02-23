@@ -39,7 +39,7 @@ uint8_t analogSensors[NUM_SENSORS] = {ADC_IR_IN, ADC_THERMISTOR, ADC_HUMIDITY};
 // How much further after the trigger we go
 // CIRCULAR_BUFFER_LENGTH - END_TIMER = SAMPLES_BEFORE_TRIGGER
 // Portion of a CIRCULAR_BUFFER_LENGTH sample that comes after the trigger
-#define END_TIMER (CIRCULAR_BUFFER_LENGTH - SAMPLES_BEFORE_TRIGGER)
+const uint16_t END_TIMER = (CIRCULAR_BUFFER_LENGTH - ceil(CIRCULAR_BUFFER_LENGTH / 5.0)- SAMPLES_BEFORE_TRIGGER);
 
 void switchADCMuxChannel(uint8_t channel)
 {
