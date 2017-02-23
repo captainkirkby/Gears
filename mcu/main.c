@@ -186,7 +186,8 @@ int main(void)
             
             if(bmpError) flashNumber(200+bmpError);
 
-            dataPacket.rawPhase = (currentElementIndex + 1) % CIRCULAR_BUFFER_LENGTH;
+            // dataPacket.rawPhase = (currentElementIndex + 1) % CIRCULAR_BUFFER_LENGTH;   // should be currentElementIndex now?
+            dataPacket.rawPhase = currentElementIndex;
             dataPacket.thermistor = thermistorReading;
             // dataPacket.humidity = humidityReading;
 
@@ -278,7 +279,7 @@ ISR(ADC_vect){
             // if above THRESHOLD, allow buffer to fill n number of times, dump on the serial port, then continue
             // in either case, fill buffer once and increment pointer
         
-            if(adcValue <= THRESHOLD){
+            if(adcValue <= THRESHOLD && bitsLeft <= 0){
                 // Store time since last threshold (max 5.4s for a 16 bit counter)
                 runningCount += timingCounter;
                 timingCounter = 0;
@@ -291,30 +292,34 @@ ISR(ADC_vect){
                 // digitalWrite(TRIGGER_TEST_POINT, LOW);
             }
         }
+
+
     
-        //Add value to buffer
-        currentElementIndex = (currentElementIndex + 1) % CIRCULAR_BUFFER_LENGTH;
-
-
-        // Data Packing algorithm
+        // Data Packing algorithm (run when empty or end)
         if (bitsLeft <= 0) {
             dataPacket.raw[currentElementIndex] = extra;
-            currentElementIndex = currentElementIndex + 1;
+            currentElementIndex = (currentElementIndex + 1) % CIRCULAR_BUFFER_LENGTH;
             extra = 0;
             bitsLeft = 8;
         }
 
         dataPacket.raw[currentElementIndex] = adcValue & 0xFF;
-        currentElementIndex = currentElementIndex + 1;
+        currentElementIndex = (currentElementIndex + 1) % CIRCULAR_BUFFER_LENGTH;
         msbs = adcValue >> 8;
         extra |= (msbs) << (bitsLeft - 2);
         bitsLeft = bitsLeft - 2;
-        
-        if (bitsLeft < 8) {
-            dataPacket.raw[currentElementIndex] = extra;
-        }
 
-        // dataPacket.raw[currentElementIndex] = (adcValue & 0xFF);             // Lower byte 
+        // if (adcStatus == ADC_STATUS_UNSTABLE && bitsLeft != 0) {
+        //     dataPacket.start[0] = bitsLeft;      // check to see ending on same spot each time
+        // }
+
+        if (adcStatus == ADC_STATUS_UNSTABLE) {
+            dataPacket.raw[currentElementIndex] = extra;
+            currentElementIndex = (currentElementIndex + 1) % CIRCULAR_BUFFER_LENGTH;
+            extra = 0;
+            bitsLeft = 8;
+        }
+        
     } else if(adcStatus == ADC_STATUS_UNSTABLE){
         // Current reading is unstable, but next one will be stable
         adcStatus = ADC_STATUS_ONE_SHOT;

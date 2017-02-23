@@ -55,7 +55,7 @@ catch (ex) {
 }
 // console.log(RAW_LENGTH+1);
 var RAW_START = 52;
-var MAX_PACKET_SIZE = RAW_START + RAW_LENGTH + Math.ceil(RAW_LENGTH / 4.0));
+var MAX_PACKET_SIZE = RAW_START + RAW_LENGTH + Math.ceil(RAW_LENGTH / 4.0);
 
 // Keep track of the dates we are waiting on a fit to process
 // FIFO : push on, then pop off
@@ -454,7 +454,7 @@ function receive(data,assembler,averager,bootPacketModel,dataPacketModel,gpsStat
 				}
 				txIndex = txIndex + 1;
 			}
-			
+
 
 			// use nominal 1st order fit from sensor datasheet to calculate RH in %
 			var humidity			= buf.readUInt32LE(24)/1024.0;
