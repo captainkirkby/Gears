@@ -49,10 +49,15 @@ else
 endif
 
 # run cat ../IRLength.txt to capture the value for CIRCULAR_BUFFER_LENGTH
+# then runs a python script to compute the expression raw bytes = BUF_LEN + ceiling(BUF_LEN / 4.0)
+# this allows the IRLength.txt file to contain number of logical entries, while the mcu
+# needs to know about the number of bytes
+
 IRLENGTH := $(shell cat ../IRLength.txt)
+IRBYTES := $(shell python -c "from math import ceil; print(str(int($(IRLENGTH) + ceil($(IRLENGTH)/4.0))))")
 
 AVRDUDE = avrdude $(PROGRAMMER_ARGS) -p $(UPLOAD_DEVICE)
-COMPILE = avr-gcc -Wall -Os -std=c99 -DF_CPU=$(CLOCK) -DCIRCULAR_BUFFER_LENGTH=$(IRLENGTH) -mmcu=$(DEVICE)
+COMPILE = avr-gcc -Wall -Os -std=c99 -DF_CPU=$(CLOCK) -DCIRCULAR_BUFFER_LENGTH=$(IRBYTES) -mmcu=$(DEVICE)
 
 SOURCES = main.c
 OBJECTS = $(addprefix build/, $(SOURCES:%.c=%.o))
