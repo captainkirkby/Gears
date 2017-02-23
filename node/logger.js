@@ -53,9 +53,9 @@ try {
 catch (ex) {
 	throw new Error("Could not read IR length from ../IRLength.txt");
 }
-console.log(RAW_LENGTH+1);
+// console.log(RAW_LENGTH+1);
 var RAW_START = 52;
-var MAX_PACKET_SIZE = RAW_START+RAW_LENGTH;
+var MAX_PACKET_SIZE = RAW_START + RAW_LENGTH + Math.ceil(RAW_LENGTH / 4.0));
 
 // Keep track of the dates we are waiting on a fit to process
 // FIFO : push on, then pop off
